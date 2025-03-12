@@ -717,16 +717,49 @@ def handle_callback(call):
         # جمع‌آوری اطلاعات
         import psutil
         import shutil
+        import datetime
         
-        # اطلاعات سیستم
-        cpu_percent = psutil.cpu_percent()
+        # اطلاعات سیستم - CPU
+        cpu_percent = psutil.cpu_percent(interval=1)
+        cpu_count = psutil.cpu_count()
+        cpu_freq = psutil.cpu_freq()
+        
+        # اطلاعات پردازش‌های مصرف‌کننده CPU
+        processes = []
+        for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent']):
+            try:
+                proc_info = proc.info
+                if proc_info['cpu_percent'] > 0.5:  # فقط پردازش‌های با مصرف بالاتر از 0.5%
+                    processes.append(proc_info)
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                pass
+        
+        # مرتب‌سازی پردازش‌ها بر اساس مصرف CPU (بیشترین اول)
+        processes.sort(key=lambda x: x['cpu_percent'], reverse=True)
+        
+        # اطلاعات حافظه
         memory = psutil.virtual_memory()
+        swap = psutil.swap_memory()
+        
+        # اطلاعات دیسک
         disk = shutil.disk_usage("/")
+        
+        # اطلاعات شبکه
+        net_io = psutil.net_io_counters()
+        net_sent_mb = net_io.bytes_sent / (1024 * 1024)
+        net_recv_mb = net_io.bytes_recv / (1024 * 1024)
+        
+        # آمار فضای ذخیره‌سازی ویدیوها
+        storage_stats = get_storage_stats()
         
         # اطلاعات ربات
         channels_count = len(hashtag_manager.registered_channels)
         hashtags_count = len(hashtag_manager.hashtag_cache)
         responses_count = len(responses)
+        
+        # اطلاعات زمان اجرا
+        uptime = datetime.datetime.now() - datetime.datetime.fromtimestamp(psutil.boot_time())
+        uptime_str = f"{uptime.days} روز، {uptime.seconds // 3600} ساعت، {(uptime.seconds // 60) % 60} دقیقه"
         
         # تبدیل مقادیر به واحدهای مناسب
         def convert_size(size_bytes):
@@ -745,22 +778,60 @@ def handle_callback(call):
             f"<b>🤖 آمار ربات:</b>\n"
             f"• کانال‌های مانیتورینگ: {channels_count}\n"
             f"• هشتگ‌های ذخیره شده: {hashtags_count}\n"
-            f"• پاسخ‌های خودکار: {responses_count}\n\n"
-            f"<b>💻 اطلاعات سیستم:</b>\n"
-            f"• مصرف CPU: {cpu_percent}%\n"
-            f"• حافظه: {convert_size(memory.used)} از {convert_size(memory.total)} ({memory.percent}%)\n"
-            f"• فضای ذخیره‌سازی: {convert_size(disk.used)} از {convert_size(disk.total)} ({disk.used / disk.total * 100:.1f}%)\n\n"
-            f"<b>⚙️ سیستم‌های فعال:</b>\n"
+            f"• پاسخ‌های خودکار: {responses_count}\n"
+            f"• زمان فعالیت: {uptime_str}\n\n"
+            
+            f"<b>💾 فضای ذخیره‌سازی ویدیوها:</b>\n"
+            f"• کل فضای اشغال شده: {storage_stats['total_size_mb']:.2f} MB\n"
+            f"• تعداد ویدیوها: {storage_stats['total_videos']}\n"
+            f"• فضای یوتیوب: {storage_stats['folders'][VIDEO_FOLDER]['size_mb']:.2f} MB ({storage_stats['folders'][VIDEO_FOLDER]['file_count']} فایل)\n"
+            f"• فضای اینستاگرام: {storage_stats['folders'][INSTAGRAM_FOLDER]['size_mb']:.2f} MB ({storage_stats['folders'][INSTAGRAM_FOLDER]['file_count']} فایل)\n\n"
+            
+            f"<b>💻 CPU:</b>\n"
+            f"• مصرف کلی: {cpu_percent}%\n"
+            f"• تعداد هسته‌ها: {cpu_count}\n"
+            f"• فرکانس: {cpu_freq.current:.2f} MHz\n\n"
+            
+            f"<b>🔄 پردازش‌های با بیشترین مصرف CPU:</b>\n"
+        )
+        
+        # اضافه کردن اطلاعات 5 پردازش برتر
+        for i, proc in enumerate(processes[:5], 1):
+            status_text += f"• {i}. {proc['name']}: {proc['cpu_percent']:.1f}% CPU, {proc['memory_percent']:.1f}% RAM\n"
+        
+        status_text += (
+            f"\n<b>🧠 حافظه:</b>\n"
+            f"• استفاده شده: {convert_size(memory.used)} از {convert_size(memory.total)} ({memory.percent}%)\n"
+            f"• حافظه مجازی: {convert_size(swap.used)} از {convert_size(swap.total)} ({swap.percent}%)\n\n"
+            
+            f"<b>💽 دیسک:</b>\n"
+            f"• استفاده شده: {convert_size(disk.used)} از {convert_size(disk.total)} ({disk.used / disk.total * 100:.1f}%)\n"
+            f"• فضای آزاد: {convert_size(disk.free)}\n\n"
+            
+            f"<b>🌐 شبکه:</b>\n"
+            f"• ارسال شده: {net_sent_mb:.2f} MB\n"
+            f"• دریافت شده: {net_recv_mb:.2f} MB\n\n"
+            
+            f"<b>⚙️ تنظیمات فعلی:</b>\n"
             f"• سیستم پینگ خودکار: هر 5 دقیقه\n"
             f"• حداکثر ویدیوهای ذخیره: {MAX_VIDEOS_PER_FOLDER}\n"
+            f"• کیفیت پیش‌فرض ویدیو: {DEFAULT_VIDEO_QUALITY}\n"
+            f"• حداکثر اندازه ویدیو: {VIDEO_MAX_SIZE_MB} MB\n"
             f"• قابلیت کانال خصوصی: فعال"
         )
         
         # ایجاد دکمه‌های مدیریتی
-        markup = telebot.types.InlineKeyboardMarkup()
+        markup = telebot.types.InlineKeyboardMarkup(row_width=2)
         markup.add(
             telebot.types.InlineKeyboardButton("🧹 پاکسازی ویدیوها", callback_data="clear_videos"),
-            telebot.types.InlineKeyboardButton("🔍 نمایش کانال‌ها", callback_data="show_channels")
+            telebot.types.InlineKeyboardButton("📋 نمایش کانال‌ها", callback_data="show_channels")
+        )
+        markup.add(
+            telebot.types.InlineKeyboardButton("⚡ اطلاعات دقیق سیستم", callback_data="detailed_system_info"),
+            telebot.types.InlineKeyboardButton("💻 دسترسی به کد ربات", callback_data="view_bot_code")
+        )
+        markup.add(
+            telebot.types.InlineKeyboardButton("🔄 بروزرسانی اطلاعات", callback_data="bot_status")
         )
         
         bot.send_message(
