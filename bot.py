@@ -2125,7 +2125,8 @@ def handle_optimize_memory(call):
         # بهینه‌سازی فایل هشتگ‌ها
         if os.path.exists("hashtags.json"):
             try:
-                hashtag_manager.save_data()                compressed_hashtags = True
+                hashtag_manager.save_data()
+                compressed_hashtags = True
             except:
                 pass
 
