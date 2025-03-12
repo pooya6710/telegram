@@ -28,9 +28,9 @@ MAX_CACHE_SIZE = 5
 
 # تنظیمات
 DOWNLOAD_TIMEOUT = 300  # حداکثر زمان دانلود (ثانیه)
-MAX_VIDEOS_PER_FOLDER = 3  # کاهش تعداد ویدئو ذخیره شده برای بهینه‌سازی فضا
-VIDEO_MAX_SIZE_MB = 25  # حداکثر حجم ویدئو (مگابایت)
-DEFAULT_VIDEO_QUALITY = "240p"  # کیفیت پیش‌فرض ویدئو برای کاهش فضای ذخیره‌سازی
+MAX_VIDEOS_PER_FOLDER = 2  # کاهش تعداد ویدئو ذخیره شده برای بهینه‌سازی فضا
+VIDEO_MAX_SIZE_MB = 20  # حداکثر حجم ویدئو (مگابایت)
+DEFAULT_VIDEO_QUALITY = "144p"  # کیفیت پیش‌فرض ویدئو برای کاهش فضای ذخیره‌سازی
 # کیفیت‌های قابل انتخاب
 VIDEO_QUALITIES = {
     "144p": {"height": "144", "format": "worst[height<=144]/worst"},
@@ -40,6 +40,9 @@ VIDEO_QUALITIES = {
     "720p": {"height": "720", "format": "best[height<=720]/best"},
     "1080p": {"height": "1080", "format": "best[height<=1080]/best"}
 }
+
+# تنظیمات کاربر برای کیفیت ویدیو
+USER_SETTINGS = {}  # ذخیره تنظیمات کاربر {user_id: {"video_quality": "240p"}}
 MAX_WORKERS = 4  # تعداد نخ‌ها برای دانلود همزمان
 
 # تعداد تلاش‌های مجدد در صورت شکست
@@ -179,14 +182,15 @@ def compress_video(input_path, output_path=None, target_size_mb=20, quality="240
         print(f"⚠️ خطا در فشرده‌سازی ویدیو: {str(e)}")
         return None
 
-# 📌 پاکسازی پوشه با حفظ فایل‌های جدید
-def clear_folder(folder_path, max_files=3):
+# 📌 پاکسازی پوشه با حفظ فایل‌های جدید و محدودیت حجم کلی
+def clear_folder(folder_path, max_files=2, max_total_size_mb=50):
     """
     پاکسازی پوشه با حفظ فایل‌های جدید و حذف قدیمی‌ترین فایل‌ها
     
     Args:
         folder_path: مسیر پوشه
         max_files: تعداد فایل‌های حداکثر برای نگهداری
+        max_total_size_mb: حداکثر حجم کل پوشه به مگابایت
         
     Returns:
         تعداد فایل‌های حذف شده
@@ -194,6 +198,11 @@ def clear_folder(folder_path, max_files=3):
     files = []
     total_size = 0
     deleted_count = 0
+    
+    # ایجاد پوشه اگر وجود ندارد
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+        return 0
     
     # جمع‌آوری اطلاعات فایل‌ها
     for filename in os.listdir(folder_path):
@@ -207,18 +216,34 @@ def clear_folder(folder_path, max_files=3):
     # مرتب‌سازی بر اساس زمان تغییر (قدیمی‌ترین اول)
     files.sort(key=lambda x: x[1])
     
-    # حذف فایل‌های قدیمی اگر تعداد از حد مجاز بیشتر است
+    # بررسی حذف بر اساس تعداد فایل
+    files_to_delete = []
     if len(files) > max_files:
-        for file_path, _, file_size in files[:-max_files]:
-            try:
-                os.unlink(file_path)
-                deleted_count += 1
-                print(f"✅ فایل {file_path} با حجم {file_size:.2f} MB حذف شد")
-            except Exception as e:
-                print(f"⚠️ خطا در حذف {file_path}: {e}")
+        files_to_delete.extend(files[:-max_files])
+        
+    # حتی اگر تعداد فایل‌ها کمتر از حد مجاز باشد ولی حجم کل بیشتر از حد مجاز باشد
+    # از قدیمی‌ترین فایل‌ها شروع به حذف می‌کنیم
+    remaining_files = [f for f in files if f not in files_to_delete]
+    remaining_size = sum(f[2] for f in remaining_files)
+    
+    i = 0
+    while remaining_size > max_total_size_mb and i < len(remaining_files):
+        files_to_delete.append(remaining_files[i])
+        remaining_size -= remaining_files[i][2]
+        i += 1
+    
+    # حذف فایل‌ها
+    for file_path, _, file_size in files_to_delete:
+        try:
+            os.unlink(file_path)
+            deleted_count += 1
+            total_size -= file_size
+            print(f"✅ فایل {file_path} با حجم {file_size:.2f} MB حذف شد")
+        except Exception as e:
+            print(f"⚠️ خطا در حذف {file_path}: {e}")
     
     # گزارش وضعیت فضای ذخیره‌سازی
-    print(f"📊 وضعیت پوشه {folder_path}: {len(files)} فایل، {total_size:.2f} MB")
+    print(f"📊 وضعیت پوشه {folder_path}: {len(files) - deleted_count} فایل، {total_size:.2f} MB")
     return deleted_count
 
 # 📂 مدیریت پاسخ‌های متنی با کش
@@ -287,20 +312,28 @@ def get_direct_video_url(link):
         return None
 
 # 📌 دانلود ویدیو از اینستاگرام با کش و بهینه‌سازی CPU
-def download_instagram(link):
+def download_instagram(link, user_id=None):
     # بررسی کش
     if link in RECENT_VIDEOS:
         if os.path.exists(RECENT_VIDEOS[link]):
             return RECENT_VIDEOS[link]
     
     try:
-        # پاکسازی فایل‌های قدیمی، حفظ 5 فایل اخیر
-        clear_folder(INSTAGRAM_FOLDER, 5)
+        # پاکسازی فایل‌های قدیمی، حفظ فایل اخیر طبق تنظیمات
+        clear_folder(INSTAGRAM_FOLDER, MAX_VIDEOS_PER_FOLDER)
 
+        # انتخاب کیفیت ویدیو بر اساس تنظیمات کاربر
+        user_quality = DEFAULT_VIDEO_QUALITY
+        if user_id and str(user_id) in USER_SETTINGS:
+            user_quality = USER_SETTINGS[str(user_id)].get("video_quality", DEFAULT_VIDEO_QUALITY)
+        
+        # دریافت فرمت مناسب برای کیفیت انتخابی
+        format_spec = VIDEO_QUALITIES.get(user_quality, VIDEO_QUALITIES[DEFAULT_VIDEO_QUALITY])["format"]
+        
         # تنظیمات بهینه‌سازی شده برای کاهش مصرف CPU
         ydl_opts = {
             'outtmpl': f'{INSTAGRAM_FOLDER}/%(id)s.%(ext)s',
-            'format': 'mp4/best[height<=480]/best', # کیفیت پایین‌تر برای سرعت بیشتر و CPU کمتر
+            'format': format_spec,  # استفاده از کیفیت انتخابی کاربر
             'quiet': True,
             'noplaylist': True,
             'socket_timeout': 30,
@@ -356,20 +389,28 @@ def download_instagram(link):
         return None
 
 # 📌 دانلود ویدیو از یوتیوب با کش و بهینه‌سازی مصرف CPU
-def download_youtube(link):
+def download_youtube(link, user_id=None):
     # بررسی کش
     if link in RECENT_VIDEOS:
         if os.path.exists(RECENT_VIDEOS[link]):
             return RECENT_VIDEOS[link]
     
     try:
-        # پاکسازی فایل‌های قدیمی، حفظ 5 فایل اخیر
-        clear_folder(VIDEO_FOLDER, 5)
+        # پاکسازی فایل‌های قدیمی، حفظ فایل اخیر طبق تنظیمات
+        clear_folder(VIDEO_FOLDER, MAX_VIDEOS_PER_FOLDER)
 
+        # انتخاب کیفیت ویدیو بر اساس تنظیمات کاربر
+        user_quality = DEFAULT_VIDEO_QUALITY
+        if user_id and str(user_id) in USER_SETTINGS:
+            user_quality = USER_SETTINGS[str(user_id)].get("video_quality", DEFAULT_VIDEO_QUALITY)
+        
+        # دریافت فرمت مناسب برای کیفیت انتخابی
+        format_spec = VIDEO_QUALITIES.get(user_quality, VIDEO_QUALITIES[DEFAULT_VIDEO_QUALITY])["format"]
+        
         # تنظیمات بهینه‌سازی شده برای کاهش مصرف CPU
         ydl_opts = {
             'outtmpl': f'{VIDEO_FOLDER}/%(id)s.%(ext)s',
-            'format': 'mp4/best[height<=480]/best', # کیفیت پایین‌تر برای سرعت بیشتر و CPU کمتر
+            'format': format_spec,  # استفاده از کیفیت انتخابی کاربر
             'quiet': True,
             'noplaylist': True,
             'socket_timeout': 30,
@@ -556,12 +597,22 @@ def handle_callback(call):
     if call.data == "help":
         handle_help(call.message)
     elif call.data == "video_info":
+        # ایجاد دکمه انتخاب کیفیت
+        markup = telebot.types.InlineKeyboardMarkup()
+        markup.add(telebot.types.InlineKeyboardButton("⚙️ تنظیم کیفیت ویدیو", callback_data="set_video_quality"))
+        
+        # دریافت کیفیت فعلی کاربر
+        user_quality = USER_SETTINGS.get(str(call.from_user.id), {}).get("video_quality", DEFAULT_VIDEO_QUALITY)
+        
         bot.send_message(
             call.message.chat.id,
             "🎥 <b>لطفاً لینک ویدیوی مورد نظر را ارسال کنید</b>\n\n"
             "• یوتیوب: https://youtube.com/...\n"
-            "• اینستاگرام: https://instagram.com/...",
-            parse_mode="HTML"
+            "• اینستاگرام: https://instagram.com/...\n\n"
+            f"🔹 <b>کیفیت فعلی شما:</b> {user_quality}\n"
+            "برای تغییر کیفیت دانلود، از دکمه زیر استفاده کنید.",
+            parse_mode="HTML",
+            reply_markup=markup
         )
     elif call.data == "hashtag_info":
         bot.send_message(
@@ -828,7 +879,7 @@ def handle_callback(call):
         )
         markup.add(
             telebot.types.InlineKeyboardButton("⚡ اطلاعات دقیق سیستم", callback_data="detailed_system_info"),
-            telebot.types.InlineKeyboardButton("💻 دسترسی به کد ربات", callback_data="view_bot_code")
+            telebot.types.InlineKeyboardButton("💻 مشاهده کد ربات", callback_data="view_bot_code")
         )
         markup.add(
             telebot.types.InlineKeyboardButton("🔄 بروزرسانی اطلاعات", callback_data="bot_status")
@@ -932,6 +983,215 @@ def handle_callback(call):
                 f"⚠️ کانال <code>{channel_id}</code> در لیست مانیتورینگ یافت نشد!",
                 parse_mode="HTML"
             )
+    
+    elif call.data == "view_bot_code":
+        # بررسی دسترسی ادمین
+        if call.from_user.id != ADMIN_CHAT_ID:
+            bot.send_message(call.message.chat.id, "⛔ شما دسترسی به این قابلیت را ندارید!")
+            return
+            
+        try:
+            # ارسال فایل کد ربات
+            with open("bot.py", "rb") as file:
+                bot.send_document(
+                    call.message.chat.id,
+                    file,
+                    caption="📄 کد اصلی ربات"
+                )
+                
+            # ارسال فایل اصلی
+            with open("main.py", "rb") as file:
+                bot.send_document(
+                    call.message.chat.id,
+                    file,
+                    caption="📄 فایل اصلی برنامه"
+                )
+                
+            bot.send_message(
+                call.message.chat.id,
+                "✅ فایل‌های اصلی کد ربات ارسال شد. می‌توانید آن‌ها را بررسی و ویرایش کنید."
+            )
+        except Exception as e:
+            bot.send_message(
+                call.message.chat.id,
+                f"⚠️ خطا در ارسال فایل‌های کد: {str(e)}"
+            )
+    
+    elif call.data == "detailed_system_info":
+        # بررسی دسترسی ادمین
+        if call.from_user.id != ADMIN_CHAT_ID:
+            bot.send_message(call.message.chat.id, "⛔ شما دسترسی به این قابلیت را ندارید!")
+            return
+            
+        try:
+            import psutil
+            import platform
+            import os
+            
+            # جزئیات سیستم
+            system_info = (
+                "<b>🖥️ جزئیات سیستم:</b>\n\n"
+                f"<b>سیستم عامل:</b> {platform.system()} {platform.release()}\n"
+                f"<b>معماری:</b> {platform.machine()}\n"
+                f"<b>پردازنده:</b> {platform.processor()}\n\n"
+                
+                "<b>🔍 اطلاعات دقیق CPU:</b>\n"
+            )
+            
+            # جزئیات CPU
+            cpu_freq = psutil.cpu_freq()
+            system_info += f"<b>تعداد هسته‌های فیزیکی:</b> {psutil.cpu_count(logical=False)}\n"
+            system_info += f"<b>تعداد ترد‌ها:</b> {psutil.cpu_count(logical=True)}\n"
+            if cpu_freq:
+                system_info += f"<b>فرکانس فعلی:</b> {cpu_freq.current:.2f} MHz\n"
+                if cpu_freq.min and cpu_freq.max:
+                    system_info += f"<b>محدوده فرکانس:</b> {cpu_freq.min:.2f} - {cpu_freq.max:.2f} MHz\n"
+            
+            # استفاده از CPU به تفکیک هسته
+            system_info += "\n<b>استفاده از هر هسته CPU:</b>\n"
+            for i, percentage in enumerate(psutil.cpu_percent(percpu=True, interval=1)):
+                system_info += f"• هسته {i}: {percentage}%\n"
+            
+            # اطلاعات حافظه بیشتر
+            memory = psutil.virtual_memory()
+            swap = psutil.swap_memory()
+            system_info += (
+                f"\n<b>🧠 جزئیات حافظه:</b>\n"
+                f"<b>کل:</b> {memory.total / (1024**3):.2f} GB\n"
+                f"<b>استفاده شده:</b> {memory.used / (1024**3):.2f} GB ({memory.percent}%)\n"
+                f"<b>آزاد:</b> {memory.available / (1024**3):.2f} GB\n"
+                f"<b>حافظه مجازی کل:</b> {swap.total / (1024**3):.2f} GB\n"
+                f"<b>حافظه مجازی استفاده شده:</b> {swap.used / (1024**3):.2f} GB ({swap.percent}%)\n"
+            )
+            
+            # پردازش‌های با بیشترین مصرف حافظه
+            processes = []
+            for proc in psutil.process_iter(['pid', 'name', 'memory_percent']):
+                try:
+                    processes.append(proc.info)
+                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                    pass
+            
+            # مرتب‌سازی بر اساس مصرف حافظه
+            processes.sort(key=lambda x: x['memory_percent'], reverse=True)
+            
+            system_info += "\n<b>🔝 پردازش‌های با بیشترین مصرف حافظه:</b>\n"
+            for i, proc in enumerate(processes[:5], 1):
+                system_info += f"• {i}. {proc['name']} (PID: {proc['pid']}): {proc['memory_percent']:.1f}%\n"
+            
+            # اطلاعات فایل‌سیستم
+            system_info += "\n<b>💽 جزئیات فایل‌سیستم:</b>\n"
+            
+            for part in psutil.disk_partitions(all=False):
+                if os.name == 'nt' and ('cdrom' in part.opts or part.fstype == ''):
+                    # در ویندوز، دیسک‌های CD-ROM و درایوهای خالی را رد کن
+                    continue
+                    
+                usage = psutil.disk_usage(part.mountpoint)
+                system_info += (
+                    f"<b>محل نصب:</b> {part.mountpoint}\n"
+                    f"<b>نوع فایل‌سیستم:</b> {part.fstype}\n"
+                    f"<b>فضای کل:</b> {usage.total / (1024**3):.2f} GB\n"
+                    f"<b>فضای استفاده شده:</b> {usage.used / (1024**3):.2f} GB ({usage.percent}%)\n"
+                    f"<b>فضای آزاد:</b> {usage.free / (1024**3):.2f} GB\n\n"
+                )
+            
+            # اطلاعات شبکه بیشتر
+            net_if_addrs = psutil.net_if_addrs()
+            net_io = psutil.net_io_counters()
+            
+            system_info += (
+                "<b>🌐 جزئیات شبکه:</b>\n"
+                f"<b>بایت‌های ارسالی:</b> {net_io.bytes_sent / (1024**2):.2f} MB\n"
+                f"<b>بایت‌های دریافتی:</b> {net_io.bytes_recv / (1024**2):.2f} MB\n"
+                f"<b>بسته‌های ارسالی:</b> {net_io.packets_sent}\n"
+                f"<b>بسته‌های دریافتی:</b> {net_io.packets_recv}\n"
+            )
+            
+            # ارسال پیام با مزلت به یک و یا چند پیام
+            if len(system_info) > 4000:
+                # تقسیم به چند پیام
+                parts = [system_info[i:i+4000] for i in range(0, len(system_info), 4000)]
+                for i, part in enumerate(parts):
+                    bot.send_message(
+                        call.message.chat.id,
+                        part + (f"\n\n<i>ادامه دارد... {i+1}/{len(parts)}</i>" if i < len(parts) - 1 else ""),
+                        parse_mode="HTML"
+                    )
+            else:
+                bot.send_message(call.message.chat.id, system_info, parse_mode="HTML")
+                
+        except Exception as e:
+            bot.send_message(
+                call.message.chat.id,
+                f"⚠️ خطا در دریافت اطلاعات سیستم: {str(e)}"
+            )
+
+    elif call.data == "set_video_quality":
+        # ایجاد دکمه‌های انتخاب کیفیت
+        markup = telebot.types.InlineKeyboardMarkup(row_width=3)
+        
+        # افزودن دکمه‌های کیفیت
+        quality_buttons = []
+        for quality in VIDEO_QUALITIES.keys():
+            quality_buttons.append(
+                telebot.types.InlineKeyboardButton(
+                    f"{quality}", 
+                    callback_data=f"quality_{quality}"
+                )
+            )
+        
+        # تنظیم دکمه‌ها در ردیف‌های 3تایی
+        for i in range(0, len(quality_buttons), 3):
+            row_buttons = quality_buttons[i:i+3]
+            markup.add(*row_buttons)
+        
+        # دکمه بازگشت
+        markup.add(telebot.types.InlineKeyboardButton("🔙 بازگشت", callback_data="video_info"))
+        
+        # دریافت کیفیت فعلی کاربر
+        user_quality = USER_SETTINGS.get(str(call.from_user.id), {}).get("video_quality", DEFAULT_VIDEO_QUALITY)
+        
+        bot.send_message(
+            call.message.chat.id,
+            f"🎬 <b>انتخاب کیفیت ویدیو</b>\n\n"
+            f"لطفاً کیفیت مورد نظر خود را برای دانلود ویدیوها انتخاب کنید.\n\n"
+            f"⚠️ <b>نکته مهم:</b> انتخاب کیفیت پایین‌تر باعث کاهش مصرف فضای ذخیره‌سازی و سرعت بیشتر دانلود می‌شود.\n\n"
+            f"🔹 <b>کیفیت فعلی شما:</b> {user_quality}",
+            parse_mode="HTML",
+            reply_markup=markup
+        )
+    
+    elif call.data.startswith("quality_"):
+        # تنظیم کیفیت ویدیو
+        quality = call.data.replace("quality_", "")
+        
+        if quality in VIDEO_QUALITIES:
+            # ذخیره تنظیمات کاربر
+            user_id = str(call.from_user.id)
+            if user_id not in USER_SETTINGS:
+                USER_SETTINGS[user_id] = {}
+            
+            USER_SETTINGS[user_id]["video_quality"] = quality
+            
+            bot.answer_callback_query(
+                call.id,
+                f"✅ کیفیت ویدیو به {quality} تغییر یافت",
+                show_alert=True
+            )
+            
+            # بازگشت به منوی دانلود ویدیو
+            markup = telebot.types.InlineKeyboardMarkup()
+            markup.add(telebot.types.InlineKeyboardButton("🔙 بازگشت", callback_data="video_info"))
+            
+            bot.edit_message_text(
+                f"✅ <b>کیفیت ویدیو با موفقیت به {quality} تغییر یافت.</b>\n\n"
+                f"از این پس، تمام ویدیوهای دانلودی شما با این کیفیت ارسال خواهند شد.",
+                call.message.chat.id,
+                call.message.message_id,
+                parse_mode="HTML",
+                reply_markup=markup
+            )
 
 # دستور نمایش کانال‌های ثبت شده
 @bot.message_handler(commands=['channels'])
@@ -972,6 +1232,19 @@ def handle_remove_channel(message):
 # 🔄 پردازش ویدیو به صورت ناهمزمان
 def process_video_link(message, text, processing_msg):
     try:
+        # دریافت کیفیت کاربر
+        user_id = message.from_user.id
+        user_quality = DEFAULT_VIDEO_QUALITY
+        if str(user_id) in USER_SETTINGS:
+            user_quality = USER_SETTINGS[str(user_id)].get("video_quality", DEFAULT_VIDEO_QUALITY)
+        
+        # اعلام کیفیت انتخابی
+        bot.edit_message_text(
+            f"⏳ در حال پردازش ویدیو با کیفیت {user_quality}، لطفاً صبر کنید...", 
+            message.chat.id, 
+            processing_msg.message_id
+        )
+        
         # ابتدا لینک مستقیم (سریع‌ترین)
         direct_url = get_direct_video_url(text)
         if direct_url:
@@ -981,19 +1254,37 @@ def process_video_link(message, text, processing_msg):
                 bot.delete_message(message.chat.id, processing_msg.message_id)
                 return
             except Exception:
-                bot.edit_message_text("⏳ روش مستقیم موفق نبود. در حال دانلود ویدیو...", message.chat.id, processing_msg.message_id)
+                bot.edit_message_text(
+                    f"⏳ روش مستقیم موفق نبود. در حال دانلود ویدیو با کیفیت {user_quality}...", 
+                    message.chat.id, 
+                    processing_msg.message_id
+                )
         
-        # دانلود و ارسال ویدیو
-        video_path = download_instagram(text) if "instagram.com" in text else download_youtube(text)
+        # دانلود و ارسال ویدیو با کیفیت انتخابی کاربر
+        if "instagram.com" in text:
+            video_path = download_instagram(text, user_id)
+        else:
+            video_path = download_youtube(text, user_id)
         
         if video_path and os.path.exists(video_path):
-            bot.edit_message_text("✅ دانلود کامل شد، در حال ارسال...", message.chat.id, processing_msg.message_id)
+            # بررسی حجم فایل برای اطلاع‌رسانی به کاربر
+            file_size_mb = os.path.getsize(video_path) / (1024 * 1024)
+            bot.edit_message_text(
+                f"✅ دانلود کامل شد ({file_size_mb:.1f} MB)، در حال ارسال...", 
+                message.chat.id, 
+                processing_msg.message_id
+            )
+            
             if send_video_with_handling(message.chat.id, video_path):
                 bot.delete_message(message.chat.id, processing_msg.message_id)
             else:
                 bot.edit_message_text("⚠️ خطا در ارسال ویدیو. لطفاً دوباره تلاش کنید.", message.chat.id, processing_msg.message_id)
         else:
-            bot.edit_message_text("⚠️ دانلود ویدیو ناموفق بود. لطفاً لینک را بررسی کنید.", message.chat.id, processing_msg.message_id)
+            bot.edit_message_text(
+                "⚠️ دانلود ویدیو ناموفق بود. لطفاً لینک را بررسی کنید یا کیفیت پایین‌تری انتخاب کنید.", 
+                message.chat.id, 
+                processing_msg.message_id
+            )
     
     except Exception as e:
         notify_admin(f"⚠️ خطا در پردازش ویدیو: {str(e)}")
