@@ -1,81 +1,204 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="fa" data-bs-theme="dark" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Bot Status</title>
+    <title>وضعیت ربات تلگرام</title>
     
     <!-- Bootstrap CSS (Replit dark theme) -->
     <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
     
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+        }
+        
+        .status-circle {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        
+        .feature-icon {
+            font-size: 1.5rem;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        
+        .card {
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-header {
+            background-color: var(--bs-dark);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .badge-command {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-family: monospace;
+            font-weight: normal;
+        }
+    </style>
 </head>
 <body>
     <div class="container mt-5">
         <div class="row justify-content-center">
-            <div class="col-md-8">
+            <div class="col-md-10">
                 <div class="card">
-                    <div class="card-header text-center">
-                        <h2>{{ bot_name }} Status</h2>
+                    <div class="card-header text-center py-3">
+                        <h2 class="mb-0">{{ bot_name }}</h2>
                     </div>
-                    <div class="card-body text-center">
+                    <div class="card-body">
                         <div class="d-flex align-items-center justify-content-center mb-4">
                             {% if token_available %}
                                 <div class="status-circle bg-success me-2"></div>
-                                <h3 class="mb-0">Bot is {{ bot_status }}</h3>
+                                <h3 class="mb-0">ربات {{ bot_status }} است</h3>
                             {% else %}
                                 <div class="status-circle bg-warning me-2"></div>
-                                <h3 class="mb-0">Bot is {{ bot_status }}</h3>
+                                <h3 class="mb-0">ربات {{ bot_status }}</h3>
                             {% endif %}
                         </div>
                         
                         {% if token_available %}
-                            <p class="lead">The Telegram bot is active and ready to receive commands!</p>
+                            <p class="lead text-center">ربات تلگرام فعال است و آماده دریافت دستورات!</p>
+                            
+                            <div class="row mt-4">
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-body text-center">
+                                            <div class="feature-icon bg-primary mx-auto">
+                                                <i class="fas fa-folder-open text-light"></i>
+                                            </div>
+                                            <h5>وضعیت ذخیره‌سازی</h5>
+                                            <ul class="list-group list-group-flush mt-3">
+                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                    <span>پوشه ویدیوهای یوتیوب</span>
+                                                    <span class="badge bg-{{ 'success' if video_folder_exists else 'danger' }} rounded-pill">
+                                                        <i class="fas fa-{{ 'check' if video_folder_exists else 'times' }}"></i>
+                                                    </span>
+                                                </li>
+                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                    <span>پوشه ویدیوهای اینستاگرام</span>
+                                                    <span class="badge bg-{{ 'success' if instagram_folder_exists else 'danger' }} rounded-pill">
+                                                        <i class="fas fa-{{ 'check' if instagram_folder_exists else 'times' }}"></i>
+                                                    </span>
+                                                </li>
+                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                    <span>فایل پاسخ‌های خودکار</span>
+                                                    <span class="badge bg-{{ 'success' if responses_file_exists else 'warning' }} rounded-pill">
+                                                        <i class="fas fa-{{ 'check' if responses_file_exists else 'sync' }}"></i>
+                                                    </span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-body text-center">
+                                            <div class="feature-icon bg-info mx-auto">
+                                                <i class="fas fa-download text-light"></i>
+                                            </div>
+                                            <h5>آمار ربات</h5>
+                                            <ul class="list-group list-group-flush mt-3">
+                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                    <span>تعداد ویدیوهای پردازش شده</span>
+                                                    <span class="badge bg-primary rounded-pill" data-stat="videos_processed">{{ stats.videos_processed }}</span>
+                                                </li>
+                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                    <span>دانلودهای یوتیوب</span>
+                                                    <span class="badge bg-danger rounded-pill" data-stat="youtube_downloads">{{ stats.youtube_downloads }}</span>
+                                                </li>
+                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                    <span>دانلودهای اینستاگرام</span>
+                                                    <span class="badge bg-warning rounded-pill" data-stat="instagram_downloads">{{ stats.instagram_downloads }}</span>
+                                                </li>
+                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                    <span>تعداد پاسخ‌های ذخیره شده</span>
+                                                    <span class="badge bg-success rounded-pill" data-stat="response_count">{{ stats.response_count }}</span>
+                                                </li>
+                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                    <span>زمان کارکرد سرور</span>
+                                                    <span class="badge bg-info rounded-pill" data-stat="uptime">{{ uptime }}</span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
                         {% else %}
-                            <p class="lead">Web interface is active, but the bot is not connected.</p>
-                            <div class="alert alert-warning">
-                                <strong>Token Missing:</strong> Add a Telegram Bot Token to enable bot functionality.
+                            <p class="lead text-center">رابط کاربری وب فعال است، اما ربات متصل نیست.</p>
+                            <div class="alert alert-warning text-center">
+                                <strong>توکن وجود ندارد:</strong> یک توکن ربات تلگرام اضافه کنید تا قابلیت‌های ربات فعال شود.
                             </div>
                         {% endif %}
                         
                         {% if error_message %}
-                            <div class="alert alert-danger mt-3">
-                                <strong>Error:</strong> {{ error_message }}
+                            <div class="alert alert-danger mt-3 text-center">
+                                <strong>خطا:</strong> {{ error_message }}
                             </div>
                         {% endif %}
                         
-                        <div class="features mt-5">
-                            <h4>Bot Features</h4>
-                            <ul class="list-group list-group-flush mt-3">
+                        <div class="mt-5">
+                            <h4 class="text-center mb-4">ویژگی‌های ربات</h4>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <h5><i class="fas fa-video text-danger me-2"></i>دانلود ویدیو</h5>
+                                            <p class="text-muted">دانلود و ارسال ویدیو از یوتیوب و اینستاگرام با ارسال لینک</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <h5><i class="fas fa-comment-dots text-primary me-2"></i>پاسخ‌های خودکار</h5>
+                                            <p class="text-muted">ذخیره و بازیابی پاسخ‌های خودکار با فرمت "سوال، جواب"</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <h5 class="text-center mt-4 mb-3">دستورات ربات</h5>
+                            <ul class="list-group list-group-flush">
                                 <li class="list-group-item d-flex align-items-center">
-                                    <span class="badge bg-primary me-2">/start</span>
-                                    <span>Start the bot and get a welcome message</span>
+                                    <span class="badge badge-command bg-primary ms-2">/start</span>
+                                    <span>شروع ربات و دریافت پیام خوش‌آمدگویی</span>
                                 </li>
                                 <li class="list-group-item d-flex align-items-center">
-                                    <span class="badge bg-primary me-2">/help</span>
-                                    <span>Display available commands</span>
-                                </li>
-                                <li class="list-group-item d-flex align-items-center">
-                                    <span class="badge bg-primary me-2">/survey</span>
-                                    <span>Start a simple survey conversation</span>
-                                </li>
-                                <li class="list-group-item d-flex align-items-center">
-                                    <span class="badge bg-primary me-2">/cancel</span>
-                                    <span>Cancel the current conversation</span>
+                                    <span class="badge badge-command bg-primary ms-2">/help</span>
+                                    <span>نمایش دستورات موجود</span>
                                 </li>
                             </ul>
                         </div>
                         
-                        <div class="mt-5">
-                            <p>This web server keeps the bot running on Replit. Visit the Telegram bot to interact with it.</p>
-                            <div class="alert alert-info mt-3">
-                                <strong>Setup Instructions:</strong> Set the <code>TELEGRAM_BOT_TOKEN</code> environment variable in your Replit secrets to enable the bot functionality.
-                            </div>
+                        <div class="alert alert-info mt-5 text-center">
+                            <strong>راهنمای راه‌اندازی:</strong> متغیر محیطی <code>TELEGRAM_BOT_TOKEN</code> را در تنظیمات Replit قرار دهید تا عملکرد ربات فعال شود.
                         </div>
                     </div>
                     <div class="card-footer text-center">
-                        <small class="text-muted">Last checked: <span id="timestamp"></span></small>
+                        <small class="text-muted">آخرین بررسی: <span id="timestamp" dir="ltr"></span></small>
                     </div>
                 </div>
             </div>
@@ -85,16 +208,81 @@
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Update timestamp -->
+    <!-- Update timestamp and stats automatically -->
     <script>
         function updateTimestamp() {
             const now = new Date();
-            document.getElementById('timestamp').textContent = now.toLocaleString();
+            document.getElementById('timestamp').textContent = now.toLocaleString('fa-IR');
         }
         
-        // Update initially and then every 30 seconds
+        async function updateStats() {
+            try {
+                const response = await fetch('/api/status');
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // بروزرسانی آمار
+                    const statsElements = document.querySelectorAll('[data-stat]');
+                    statsElements.forEach(el => {
+                        const statName = el.getAttribute('data-stat');
+                        if (data.stats[statName] !== undefined) {
+                            // استفاده از انیمیشن برای نمایش تغییر
+                            if (statName !== 'uptime' && el.textContent != data.stats[statName]) {
+                                // حذف کلاس انیمیشن قبلی
+                                el.classList.remove('update-highlight');
+                                
+                                // اعمال انیمیشن با تایمر کوتاه برای اطمینان از اعمال مجدد
+                                setTimeout(() => {
+                                    el.textContent = data.stats[statName];
+                                    el.classList.add('update-highlight');
+                                }, 10);
+                            } else {
+                                el.textContent = data.stats[statName];
+                            }
+                        }
+                    });
+                    
+                    // وضعیت آنلاین
+                    const statusCircle = document.querySelector('.status-circle');
+                    if (statusCircle) {
+                        const previousStatus = statusCircle.classList.contains('bg-success') ? 'active' : 'inactive';
+                        
+                        if (data.status === 'active' && previousStatus !== 'active') {
+                            statusCircle.classList.remove('bg-warning', 'bg-danger');
+                            statusCircle.classList.add('bg-success', 'update-highlight');
+                        } else if (data.status !== 'active' && previousStatus === 'active') {
+                            statusCircle.classList.remove('bg-success', 'bg-danger');
+                            statusCircle.classList.add('bg-warning', 'update-highlight');
+                        }
+                    }
+                    
+                    // محاسبه زمان آپتایم
+                    if (data.uptime) {
+                        const days = Math.floor(data.uptime / 86400);
+                        const hours = Math.floor((data.uptime % 86400) / 3600);
+                        const minutes = Math.floor((data.uptime % 3600) / 60);
+                        const uptimeText = `${days} روز, ${hours} ساعت, ${minutes} دقیقه`;
+                        const uptimeElement = document.querySelector('[data-stat="uptime"]');
+                        if (uptimeElement) {
+                            uptimeElement.textContent = uptimeText;
+                        }
+                    }
+                    
+                    // بروزرسانی آخرین زمان چک
+                    document.getElementById('timestamp').textContent = new Date().toLocaleString('fa-IR');
+                }
+            } catch (error) {
+                console.error('خطا در بروزرسانی آمار:', error);
+            }
+        }
+        
+        // بروزرسانی زمان
         updateTimestamp();
         setInterval(updateTimestamp, 30000);
+        
+        // بروزرسانی آمار هر 60 ثانیه
+        updateStats();
+        setInterval(updateStats, 60000);
     </script>
 </body>
 </html>

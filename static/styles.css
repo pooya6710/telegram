@@ -1,27 +1,146 @@
-/* Custom styles for the bot status page */
+/* 
+  استایل‌های اختصاصی برای ربات تلگرام 
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700&display=swap');
+
+:root {
+  --primary-color: #0088cc;
+  --secondary-color: #005a85;
+  --success-color: #28a745;
+  --warning-color: #ffc107;
+  --danger-color: #dc3545;
+  --dark-color: #1f1f1f;
+  --light-color: #f8f9fa;
+}
+
+body {
+  font-family: 'Vazirmatn', sans-serif;
+  background-color: var(--dark-color);
+  color: var(--light-color);
+  direction: rtl;
+  line-height: 1.6;
+}
+
+/* کارت‌ها */
+.card {
+  transition: transform 0.3s, box-shadow 0.3s;
+  margin-bottom: 20px;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* نشانگر وضعیت */
+.status-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
 
 .status-circle {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  margin-left: 10px;
+  display: inline-block;
 }
 
-.features {
-    text-align: left;
+/* آیکون‌های ویژگی‌ها */
+.feature-card {
+  padding: 1.5rem;
+  text-align: center;
+  height: 100%;
 }
 
-.card {
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+.feature-icon {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 1.5rem;
 }
 
-.list-group-item {
-    background-color: transparent;
-    border-color: var(--bs-border-color);
+/* فهرست دستورات */
+.command-list {
+  list-style: none;
+  padding: 0;
 }
 
-.badge {
-    font-family: monospace;
-    font-size: 0.9rem;
-    min-width: 65px;
+.command-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 15px;
+  margin-bottom: 5px;
+  border-radius: 5px;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.command-badge {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 20px;
+  margin-left: 10px;
+  font-family: monospace;
+  font-weight: normal;
+}
+
+/* نوار پیشرفت */
+.progress {
+  height: 8px;
+  border-radius: 20px;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* انیمیشن به‌روزرسانی */
+@keyframes update-highlight {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.update-highlight {
+  animation: update-highlight 0.6s ease-in-out;
+}
+
+/* دکمه‌ها */
+.btn {
+  border-radius: 20px;
+  padding: 8px 20px;
+  transition: all 0.3s;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+}
+
+/* هشدارها */
+.alert {
+  border-radius: 10px;
+}
+
+/* برای صفحات موبایل */
+@media (max-width: 576px) {
+  .container {
+    padding: 10px;
+  }
+  
+  .feature-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 1.2rem;
+  }
 }

@@ -1,92 +1,147 @@
 import os
 import logging
-from flask import Flask, render_template
-from threading import Thread
+import time
+import threading
+from flask import Flask, render_template, jsonify
 from bot import setup_bot
 
-# Configure logging
+# ⚙️ تنظیم سطح لاگ برای کاهش خروجی اضافی
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
-# Flask app setup
-app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key")
+# کاهش سطح لاگ‌های غیرضروری
+logging.getLogger("werkzeug").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 
-# Bot status variable
+# 🕸️ تنظیمات فلسک با بهینه‌سازی
+app = Flask(__name__, static_folder='static', template_folder='templates')
+app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key")
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 86400  # کش 1 روزه برای فایل‌های استاتیک
+app.config['TEMPLATES_AUTO_RELOAD'] = True  # در محیط توسعه
+
+# 📊 وضعیت ربات با قابلیت بروزرسانی خودکار
 bot_status = {
     "running": False,
-    "error": None
+    "error": None,
+    "stats": {
+        "videos_processed": 0,
+        "youtube_downloads": 0,
+        "instagram_downloads": 0,
+        "response_count": 0
+    },
+    "start_time": time.time(),
+    "last_update": time.time()
 }
 
-# Start the Telegram bot on app initialization
+# 🚀 راه‌اندازی ربات تلگرام در هنگام شروع برنامه
 token = os.environ.get("TELEGRAM_BOT_TOKEN")
 if token:
     try:
-        bot = setup_bot()
-        if bot:
+        bot_running = setup_bot()
+        if bot_running:
             bot_status["running"] = True
-            logger.info("Bot is running!")
+            logger.info("🤖 ربات با موفقیت راه‌اندازی شد!")
         else:
-            bot_status["error"] = "Failed to start the bot"
-            logger.error("Failed to start the bot")
+            bot_status["error"] = "ربات راه‌اندازی نشد"
+            logger.error("⚠️ ربات راه‌اندازی نشد")
     except Exception as e:
         bot_status["error"] = str(e)
-        logger.error(f"Error starting bot: {e}")
+        logger.error(f"⚠️ خطا در راه‌اندازی ربات: {e}")
 else:
-    logger.warning("No TELEGRAM_BOT_TOKEN found. Running in web-only mode.")
-    bot_status["error"] = "No Telegram Bot Token provided"
+    logger.warning("⚠️ توکن تلگرام یافت نشد. در حالت وب-فقط اجرا می‌شود.")
+    bot_status["error"] = "توکن تلگرام موجود نیست"
 
+# 🔄 بروزرسانی آمار ربات
+def update_bot_stats():
+    # بررسی پوشه‌های ویدیو
+    youtube_folder = "videos"
+    instagram_folder = "instagram_videos"
+    
+    # شمارش ویدیوها
+    youtube_count = len(os.listdir(youtube_folder)) if os.path.exists(youtube_folder) else 0
+    instagram_count = len(os.listdir(instagram_folder)) if os.path.exists(instagram_folder) else 0
+    
+    # بررسی تعداد پاسخ‌ها
+    response_count = 0
+    if os.path.exists("responses.json"):
+        try:
+            import json
+            with open("responses.json", "r", encoding="utf-8") as f:
+                response_count = len(json.load(f))
+        except:
+            pass
+    
+    # بروزرسانی آمار
+    bot_status["stats"]["youtube_downloads"] = youtube_count
+    bot_status["stats"]["instagram_downloads"] = instagram_count
+    bot_status["stats"]["videos_processed"] = youtube_count + instagram_count
+    bot_status["stats"]["response_count"] = response_count
+    bot_status["last_update"] = time.time()
+
+# 🏠 صفحه اصلی
 @app.route('/')
 def home():
-    """Route to render the home page."""
+    """صفحه اصلی داشبورد ربات"""
+    # بروزرسانی آمار قبل از نمایش
+    update_bot_stats()
+    
     token_available = os.environ.get("TELEGRAM_BOT_TOKEN") is not None
-    status_message = "Running" if bot_status["running"] else "Waiting for Telegram Token"
+    status_message = "فعال" if bot_status["running"] else "در انتظار توکن تلگرام"
+    
+    # محاسبه زمان آپتایم
+    uptime_seconds = int(time.time() - bot_status["start_time"])
+    days, remainder = divmod(uptime_seconds, 86400)
+    hours, remainder = divmod(remainder, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    uptime = f"{days} روز, {hours} ساعت, {minutes} دقیقه"
+    
+    # بررسی وضعیت پوشه‌ها و فایل‌ها
+    video_folder_exists = os.path.exists("videos")
+    instagram_folder_exists = os.path.exists("instagram_videos")
+    responses_file_exists = os.path.exists("responses.json")
     
     return render_template(
         'index.html', 
-        bot_name="Telegram Bot",
+        bot_name="ربات دانلود ویدیو",
         bot_status=status_message,
         token_available=token_available,
-        error_message=bot_status["error"]
+        error_message=bot_status["error"],
+        video_folder_exists=video_folder_exists,
+        instagram_folder_exists=instagram_folder_exists,
+        responses_file_exists=responses_file_exists,
+        stats=bot_status["stats"],
+        uptime=uptime
     )
 
+# 🔍 API برای دریافت وضعیت ربات
+@app.route('/api/status')
+def api_status():
+    """API برای دریافت وضعیت ربات"""
+    update_bot_stats()
+    return jsonify({
+        "status": "active" if bot_status["running"] else "inactive",
+        "uptime": int(time.time() - bot_status["start_time"]),
+        "stats": bot_status["stats"],
+        "error": bot_status["error"]
+    })
+
+# 🩺 سلامت سرور
+@app.route('/ping')
+def ping():
+    """بررسی سلامت سرور"""
+    return "ربات فعال است!", 200
+
+# 🚀 تابع اجرای سرور فلسک
 def run_flask():
-    """Run the Flask web server."""
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    """اجرای سرور وب فلسک"""
+    # از حالت دیباگ در محیط تولید استفاده نمی‌کنیم
+    debug_mode = os.environ.get("FLASK_DEBUG", "false").lower() == "true"
+    app.run(host='0.0.0.0', port=5000, debug=debug_mode, threaded=True)
 
-def main():
-    """Main function to start both the Flask server and the Telegram bot."""
-    # Start Flask in a separate thread
-    flask_thread = Thread(target=run_flask)
-    flask_thread.daemon = True
-    flask_thread.start()
-    
-    # Start the Telegram bot if token is available
-    token = os.environ.get("TELEGRAM_BOT_TOKEN")
-    if token:
-        try:
-            bot = setup_bot()
-            if bot:
-                bot_status["running"] = True
-                logger.info("Bot is running!")
-            else:
-                bot_status["error"] = "Failed to start the bot"
-                logger.error("Failed to start the bot")
-        except Exception as e:
-            bot_status["error"] = str(e)
-            logger.error(f"Error starting bot: {e}")
-    else:
-        logger.warning("No TELEGRAM_BOT_TOKEN found. Running in web-only mode.")
-        bot_status["error"] = "No Telegram Bot Token provided"
-    
-    # Keep the main thread alive
-    try:
-        flask_thread.join()
-    except KeyboardInterrupt:
-        logger.info("Stopping the application...")
-
+# ورودی اصلی برنامه
 if __name__ == "__main__":
-    main()
+    logger.info("🌐 شروع سرور وب...")
+    run_flask()
