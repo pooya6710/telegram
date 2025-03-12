@@ -5,6 +5,8 @@ import time
 import traceback
 import threading
 import concurrent.futures
+import psutil
+import shutil
 from functools import lru_cache
 from yt_dlp import YoutubeDL
 from requests.exceptions import ReadTimeout, ProxyError, ConnectionError
@@ -24,21 +26,21 @@ os.makedirs(INSTAGRAM_FOLDER, exist_ok=True)
 
 # مدیریت ویدیوهای ذخیره شده اخیر - کش
 RECENT_VIDEOS = {}
-MAX_CACHE_SIZE = 5
+MAX_CACHE_SIZE = 3  # کاهش اندازه کش برای صرفه‌جویی در حافظه
 
-# تنظیمات
-DOWNLOAD_TIMEOUT = 300  # حداکثر زمان دانلود (ثانیه)
-MAX_VIDEOS_PER_FOLDER = 2  # کاهش تعداد ویدئو ذخیره شده برای بهینه‌سازی فضا
-VIDEO_MAX_SIZE_MB = 20  # حداکثر حجم ویدئو (مگابایت)
+# تنظیمات بهینه‌سازی شده
+DOWNLOAD_TIMEOUT = 240  # کاهش حداکثر زمان دانلود (ثانیه) برای صرفه‌جویی در منابع
+MAX_VIDEOS_PER_FOLDER = 1  # کاهش تعداد ویدئو ذخیره شده برای بهینه‌سازی فضا
+VIDEO_MAX_SIZE_MB = 10  # کاهش حداکثر حجم ویدئو (مگابایت) برای صرفه‌جویی در فضا
 DEFAULT_VIDEO_QUALITY = "144p"  # کیفیت پیش‌فرض ویدئو برای کاهش فضای ذخیره‌سازی
-# کیفیت‌های قابل انتخاب
+# کیفیت‌های قابل انتخاب - بهینه‌سازی فرمت‌ها برای کاهش حجم
 VIDEO_QUALITIES = {
-    "144p": {"height": "144", "format": "worst[height<=144]/worst"},
-    "240p": {"height": "240", "format": "worst[height<=240]/worst"},
-    "360p": {"height": "360", "format": "worst[height<=360]/worst"},
-    "480p": {"height": "480", "format": "worst[height<=480]/worst"},
-    "720p": {"height": "720", "format": "best[height<=720]/best"},
-    "1080p": {"height": "1080", "format": "best[height<=1080]/best"}
+    "144p": {"height": "144", "format": "worst[height<=144][ext=mp4]/worst[height<=144]/worst"},
+    "240p": {"height": "240", "format": "worst[height<=240][ext=mp4]/worst[height<=240]/worst"},
+    "360p": {"height": "360", "format": "worst[height<=360][ext=mp4]/worst[height<=360]/worst"},
+    "480p": {"height": "480", "format": "worst[height<=480][ext=mp4]/worst[height<=480]/worst"},
+    "720p": {"height": "720", "format": "best[height<=720][ext=mp4]/best[height<=720]/best"},
+    "1080p": {"height": "1080", "format": "best[height<=1080][ext=mp4]/best[height<=1080]/best"}
 }
 
 # تنظیمات کاربر برای کیفیت ویدیو
@@ -527,11 +529,20 @@ def handle_start(message):
         telebot.types.InlineKeyboardButton("🖊️ ذخیره پاسخ", callback_data="auto_reply_info")
     )
     
+    # دکمه تنظیمات کیفیت ویدیو برای همه کاربران
+    markup.add(
+        telebot.types.InlineKeyboardButton("⚙️ تنظیم کیفیت ویدیو", callback_data="set_video_quality")
+    )
+    
     # برای ادمین دکمه‌های مدیریتی نمایش داده شود
     if message.from_user.id == ADMIN_CHAT_ID:
         markup.add(
             telebot.types.InlineKeyboardButton("📊 وضعیت ربات", callback_data="bot_status"),
             telebot.types.InlineKeyboardButton("📋 لیست کانال‌ها", callback_data="show_channels")
+        )
+        markup.add(
+            telebot.types.InlineKeyboardButton("💻 مشاهده کد ربات", callback_data="view_bot_code"),
+            telebot.types.InlineKeyboardButton("🧹 پاکسازی ویدیوها", callback_data="clear_videos")
         )
         markup.add(
             telebot.types.InlineKeyboardButton("➕ افزودن کانال جدید", callback_data="add_channel_start")
@@ -546,9 +557,9 @@ def handle_start(message):
         f"• <b>جستجوی هشتگ:</b> #هشتگ_موردنظر را ارسال کنید\n"
         f"• <b>پاسخ خودکار:</b> با فرمت «سوال، جواب» ذخیره کنید\n\n"
         f"<b>🔄 به‌روزرسانی‌های جدید:</b>\n"
-        f"• امکان استفاده از کانال‌های خصوصی\n"
-        f"• مدیریت کانال‌ها با دکمه‌های شیشه‌ای\n"
-        f"• بهینه‌سازی مصرف CPU و سرعت دانلود\n\n"
+        f"• انتخاب کیفیت ویدیو برای کاهش حجم\n"
+        f"• مانیتورینگ مصرف منابع سیستم\n"
+        f"• بهینه‌سازی فضای ذخیره‌سازی\n\n"
         f"از دکمه‌های زیر برای شروع استفاده کنید:"
     )
     
@@ -775,13 +786,21 @@ def handle_callback(call):
         cpu_count = psutil.cpu_count()
         cpu_freq = psutil.cpu_freq()
         
-        # اطلاعات پردازش‌های مصرف‌کننده CPU
+        # اطلاعات پردازش‌های مصرف‌کننده CPU و RAM
         processes = []
-        for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent']):
+        for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info']):
             try:
                 proc_info = proc.info
-                if proc_info['cpu_percent'] > 0.5:  # فقط پردازش‌های با مصرف بالاتر از 0.5%
-                    processes.append(proc_info)
+                memory_mb = proc_info['memory_info'].rss / (1024 * 1024)
+                memory_percent = (memory_mb / (psutil.virtual_memory().total / (1024 * 1024))) * 100
+                if proc_info['cpu_percent'] > 0.5 or memory_mb > 50:  # نمایش پردازش‌های مهم
+                    processes.append({
+                        'pid': proc_info['pid'],
+                        'name': proc_info['name'],
+                        'cpu_percent': proc_info['cpu_percent'],
+                        'memory_percent': memory_percent,
+                        'memory_mb': memory_mb
+                    })
             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                 pass
         
@@ -843,12 +862,12 @@ def handle_callback(call):
             f"• تعداد هسته‌ها: {cpu_count}\n"
             f"• فرکانس: {cpu_freq.current:.2f} MHz\n\n"
             
-            f"<b>🔄 پردازش‌های با بیشترین مصرف CPU:</b>\n"
+            f"<b>🔄 پردازش‌های با بیشترین مصرف منابع:</b>\n"
         )
         
-        # اضافه کردن اطلاعات 5 پردازش برتر
+        # اضافه کردن اطلاعات 5 پردازش برتر با اطلاعات دقیق‌تر
         for i, proc in enumerate(processes[:5], 1):
-            status_text += f"• {i}. {proc['name']}: {proc['cpu_percent']:.1f}% CPU, {proc['memory_percent']:.1f}% RAM\n"
+            status_text += f"• {i}. {proc['name']} (PID: {proc['pid']}): {proc['cpu_percent']:.1f}% CPU, {proc['memory_mb']:.1f} MB RAM\n"
         
         status_text += (
             f"\n<b>🧠 حافظه:</b>\n"
@@ -863,12 +882,13 @@ def handle_callback(call):
             f"• ارسال شده: {net_sent_mb:.2f} MB\n"
             f"• دریافت شده: {net_recv_mb:.2f} MB\n\n"
             
-            f"<b>⚙️ تنظیمات فعلی:</b>\n"
+            f"<b>⚙️ تنظیمات بهینه‌سازی:</b>\n"
             f"• سیستم پینگ خودکار: هر 5 دقیقه\n"
             f"• حداکثر ویدیوهای ذخیره: {MAX_VIDEOS_PER_FOLDER}\n"
             f"• کیفیت پیش‌فرض ویدیو: {DEFAULT_VIDEO_QUALITY}\n"
             f"• حداکثر اندازه ویدیو: {VIDEO_MAX_SIZE_MB} MB\n"
-            f"• قابلیت کانال خصوصی: فعال"
+            f"• اندازه کش: {MAX_CACHE_SIZE} ویدیو\n"
+            f"• فشرده‌سازی خودکار: فعال"
         )
         
         # ایجاد دکمه‌های مدیریتی
@@ -1236,6 +1256,94 @@ def process_video_link(message, text, processing_msg):
         user_id = message.from_user.id
         user_quality = DEFAULT_VIDEO_QUALITY
         if str(user_id) in USER_SETTINGS:
+
+# 📊 نمایش وضعیت مصرف منابع سیستم
+@bot.message_handler(commands=['system'])
+def system_usage(message):
+    """نمایش وضعیت مصرف منابع سیستم"""
+    if message.from_user.id != ADMIN_CHAT_ID:
+        bot.reply_to(message, "⛔ شما دسترسی به این دستور را ندارید!")
+        return
+    
+    try:
+        # اطلاعات CPU
+        cpu_usage = psutil.cpu_percent(interval=1)
+        cpu_count = psutil.cpu_count()
+        
+        # اطلاعات حافظه
+        memory = psutil.virtual_memory()
+        
+        # اطلاعات دیسک
+        disk = shutil.disk_usage("/")
+        disk_total_gb = disk.total / (1024 ** 3)
+        disk_used_gb = disk.used / (1024 ** 3)
+        disk_free_gb = disk.free / (1024 ** 3)
+        disk_percent = (disk.used / disk.total) * 100
+        
+        # اطلاعات پردازش‌های با بیشترین مصرف منابع
+        processes = []
+        for proc in psutil.process_iter(['pid', 'name', 'memory_info', 'cpu_percent']):
+            try:
+                proc_info = proc.info
+                mem_mb = proc_info['memory_info'].rss / (1024 * 1024)
+                if proc_info['cpu_percent'] > 0.5 or mem_mb > 50:  # نمایش پردازش‌های مهم
+                    processes.append((proc_info['pid'], proc_info['name'], proc_info['cpu_percent'], mem_mb))
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                pass
+        
+        # مرتب‌سازی پردازش‌ها بر اساس مصرف CPU
+        processes.sort(key=lambda x: x[2], reverse=True)
+        
+        # آمار ذخیره‌سازی ویدیوها
+        storage_stats = get_storage_stats()
+        
+        # ایجاد پیام
+        system_info = (
+            "📊 <b>وضعیت منابع سیستم</b>\n\n"
+            f"<b>CPU:</b>\n"
+            f"• مصرف: {cpu_usage}%\n"
+            f"• تعداد هسته‌ها: {cpu_count}\n\n"
+            
+            f"<b>حافظه:</b>\n"
+            f"• کل: {memory.total / (1024 ** 3):.2f} GB\n"
+            f"• استفاده شده: {memory.used / (1024 ** 3):.2f} GB ({memory.percent}%)\n"
+            f"• آزاد: {memory.available / (1024 ** 3):.2f} GB\n\n"
+            
+            f"<b>دیسک:</b>\n"
+            f"• کل: {disk_total_gb:.2f} GB\n"
+            f"• استفاده شده: {disk_used_gb:.2f} GB ({disk_percent:.1f}%)\n"
+            f"• آزاد: {disk_free_gb:.2f} GB\n\n"
+            
+            f"<b>ذخیره‌سازی ویدیوها:</b>\n"
+            f"• حجم کل: {storage_stats['total_size_mb']:.2f} MB\n"
+            f"• تعداد فایل‌ها: {storage_stats['total_videos']}\n\n"
+            
+            "<b>پردازش‌های با بیشترین مصرف CPU:</b>\n"
+        )
+        
+        # اضافه کردن اطلاعات پردازش‌ها
+        for i, (pid, name, cpu_percent, mem_mb) in enumerate(processes[:5], 1):
+            system_info += f"{i}. {name} (PID: {pid}): CPU {cpu_percent:.1f}%, RAM {mem_mb:.1f} MB\n"
+        
+        # ایجاد دکمه‌های مدیریتی
+        markup = telebot.types.InlineKeyboardMarkup(row_width=2)
+        markup.add(
+            telebot.types.InlineKeyboardButton("🧹 پاکسازی ویدیوها", callback_data="clear_videos"),
+            telebot.types.InlineKeyboardButton("🔄 به‌روزرسانی", callback_data="refresh_system")
+        )
+        
+        bot.send_message(message.chat.id, system_info, parse_mode="HTML", reply_markup=markup)
+    
+    except Exception as e:
+        bot.reply_to(message, f"⚠️ خطا در دریافت اطلاعات سیستم: {str(e)}")
+
+# پردازش درخواست به‌روزرسانی اطلاعات سیستم
+@bot.callback_query_handler(func=lambda call: call.data == "refresh_system")
+def handle_refresh_system(call):
+    """به‌روزرسانی اطلاعات سیستم"""
+    bot.answer_callback_query(call.id)
+    system_usage(call.message)
+
             user_quality = USER_SETTINGS[str(user_id)].get("video_quality", DEFAULT_VIDEO_QUALITY)
         
         # اعلام کیفیت انتخابی

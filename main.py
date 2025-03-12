@@ -17,6 +17,88 @@ logging.getLogger("werkzeug").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 # 🕸️ تنظیمات فلسک با بهینه‌سازی
+
+import os
+import json
+import psutil
+import threading
+from flask import Flask, render_template
+from utils import get_bot_token
+from bot import setup_bot
+
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    """Main page of the bot web dashboard"""
+    token = get_bot_token()
+    
+    # Check if files and folders exist
+    video_folder_exists = os.path.exists("videos")
+    instagram_folder_exists = os.path.exists("instagram_videos")
+    responses_file_exists = os.path.exists("responses.json")
+    hashtags_file_exists = os.path.exists("hashtags.json")
+    
+    # Get system info
+    cpu_usage = psutil.cpu_percent()
+    memory = psutil.virtual_memory()
+    memory_usage = memory.percent
+    
+    # Get storage stats
+    storage_stats = {
+        "total_size": 0,
+        "video_count": 0
+    }
+    
+    # Count videos in folders
+    if video_folder_exists:
+        for file in os.listdir("videos"):
+            file_path = os.path.join("videos", file)
+            if os.path.isfile(file_path):
+                storage_stats["total_size"] += os.path.getsize(file_path) / (1024 * 1024)  # MB
+                storage_stats["video_count"] += 1
+                
+    if instagram_folder_exists:
+        for file in os.listdir("instagram_videos"):
+            file_path = os.path.join("instagram_videos", file)
+            if os.path.isfile(file_path):
+                storage_stats["total_size"] += os.path.getsize(file_path) / (1024 * 1024)  # MB
+                storage_stats["video_count"] += 1
+    
+    # Get processes using most CPU
+    processes = []
+    for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info']):
+        try:
+            p_info = proc.info
+            mem_mb = p_info['memory_info'].rss / (1024 * 1024) if p_info['memory_info'] else 0
+            if p_info['cpu_percent'] > 1.0 or mem_mb > 50:
+                processes.append({
+                    'name': p_info['name'],
+                    'cpu': p_info['cpu_percent'],
+                    'memory_mb': mem_mb
+                })
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+    
+    # Sort by CPU usage (highest first)
+    processes.sort(key=lambda x: x['cpu'], reverse=True)
+    top_processes = processes[:5]  # Get top 5
+    
+    return render_template(
+        'index.html',
+        bot_name="ربات چندکاره تلگرام",
+        token_available=bool(token),
+        bot_status="فعال" if token else "غیرفعال (توکن یافت نشد)",
+        video_folder_exists=video_folder_exists,
+        instagram_folder_exists=instagram_folder_exists,
+        responses_file_exists=responses_file_exists,
+        hashtags_file_exists=hashtags_file_exists,
+        cpu_usage=cpu_usage,
+        memory_usage=memory_usage,
+        storage_stats=storage_stats,
+        top_processes=top_processes
+    )
+
 app = Flask(__name__, static_folder='static', template_folder='templates')
 app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key")
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 86400  # کش 1 روزه برای فایل‌های استاتیک
