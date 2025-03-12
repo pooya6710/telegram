@@ -162,7 +162,7 @@
                         <div class="mt-5">
                             <h4 class="text-center mb-4">ویژگی‌های ربات</h4>
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="card mb-3">
                                         <div class="card-body">
                                             <h5><i class="fas fa-video text-danger me-2"></i>دانلود ویدیو</h5>
@@ -170,7 +170,15 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <h5><i class="fas fa-hashtag text-success me-2"></i>جستجوی هشتگ</h5>
+                                            <p class="text-muted">جستجو و بازیابی پیام‌های دارای هشتگ از کانال‌های ثبت شده</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
                                     <div class="card mb-3">
                                         <div class="card-body">
                                             <h5><i class="fas fa-comment-dots text-primary me-2"></i>پاسخ‌های خودکار</h5>
@@ -179,6 +187,50 @@
                                     </div>
                                 </div>
                             </div>
+                            
+                            {% if stats.hashtag_count > 0 and hashtags_file_exists %}
+                            <div class="mt-4">
+                                <h4 class="text-center mb-3">آمار هشتگ‌ها</h4>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="card mb-3">
+                                            <div class="card-body">
+                                                <h5 class="text-center">آمار کلی</h5>
+                                                <ul class="list-group list-group-flush mt-3">
+                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                        <span>تعداد کل هشتگ‌ها</span>
+                                                        <span class="badge bg-primary rounded-pill" data-stat="hashtag_count">{{ stats.hashtag_count }}</span>
+                                                    </li>
+                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                        <span>کانال‌های ثبت شده</span>
+                                                        <span class="badge bg-success rounded-pill" data-stat="registered_channels">{{ stats.registered_channels }}</span>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card mb-3">
+                                            <div class="card-body">
+                                                <h5 class="text-center">هشتگ‌های پرکاربرد</h5>
+                                                {% if hashtag_labels %}
+                                                <ul class="list-group list-group-flush mt-3">
+                                                    {% for i in range(hashtag_labels|length) %}
+                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                        <span># {{ hashtag_labels[i] }}</span>
+                                                        <span class="badge bg-info rounded-pill">{{ hashtag_values[i] }}</span>
+                                                    </li>
+                                                    {% endfor %}
+                                                </ul>
+                                                {% else %}
+                                                <p class="text-muted text-center mt-3">هنوز هشتگی ثبت نشده است.</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
                             
                             <h5 class="text-center mt-4 mb-3">دستورات ربات</h5>
                             <ul class="list-group list-group-flush">
@@ -189,6 +241,18 @@
                                 <li class="list-group-item d-flex align-items-center">
                                     <span class="badge badge-command bg-primary ms-2">/help</span>
                                     <span>نمایش دستورات موجود</span>
+                                </li>
+                                <li class="list-group-item d-flex align-items-center">
+                                    <span class="badge badge-command bg-success ms-2">#هشتگ</span>
+                                    <span>جستجوی پیام‌های دارای هشتگ</span>
+                                </li>
+                                <li class="list-group-item d-flex align-items-center">
+                                    <span class="badge badge-command bg-danger ms-2">/add_channel</span>
+                                    <span>افزودن کانال به لیست مانیتورینگ (فقط ادمین)</span>
+                                </li>
+                                <li class="list-group-item d-flex align-items-center">
+                                    <span class="badge badge-command bg-warning ms-2">/channels</span>
+                                    <span>مشاهده کانال‌های ثبت شده (فقط ادمین)</span>
                                 </li>
                             </ul>
                         </div>

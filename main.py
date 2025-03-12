@@ -74,11 +74,33 @@ def update_bot_stats():
         except:
             pass
     
+    # بررسی آمار هشتگ‌ها
+    hashtag_count = 0
+    registered_channels = 0
+    hashtag_stats = {}
+    if os.path.exists("hashtags.json"):
+        try:
+            import json
+            with open("hashtags.json", "r", encoding="utf-8") as f:
+                data = json.load(f)
+                hashtags = data.get("hashtags", {})
+                hashtag_count = len(hashtags)
+                registered_channels = len(data.get("channels", []))
+                
+                # پیدا کردن 5 هشتگ پرکاربرد
+                sorted_hashtags = sorted(hashtags.items(), key=lambda x: len(x[1]), reverse=True)[:5]
+                hashtag_stats = {tag: len(msgs) for tag, msgs in sorted_hashtags}
+        except Exception as e:
+            print(f"خطا در بارگذاری آمار هشتگ‌ها: {e}")
+    
     # بروزرسانی آمار
     bot_status["stats"]["youtube_downloads"] = youtube_count
     bot_status["stats"]["instagram_downloads"] = instagram_count
     bot_status["stats"]["videos_processed"] = youtube_count + instagram_count
     bot_status["stats"]["response_count"] = response_count
+    bot_status["stats"]["hashtag_count"] = hashtag_count
+    bot_status["stats"]["registered_channels"] = registered_channels
+    bot_status["stats"]["top_hashtags"] = hashtag_stats
     bot_status["last_update"] = time.time()
 
 # 🏠 صفحه اصلی
@@ -102,18 +124,27 @@ def home():
     video_folder_exists = os.path.exists("videos")
     instagram_folder_exists = os.path.exists("instagram_videos")
     responses_file_exists = os.path.exists("responses.json")
+    hashtags_file_exists = os.path.exists("hashtags.json")
+    
+    # پردازش هشتگ‌های پرکاربرد برای نمودار
+    top_hashtags = bot_status["stats"].get("top_hashtags", {})
+    hashtag_labels = list(top_hashtags.keys())
+    hashtag_values = list(top_hashtags.values())
     
     return render_template(
         'index.html', 
-        bot_name="ربات دانلود ویدیو",
+        bot_name="ربات چندکاره تلگرام",
         bot_status=status_message,
         token_available=token_available,
         error_message=bot_status["error"],
         video_folder_exists=video_folder_exists,
         instagram_folder_exists=instagram_folder_exists,
         responses_file_exists=responses_file_exists,
+        hashtags_file_exists=hashtags_file_exists,
         stats=bot_status["stats"],
-        uptime=uptime
+        uptime=uptime,
+        hashtag_labels=hashtag_labels,
+        hashtag_values=hashtag_values
     )
 
 # 🔍 API برای دریافت وضعیت ربات
