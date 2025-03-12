@@ -21,6 +21,24 @@ bot_status = {
     "error": None
 }
 
+# Start the Telegram bot on app initialization
+token = os.environ.get("TELEGRAM_BOT_TOKEN")
+if token:
+    try:
+        bot = setup_bot()
+        if bot:
+            bot_status["running"] = True
+            logger.info("Bot is running!")
+        else:
+            bot_status["error"] = "Failed to start the bot"
+            logger.error("Failed to start the bot")
+    except Exception as e:
+        bot_status["error"] = str(e)
+        logger.error(f"Error starting bot: {e}")
+else:
+    logger.warning("No TELEGRAM_BOT_TOKEN found. Running in web-only mode.")
+    bot_status["error"] = "No Telegram Bot Token provided"
+
 @app.route('/')
 def home():
     """Route to render the home page."""

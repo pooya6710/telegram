@@ -70,8 +70,15 @@ def setup_bot():
             # Add handler for non-command messages
             application.add_handler(MessageHandler(TEXT & ~COMMAND, handle_name))
             
-            # Start the bot
-            application.run_polling(allowed_updates=["message", "callback_query"])
+            # Start polling in non-blocking mode
+            async def start_polling():
+                await application.initialize()
+                await application.start()
+                await application.updater.start_polling(allowed_updates=["message", "callback_query"])
+                logger.info("Bot polling started successfully")
+                
+            # Run the async function in the new event loop
+            loop.run_until_complete(start_polling())
             
         # Start the bot in a separate thread
         bot_thread = threading.Thread(target=run_bot_polling)
