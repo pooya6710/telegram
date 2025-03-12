@@ -1,0 +1,170 @@
+import telebot
+import os
+import json
+import time
+import traceback
+from yt_dlp import YoutubeDL
+from requests.exceptions import ReadTimeout, ProxyError, ConnectionError
+
+# 🔑 توکن ربات تلگرام
+TOKEN = '7338644071:AAEex9j0nMualdoywHSGFiBoMAzRpkFypPk'
+bot = telebot.TeleBot(TOKEN)
+
+# 📢 آیدی عددی ادمین برای دریافت خطاها
+ADMIN_CHAT_ID = 286420965  
+
+# 📂 مسیر ذخیره ویدیوها
+VIDEO_FOLDER = "videos"
+INSTAGRAM_FOLDER = "instagram_videos"
+os.makedirs(VIDEO_FOLDER, exist_ok=True)
+os.makedirs(INSTAGRAM_FOLDER, exist_ok=True)
+
+# 📂 مدیریت پاسخ‌های متنی
+def load_responses():
+    try:
+        with open("responses.json", "r", encoding="utf-8") as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return {}
+
+def save_responses():
+    with open("responses.json", "w", encoding="utf-8") as file:
+        json.dump(responses, file, ensure_ascii=False, indent=4)
+
+responses = load_responses()
+
+# 📌 استخراج لینک مستقیم ویدیو بدون دانلود
+def get_direct_video_url(link):
+    try:
+        ydl_opts = {
+            'quiet': True,
+            'skip_download': True,
+            'noplaylist': True,
+            'force_generic_extractor': False,
+            'format': 'best[ext=mp4]/best',
+        }
+        with YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(link, download=False)
+            return info.get('url', None)
+    except Exception as e:
+        notify_admin(f"⚠️ خطا در دریافت لینک مستقیم ویدیو:\n{traceback.format_exc()}")
+        return None
+
+# 📌 دانلود ویدیو از اینستاگرام
+def download_instagram(link):
+    try:
+        clear_folder(INSTAGRAM_FOLDER)  # حذف فایل‌های قدیمی
+
+        ydl_opts = {
+            'outtmpl': f'{INSTAGRAM_FOLDER}/%(id)s.%(ext)s',
+            'format': 'mp4/best',
+            'quiet': False,
+            'noplaylist': True,
+        }
+
+        with YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(link, download=True)
+            video_path = f"{INSTAGRAM_FOLDER}/{info['id']}.mp4"
+            return video_path if os.path.exists(video_path) else None
+
+    except Exception as e:
+        notify_admin(f"⚠️ خطا در دانلود ویدیو از اینستاگرام:\n{traceback.format_exc()}")
+        return None
+
+# 📌 دانلود ویدیو از یوتیوب
+def download_youtube(link):
+    try:
+        clear_folder(VIDEO_FOLDER)  # حذف فایل‌های قدیمی
+
+        ydl_opts = {
+            'outtmpl': f'{VIDEO_FOLDER}/%(id)s.%(ext)s',
+            'format': 'mp4/best',
+            'quiet': False,
+            'noplaylist': True,
+        }
+
+        with YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(link, download=True)
+            video_path = f"{VIDEO_FOLDER}/{info['id']}.mp4"
+            return video_path if os.path.exists(video_path) else None
+
+    except Exception as e:
+        notify_admin(f"⚠️ خطا در دانلود ویدیو از یوتیوب:\n{traceback.format_exc()}")
+        return None
+
+# 📢 ارسال پیام به ادمین در صورت وقوع خطا
+def notify_admin(message):
+    try:
+        bot.send_message(ADMIN_CHAT_ID, message[:4000])
+    except Exception as e:
+        print(f"⚠️ خطا در ارسال پیام به ادمین: {e}")
+
+# 📤 ارسال ویدیو یا فایل به کاربر
+def send_video_with_handling(chat_id, video_path):
+    try:
+        file_size = os.path.getsize(video_path) / (1024 * 1024)  # اندازه فایل به مگابایت
+
+        with open(video_path, 'rb') as video:
+            if file_size > 50:  # اگر فایل بیش از 50MB باشد، به‌صورت فایل ارسال کن
+                bot.send_document(chat_id=chat_id, document=video, timeout=120)
+            else:
+                bot.send_video(chat_id=chat_id, video=video, timeout=120)
+
+    except (ConnectionResetError, ConnectionError):
+        bot.send_message(chat_id, "⚠️ اتصال به تلگرام قطع شد، لطفاً دوباره امتحان کنید.")
+    except Exception as e:
+        notify_admin(f"⚠️ خطا در ارسال ویدیو:\n{traceback.format_exc()}")
+        bot.send_message(chat_id, "⚠️ مشکلی در ارسال ویدیو رخ داد. لطفاً دوباره امتحان کنید.")
+
+# 📩 مدیریت پیام‌های دریافتی
+@bot.message_handler(func=lambda message: True)
+def handle_message(message):
+    try:
+        text = message.text.strip()
+
+        if "instagram.com" in text or "youtube.com" in text or "youtu.be" in text:
+            # ابتدا لینک مستقیم را امتحان کن
+            direct_url = get_direct_video_url(text)
+            if direct_url:
+                bot.send_video(chat_id=message.chat.id, video=direct_url)
+            else:
+                # اگر لینک مستقیم پیدا نشد، دانلود و ارسال ویدیو انجام شود
+                video_path = download_instagram(text) if "instagram.com" in text else download_youtube(text)
+                if video_path and os.path.exists(video_path):
+                    send_video_with_handling(message.chat.id, video_path)
+                else:
+                    bot.reply_to(message, "⚠️ ویدیوی موردنظر دانلود نشد. لطفاً لینک را بررسی کنید.")
+
+        elif "،" in text:
+            try:
+                question, answer = map(str.strip, text.split("،", 1))
+                responses[question.lower()] = answer
+                save_responses()
+                bot.reply_to(message, f"✅ سوال '{question}' با پاسخ '{answer}' اضافه شد!")
+            except ValueError:
+                bot.reply_to(message, "⚠️ لطفاً فرمت 'سوال، جواب' را رعایت کنید.")
+
+        else:
+            key = text.lower()
+            if key in responses:
+                bot.reply_to(message, responses[key])
+            else:
+                bot.reply_to(message, "🤖 سوالی که پرسیدی در دیتابیس من نیست.")
+
+    except Exception as e:
+        notify_admin(f"⚠️ خطا در پردازش پیام:\n{traceback.format_exc()}")
+
+# 🔄 اجرای ایمن ربات
+def safe_polling():
+    while True:
+        try:
+            bot.polling(none_stop=True, interval=1)
+        except (ReadTimeout, ProxyError, ConnectionResetError):
+            time.sleep(15)
+        except Exception as e:
+            notify_admin(f"⚠️ خطای بحرانی در اجرای بات:\n{traceback.format_exc()}")
+            time.sleep(15)
+
+if __name__ == "__main__":
+    print("🤖 Bot is running...")
+    safe_polling()
