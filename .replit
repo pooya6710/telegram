@@ -8,6 +8,7 @@ deploymentTarget = "autoscale"
 run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
 
 [workflows]
+runButton = "اجرای ربات ساده"
 
 [[workflows.workflow]]
 name = "Project"
@@ -55,7 +56,7 @@ author = 40429062
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "python run_bot.py"
+args = "python simple_bot.py"
 
 [[workflows.workflow]]
 name = "راه‌اندازی ربات اصلی"
