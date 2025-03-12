@@ -5,7 +5,7 @@ import time
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
@@ -36,52 +36,157 @@ def setup_bot():
             handle_button_click, cancel_conversation
         )
         
-        # Define a function to run the bot in a separate thread
-        def run_bot_polling():
-            # Create a new event loop for this thread
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            
-            # Build the application
-            application = Application.builder().token(token).build()
-            
-            # Add conversation handler for survey
-            survey_conv_handler = ConversationHandler(
-                entry_points=[CommandHandler('survey', start_survey)],
-                states={
-                    NAME: [MessageHandler(TEXT & ~COMMAND, handle_name)],
-                    AGE: [MessageHandler(TEXT & ~COMMAND, handle_age)],
-                    FEEDBACK: [MessageHandler(TEXT & ~COMMAND, handle_feedback)],
-                },
-                fallbacks=[CommandHandler('cancel', cancel_conversation)]
+        # Create a direct method using telebot which is simpler and more reliable
+        import telebot
+        from telebot import types
+        
+        # Initialize the bot with the token
+        bot = telebot.TeleBot(token)
+        
+        # Define command handlers
+        @bot.message_handler(commands=['start'])
+        def handle_start(message):
+            user = message.from_user
+            markup = types.InlineKeyboardMarkup()
+            markup.add(
+                types.InlineKeyboardButton("Help", callback_data="help"),
+                types.InlineKeyboardButton("Start Survey", callback_data="survey")
             )
             
-            # Add command handlers
-            application.add_handler(CommandHandler("start", start))
-            application.add_handler(CommandHandler("help", help_command))
-            application.add_handler(survey_conv_handler)
+            bot.send_message(
+                message.chat.id,
+                f"Hello, {user.first_name}! 👋\n\n"
+                f"Welcome to the Telegram Bot! I can help you with various tasks.\n\n"
+                f"Use /help to see available commands or click the buttons below:",
+                reply_markup=markup
+            )
+            logger.info(f"User {user.id} started the bot")
+        
+        @bot.message_handler(commands=['help'])
+        def handle_help(message):
+            help_text = (
+                "Here are the commands you can use:\n\n"
+                "/start - Start the bot and get a welcome message\n"
+                "/help - Show this help message\n"
+                "/survey - Start a simple survey conversation\n"
+                "/youtube [URL] - Get info about a YouTube video\n"
+                "/cancel - Cancel the current conversation\n\n"
+                "You can also just send me a message and I'll respond!"
+            )
+            bot.send_message(message.chat.id, help_text)
+            logger.info(f"User {message.from_user.id} requested help")
             
-            # Add callback query handler for button clicks
-            application.add_handler(CallbackQueryHandler(handle_button_click))
-            
-            # Add handler for unknown commands
-            application.add_handler(MessageHandler(COMMAND, unknown_command))
-            
-            # Add handler for non-command messages
-            application.add_handler(MessageHandler(TEXT & ~COMMAND, handle_name))
-            
-            # Start polling in non-blocking mode
-            async def start_polling():
-                await application.initialize()
-                await application.start()
-                await application.updater.start_polling(allowed_updates=["message", "callback_query"])
-                logger.info("Bot polling started successfully")
+        @bot.message_handler(commands=['youtube'])
+        def handle_youtube(message):
+            command_parts = message.text.split(' ', 1)
+            if len(command_parts) < 2:
+                bot.send_message(
+                    message.chat.id,
+                    "Please provide a YouTube URL after the command. Example:\n/youtube https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                )
+                return
                 
-            # Run the async function in the new event loop
-            loop.run_until_complete(start_polling())
+            url = command_parts[1].strip()
             
-        # Start the bot in a separate thread
-        bot_thread = threading.Thread(target=run_bot_polling)
+            # Check if it looks like a YouTube URL
+            if not ("youtube.com" in url or "youtu.be" in url):
+                bot.send_message(
+                    message.chat.id,
+                    "That doesn't look like a YouTube URL. Please provide a valid YouTube link."
+                )
+                return
+                
+            # Let the user know we're processing
+            status_message = bot.send_message(message.chat.id, "⏳ Fetching video information...")
+            
+            try:
+                # Use yt-dlp to extract video information
+                from yt_dlp import YoutubeDL
+                
+                with YoutubeDL({'quiet': True, 'no_warnings': True, 'noplaylist': True}) as ydl:
+                    info = ydl.extract_info(url, download=False)
+                    
+                    # Format the response
+                    response = (
+                        f"📹 *{info['title']}*\n\n"
+                        f"👤 Channel: {info['uploader']}\n"
+                        f"⏱️ Duration: {info['duration_string']}\n"
+                        f"👁️ Views: {info.get('view_count', 'N/A')}\n"
+                        f"👍 Likes: {info.get('like_count', 'N/A')}\n"
+                        f"📅 Upload date: {info.get('upload_date', 'N/A')}\n\n"
+                        f"🔗 [Watch on YouTube]({url})"
+                    )
+                    
+                    # Edit the status message with the video info
+                    bot.edit_message_text(
+                        chat_id=message.chat.id,
+                        message_id=status_message.message_id,
+                        text=response,
+                        parse_mode="Markdown"
+                    )
+                    logger.info(f"Fetched YouTube info for user {message.from_user.id}: {url}")
+                    
+            except Exception as e:
+                bot.edit_message_text(
+                    chat_id=message.chat.id,
+                    message_id=status_message.message_id,
+                    text=f"❌ Error fetching video information: {str(e)}"
+                )
+                logger.error(f"YouTube info error: {e}")
+            
+        @bot.message_handler(commands=['survey'])
+        def handle_survey(message):
+            bot.send_message(
+                message.chat.id,
+                "Let's start the survey. What's your name?"
+            )
+            # Set up the next step handler
+            bot.register_next_step_handler(message, process_name_step)
+            
+        def process_name_step(message):
+            name = message.text
+            if name:
+                # Store name (would use user_data in a real application)
+                # Here we just acknowledge and move to next step
+                bot.send_message(
+                    message.chat.id,
+                    f"Nice to meet you, {name}! How old are you?"
+                )
+                bot.register_next_step_handler(message, process_age_step)
+            
+        def process_age_step(message):
+            age = message.text
+            if age and age.isdigit():
+                bot.send_message(
+                    message.chat.id,
+                    f"Thanks! You're {age} years old. What feedback do you have for me?"
+                )
+                bot.register_next_step_handler(message, process_feedback_step)
+            else:
+                bot.send_message(
+                    message.chat.id,
+                    "Please enter a valid age (numbers only)."
+                )
+                bot.register_next_step_handler(message, process_age_step)
+                
+        def process_feedback_step(message):
+            feedback = message.text
+            if feedback:
+                bot.send_message(
+                    message.chat.id,
+                    f"Thank you for your feedback! Your survey is complete."
+                )
+            
+        @bot.message_handler(func=lambda message: True)
+        def handle_all_messages(message):
+            bot.reply_to(message, "I received your message. Send /help to see what I can do!")
+            
+        # Start the bot in a separate thread for non-blocking operation
+        def polling_thread():
+            logger.info("Starting bot polling")
+            bot.infinity_polling()
+            
+        bot_thread = threading.Thread(target=polling_thread)
         bot_thread.daemon = True
         bot_thread.start()
         
