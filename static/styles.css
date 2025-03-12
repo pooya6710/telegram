@@ -1,0 +1,27 @@
+/* Custom styles for the bot status page */
+
+.status-circle {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+}
+
+.features {
+    text-align: left;
+}
+
+.card {
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.list-group-item {
+    background-color: transparent;
+    border-color: var(--bs-border-color);
+}
+
+.badge {
+    font-family: monospace;
+    font-size: 0.9rem;
+    min-width: 65px;
+}
