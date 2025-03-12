@@ -75,10 +75,11 @@ def save_responses():
 
 responses = load_responses()
 
-# 📌 استخراج لینک مستقیم ویدیو با کش
-@lru_cache(maxsize=20)
+# 📌 استخراج لینک مستقیم ویدیو با کش و بهینه‌سازی مصرف CPU
+@lru_cache(maxsize=50)  # افزایش ظرفیت کش برای کاهش درخواست‌های مجدد
 def get_direct_video_url(link):
     try:
+        # تنظیمات yt-dlp با بهینه‌سازی بیشتر
         ydl_opts = {
             'quiet': True,
             'skip_download': True,
@@ -86,15 +87,41 @@ def get_direct_video_url(link):
             'force_generic_extractor': False,
             'format': 'best[ext=mp4]/best',
             'socket_timeout': 30,
+            # اضافه کردن راهکارهای کاهش مصرف CPU
+            'nocheckcertificate': True,
+            'extract_flat': 'in_playlist',
+            'ignoreerrors': True,
+            'no_warnings': True,
+            'lazy_playlist': True,  # کاهش مصرف حافظه و CPU
+            'geo_bypass': True,     # دور زدن محدودیت‌های جغرافیایی که باعث پردازش اضافی می‌شود
         }
         with YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(link, download=False)
-            return info.get('url', None)
+            # محدود کردن زمان پردازش
+            import signal
+            class TimeoutException(Exception): pass
+            
+            def timeout_handler(signum, frame):
+                raise TimeoutException("عملیات استخراج اطلاعات بیش از حد طول کشید")
+            
+            # تنظیم تایم اوت برای جلوگیری از اشغال CPU
+            signal.signal(signal.SIGALRM, timeout_handler)
+            signal.alarm(20)  # حداکثر 20 ثانیه
+            
+            try:
+                info = ydl.extract_info(link, download=False)
+                signal.alarm(0)  # غیرفعال کردن تایمر
+                return info.get('url', None)
+            except TimeoutException as e:
+                notify_admin(f"⚠️ تایم اوت در استخراج لینک: {str(e)}")
+                return None
+            finally:
+                signal.alarm(0)  # اطمینان از غیرفعال شدن تایمر
+                
     except Exception as e:
         notify_admin(f"⚠️ خطا در دریافت لینک مستقیم ویدیو: {str(e)}")
         return None
 
-# 📌 دانلود ویدیو از اینستاگرام با کش
+# 📌 دانلود ویدیو از اینستاگرام با کش و بهینه‌سازی CPU
 def download_instagram(link):
     # بررسی کش
     if link in RECENT_VIDEOS:
@@ -105,32 +132,65 @@ def download_instagram(link):
         # پاکسازی فایل‌های قدیمی، حفظ 5 فایل اخیر
         clear_folder(INSTAGRAM_FOLDER, 5)
 
+        # تنظیمات بهینه‌سازی شده برای کاهش مصرف CPU
         ydl_opts = {
             'outtmpl': f'{INSTAGRAM_FOLDER}/%(id)s.%(ext)s',
-            'format': 'mp4/best[height<=720]/best',  # کیفیت متوسط برای سرعت بیشتر
+            'format': 'mp4/best[height<=480]/best', # کیفیت پایین‌تر برای سرعت بیشتر و CPU کمتر
             'quiet': True,
             'noplaylist': True,
             'socket_timeout': 30,
+            'nocheckcertificate': True,
+            'no_warnings': True,
+            'ignoreerrors': True,
+            'geo_bypass': True,
+            'extract_flat': 'in_playlist',
+            'postprocessors': [{  # کاهش حجم ویدیو در صورت نیاز
+                'key': 'FFmpegVideoConvertor',
+                'preferedformat': 'mp4',
+            }],
+            # کاهش مصرف حافظه و CPU
+            'noprogress': True,
+            'prefer_insecure': True,
         }
 
-        with YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(link, download=True)
-            video_path = f"{INSTAGRAM_FOLDER}/{info['id']}.mp4"
-            
-            # ذخیره در کش
-            if os.path.exists(video_path):
-                RECENT_VIDEOS[link] = video_path
-                # محدود کردن اندازه کش
-                if len(RECENT_VIDEOS) > MAX_CACHE_SIZE:
-                    RECENT_VIDEOS.pop(next(iter(RECENT_VIDEOS)))
-                return video_path
+        # استفاده از زمان‌بندی برای جلوگیری از اشغال بیش از حد CPU
+        import signal
+        
+        class TimeoutException(Exception): pass
+        
+        def timeout_handler(signum, frame):
+            raise TimeoutException("عملیات دانلود بیش از حد طول کشید")
+        
+        # تنظیم تایم اوت برای جلوگیری از اشغال CPU
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(120)  # حداکثر 2 دقیقه برای دانلود
+        
+        try:
+            with YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(link, download=True)
+                signal.alarm(0)  # غیرفعال کردن تایمر
+                
+                video_path = f"{INSTAGRAM_FOLDER}/{info['id']}.mp4"
+                
+                # ذخیره در کش
+                if os.path.exists(video_path):
+                    RECENT_VIDEOS[link] = video_path
+                    # محدود کردن اندازه کش
+                    if len(RECENT_VIDEOS) > MAX_CACHE_SIZE:
+                        RECENT_VIDEOS.pop(next(iter(RECENT_VIDEOS)))
+                    return video_path
+                return None
+        except TimeoutException as e:
+            notify_admin(f"⚠️ تایم اوت در دانلود ویدیو از اینستاگرام: {str(e)}")
             return None
+        finally:
+            signal.alarm(0)  # اطمینان از غیرفعال شدن تایمر
 
     except Exception as e:
         notify_admin(f"⚠️ خطا در دانلود ویدیو از اینستاگرام: {str(e)}")
         return None
 
-# 📌 دانلود ویدیو از یوتیوب با کش
+# 📌 دانلود ویدیو از یوتیوب با کش و بهینه‌سازی مصرف CPU
 def download_youtube(link):
     # بررسی کش
     if link in RECENT_VIDEOS:
@@ -141,26 +201,59 @@ def download_youtube(link):
         # پاکسازی فایل‌های قدیمی، حفظ 5 فایل اخیر
         clear_folder(VIDEO_FOLDER, 5)
 
+        # تنظیمات بهینه‌سازی شده برای کاهش مصرف CPU
         ydl_opts = {
             'outtmpl': f'{VIDEO_FOLDER}/%(id)s.%(ext)s',
-            'format': 'mp4/best[height<=720]/best',  # کیفیت متوسط برای سرعت بیشتر
+            'format': 'mp4/best[height<=480]/best', # کیفیت پایین‌تر برای سرعت بیشتر و CPU کمتر
             'quiet': True,
             'noplaylist': True,
             'socket_timeout': 30,
+            'nocheckcertificate': True,
+            'no_warnings': True,
+            'ignoreerrors': True,
+            'geo_bypass': True,
+            'extract_flat': 'in_playlist',
+            'postprocessors': [{  # کاهش حجم ویدیو در صورت نیاز
+                'key': 'FFmpegVideoConvertor',
+                'preferedformat': 'mp4',
+            }],
+            # کاهش مصرف حافظه و CPU
+            'noprogress': True,
+            'prefer_insecure': True,
         }
 
-        with YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(link, download=True)
-            video_path = f"{VIDEO_FOLDER}/{info['id']}.mp4"
-            
-            # ذخیره در کش
-            if os.path.exists(video_path):
-                RECENT_VIDEOS[link] = video_path
-                # محدود کردن اندازه کش
-                if len(RECENT_VIDEOS) > MAX_CACHE_SIZE:
-                    RECENT_VIDEOS.pop(next(iter(RECENT_VIDEOS)))
-                return video_path
+        # استفاده از زمان‌بندی برای جلوگیری از اشغال بیش از حد CPU
+        import signal
+        
+        class TimeoutException(Exception): pass
+        
+        def timeout_handler(signum, frame):
+            raise TimeoutException("عملیات دانلود بیش از حد طول کشید")
+        
+        # تنظیم تایم اوت برای جلوگیری از اشغال CPU
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(150)  # حداکثر 2.5 دقیقه برای دانلود
+        
+        try:
+            with YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(link, download=True)
+                signal.alarm(0)  # غیرفعال کردن تایمر
+                
+                video_path = f"{VIDEO_FOLDER}/{info['id']}.mp4"
+                
+                # ذخیره در کش
+                if os.path.exists(video_path):
+                    RECENT_VIDEOS[link] = video_path
+                    # محدود کردن اندازه کش
+                    if len(RECENT_VIDEOS) > MAX_CACHE_SIZE:
+                        RECENT_VIDEOS.pop(next(iter(RECENT_VIDEOS)))
+                    return video_path
+                return None
+        except TimeoutException as e:
+            notify_admin(f"⚠️ تایم اوت در دانلود ویدیو از یوتیوب: {str(e)}")
             return None
+        finally:
+            signal.alarm(0)  # اطمینان از غیرفعال شدن تایمر
 
     except Exception as e:
         notify_admin(f"⚠️ خطا در دانلود ویدیو از یوتیوب: {str(e)}")

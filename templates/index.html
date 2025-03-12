@@ -188,6 +188,73 @@
                                 </div>
                             </div>
                             
+                            <!-- نمایش وضعیت فضای دیسک -->
+                            <div class="mt-4">
+                                <h4 class="text-center mb-3">وضعیت فضای ذخیره‌سازی</h4>
+                                <div class="card mb-4">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <h6>فضای کل دیسک</h6>
+                                                    <div class="progress" style="height: 20px;">
+                                                        <div class="progress-bar bg-primary" role="progressbar" 
+                                                             style="width: 100%;" 
+                                                             aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+                                                            {{ stats.disk_total_mb|round }} مگابایت
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <h6>فضای استفاده شده ({{ stats.disk_usage_percent }}%)</h6>
+                                                    <div class="progress" style="height: 20px;">
+                                                        <div class="progress-bar bg-danger" role="progressbar" 
+                                                             style="width: {{ stats.disk_usage_percent }}%;" 
+                                                             aria-valuenow="{{ stats.disk_usage_percent }}" aria-valuemin="0" aria-valuemax="100">
+                                                            {{ stats.disk_used_mb|round }} مگابایت
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <h6>فضای آزاد</h6>
+                                                    <div class="progress" style="height: 20px;">
+                                                        <div class="progress-bar bg-success" role="progressbar" 
+                                                             style="width: {{ 100 - stats.disk_usage_percent }}%;" 
+                                                             aria-valuenow="{{ 100 - stats.disk_usage_percent }}" aria-valuemin="0" aria-valuemax="100">
+                                                            {{ stats.disk_free_mb|round }} مگابایت
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="card h-100">
+                                                    <div class="card-body">
+                                                        <h6 class="text-center mb-3">فضای اشغال شده توسط ویدیوها</h6>
+                                                        <div class="text-center mb-3">
+                                                            <span class="display-4 text-info">{{ stats.video_size_mb|round(1) }}</span>
+                                                            <span class="text-muted">مگابایت</span>
+                                                        </div>
+                                                        <div class="text-center">
+                                                            <span class="text-white-50">{{ stats.video_percent|round(2) }}% از کل فضا</span>
+                                                        </div>
+                                                        <ul class="list-group list-group-flush mt-3">
+                                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                <span>ویدیو‌های یوتیوب</span>
+                                                                <span class="badge bg-success rounded-pill">{{ stats.youtube_downloads }}</span>
+                                                            </li>
+                                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                <span>ویدیو‌های اینستاگرام</span>
+                                                                <span class="badge bg-info rounded-pill">{{ stats.instagram_downloads }}</span>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             {% if stats.hashtag_count > 0 and hashtags_file_exists %}
                             <div class="mt-4">
                                 <h4 class="text-center mb-3">آمار هشتگ‌ها</h4>
