@@ -697,7 +697,6 @@ def handle_callback(call):
         # اضافه کردن اطلاعات صفحه‌بندی
         if total_pages > 1:
             responses_text += f"<i>صفحه {page} از {total_pages}</i>"
-
         # ایجاد دکمه‌های مدیریت پاسخ‌ها
         markup = telebot.types.InlineKeyboardMarkup()
         markup.add(telebot.types.InlineKeyboardButton("➕ افزودن پاسخ جدید", callback_data="add_response_start"))
@@ -2133,9 +2132,9 @@ def handle_optimize_memory(call):
         # اجبار سیستم عامل به آزادسازی حافظه
         try:
             # این دستور در لینوکس حافظه کش را آزاد می‌کند
-            os.system("sync && echo 3 > /proc/sys/vm/drop_caches")
-        except:
-            pass
+                os.system("sync && echo 3 > /proc/sys/vm/drop_caches")
+            except:
+                pass
 
         # نمایش نتایج بهینه‌سازی
         import psutil
