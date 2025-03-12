@@ -11,13 +11,19 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # تنظیم توکن ربات
-TOKEN = "7338644071:AAEex9j0nMualdoywHSGFiBoMAzRpkFypPk"
+TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "7338644071:AAEex9j0nMualdoywHSGFiBoMAzRpkFypPk")
+
+if not TOKEN:
+    logger.error("❌ هیچ توکنی تنظیم نشده است! لطفا توکن را در متغیر محیطی TELEGRAM_BOT_TOKEN تنظیم کنید.")
+    exit(1)
+
+# ایجاد نمونه ربات
 bot = telebot.TeleBot(TOKEN)
 
 # تعریف دستور /start
 @bot.message_handler(commands=['start'])
 def handle_start(message):
-    bot.reply_to(message, "سلام! به ربات چندکاره خوش آمدید. 🤖\nبرای دیدن راهنما دستور /help را بفرستید.")
+    bot.reply_to(message, "سلام! ربات راه‌اندازی شد و آماده استفاده است. 🤖")
 
 # تعریف دستور /help
 @bot.message_handler(commands=['help'])
@@ -26,35 +32,21 @@ def handle_help(message):
 🤖 راهنمای استفاده از ربات:
 /start - شروع کار با ربات
 /help - نمایش این راهنما
-/info - دریافت اطلاعات
-
-همچنین می‌توانید لینک ویدیوی یوتیوب یا اینستاگرام را ارسال کنید تا دانلود شود.
     """
     bot.reply_to(message, help_text)
 
-# تعریف دستور /info
-@bot.message_handler(commands=['info'])
-def handle_info(message):
-    info_text = "🤖 این ربات چندکاره است و قابلیت‌های متنوعی دارد."
-    bot.reply_to(message, info_text)
-
-# پاسخ به پیام های معمولی
+# پاسخ به پیام های متنی
 @bot.message_handler(func=lambda message: True)
-def handle_message(message):
-    text = message.text
-    
-    # بررسی لینک یوتیوب یا اینستاگرام
-    if "youtube.com" in text or "youtu.be" in text:
-        bot.reply_to(message, "لینک یوتیوب شناسایی شد. در حال پردازش...")
-    elif "instagram.com" in text:
-        bot.reply_to(message, "لینک اینستاگرام شناسایی شد. در حال پردازش...")
-    else:
-        bot.reply_to(message, f"پیام دریافت شد: {text}")
+def echo_message(message):
+    bot.reply_to(message, f"پیام شما دریافت شد: {message.text}")
 
 if __name__ == "__main__":
-    logger.info("🚀 در حال راه‌اندازی ربات...")
+    logger.info("🚀 ربات در حال راه‌اندازی...")
     try:
         logger.info("🤖 ربات با موفقیت راه‌اندازی شد!")
+        # ایجاد پوشه‌های مورد نیاز
+        os.makedirs("videos", exist_ok=True)
+        os.makedirs("instagram_videos", exist_ok=True)
         bot.infinity_polling()
     except Exception as e:
         logger.error(f"❌ خطا در راه‌اندازی ربات: {e}")
