@@ -57,6 +57,14 @@ author = 40429062
 task = "shell.exec"
 args = "python run_bot.py"
 
+[[workflows.workflow]]
+name = "راه‌اندازی ربات اصلی"
+author = 40429062
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python main.py"
+
 [[ports]]
 localPort = 5000
 externalPort = 80
