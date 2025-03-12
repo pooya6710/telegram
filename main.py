@@ -185,6 +185,7 @@ def ping():
     return "ربات فعال است!", 200
 
 # راه‌اندازی ربات تلگرام در هنگام شروع برنامه
+os.environ["TELEGRAM_BOT_TOKEN"] = "7338644071:AAEex9j0nMualdoywHSGFiBoMAzRpkFypPk"
 token = os.environ.get("TELEGRAM_BOT_TOKEN")
 if token:
     try:
