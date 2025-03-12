@@ -28,6 +28,18 @@ MAX_CACHE_SIZE = 5
 
 # تنظیمات
 DOWNLOAD_TIMEOUT = 300  # حداکثر زمان دانلود (ثانیه)
+MAX_VIDEOS_PER_FOLDER = 3  # کاهش تعداد ویدئو ذخیره شده برای بهینه‌سازی فضا
+VIDEO_MAX_SIZE_MB = 25  # حداکثر حجم ویدئو (مگابایت)
+DEFAULT_VIDEO_QUALITY = "240p"  # کیفیت پیش‌فرض ویدئو برای کاهش فضای ذخیره‌سازی
+# کیفیت‌های قابل انتخاب
+VIDEO_QUALITIES = {
+    "144p": {"height": "144", "format": "worst[height<=144]/worst"},
+    "240p": {"height": "240", "format": "worst[height<=240]/worst"},
+    "360p": {"height": "360", "format": "worst[height<=360]/worst"},
+    "480p": {"height": "480", "format": "worst[height<=480]/worst"},
+    "720p": {"height": "720", "format": "best[height<=720]/best"},
+    "1080p": {"height": "1080", "format": "best[height<=1080]/best"}
+}
 MAX_WORKERS = 4  # تعداد نخ‌ها برای دانلود همزمان
 
 # تعداد تلاش‌های مجدد در صورت شکست
@@ -37,24 +49,177 @@ RETRY_DELAY = 5  # ثانیه
 # کارگر برای عملیات موازی
 thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS)
 
+# 📊 ابزار نظارت بر فضای ذخیره‌سازی
+def get_storage_stats():
+    """محاسبه و برگرداندن آمار فضای ذخیره‌سازی"""
+    stats = {
+        "total_videos": 0,
+        "total_size_mb": 0,
+        "folders": {}
+    }
+    
+    # محاسبه حجم هر پوشه
+    for folder_name in [VIDEO_FOLDER, INSTAGRAM_FOLDER]:
+        folder_size = 0
+        file_count = 0
+        
+        if os.path.exists(folder_name):
+            for filename in os.listdir(folder_name):
+                file_path = os.path.join(folder_name, filename)
+                if os.path.isfile(file_path):
+                    file_size = os.path.getsize(file_path)
+                    folder_size += file_size
+                    file_count += 1
+        
+        folder_size_mb = folder_size / (1024 * 1024)
+        stats["folders"][folder_name] = {
+            "size_mb": round(folder_size_mb, 2),
+            "file_count": file_count
+        }
+        
+        stats["total_videos"] += file_count
+        stats["total_size_mb"] += folder_size_mb
+    
+    stats["total_size_mb"] = round(stats["total_size_mb"], 2)
+    return stats
+
+# 🗜️ فشرده‌سازی ویدیو برای کاهش حجم
+def compress_video(input_path, output_path=None, target_size_mb=20, quality="240p"):
+    """
+    فشرده‌سازی ویدیو برای کاهش حجم فایل
+    
+    Args:
+        input_path: مسیر فایل ورودی
+        output_path: مسیر فایل خروجی (اگر None باشد، فایل ورودی بازنویسی می‌شود)
+        target_size_mb: حجم هدف به مگابایت
+        quality: کیفیت ویدیو (144p, 240p, 360p, 480p, 720p, 1080p)
+    
+    Returns:
+        مسیر فایل خروجی در صورت موفقیت، None در صورت شکست
+    """
+    import subprocess
+    import tempfile
+    
+    try:
+        # محاسبه حجم فعلی فایل
+        current_size_mb = os.path.getsize(input_path) / (1024 * 1024)
+        
+        # اگر فایل کوچکتر از حجم هدف است، آن را کپی کن
+        if current_size_mb <= target_size_mb:
+            if output_path and output_path != input_path:
+                import shutil
+                shutil.copy2(input_path, output_path)
+            return output_path or input_path
+            
+        # تنظیم مسیر خروجی
+        final_output = output_path or input_path
+        temp_output = None
+        
+        if output_path is None:
+            # ایجاد فایل موقت برای جلوگیری از بازنویسی فایل ورودی
+            fd, temp_output = tempfile.mkstemp(suffix=".mp4")
+            os.close(fd)
+            output_path = temp_output
+            
+        # استخراج ارتفاع ویدیو بر اساس کیفیت
+        height = VIDEO_QUALITIES.get(quality, VIDEO_QUALITIES["240p"])["height"]
+        
+        # محاسبه بیت‌ریت مناسب برای رسیدن به حجم هدف
+        # فرمول: (حجم هدف به بایت * 8) / (مدت زمان به ثانیه)
+        duration_cmd = ["ffprobe", "-v", "error", "-show_entries", "format=duration", 
+                         "-of", "default=noprint_wrappers=1:nokey=1", input_path]
+        duration = float(subprocess.check_output(duration_cmd).decode().strip())
+        
+        # محاسبه بیت‌ریت با 10% حاشیه ایمنی
+        target_bitrate = int(((target_size_mb * 8192) / duration) * 0.9)
+        
+        # فرمان ffmpeg با تنظیمات بهینه‌سازی شده
+        cmd = [
+            "ffmpeg", "-i", input_path, 
+            "-y",  # بازنویسی فایل خروجی اگر وجود دارد
+            "-c:v", "libx264",  # کدک ویدیو با فشرده‌سازی بالا
+            "-preset", "medium",  # توازن بین سرعت فشرده‌سازی و کیفیت
+            "-b:v", f"{target_bitrate}k",  # بیت‌ریت ویدیو
+            "-maxrate", f"{int(target_bitrate * 1.5)}k",  # حداکثر بیت‌ریت
+            "-bufsize", f"{target_bitrate * 2}k",  # اندازه بافر
+            "-vf", f"scale=-2:{height}",  # تغییر سایز ویدیو با حفظ نسبت تصویر
+            "-c:a", "aac",  # کدک صدا
+            "-b:a", "128k",  # بیت‌ریت صدا
+            "-ac", "2",  # کانال‌های صدا
+            "-ar", "44100",  # فرکانس نمونه‌برداری صدا
+            "-f", "mp4",  # فرمت خروجی
+            output_path
+        ]
+        
+        # فشرده‌سازی با محدودیت زمانی
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        try:
+            stdout, stderr = process.communicate(timeout=300)  # تایم‌اوت 5 دقیقه
+            
+            if process.returncode != 0:
+                print(f"⚠️ خطا در فشرده‌سازی ویدیو: {stderr.decode()}")
+                if temp_output and os.path.exists(temp_output):
+                    os.unlink(temp_output)
+                return None
+                
+            # اگر فایل موقت ایجاد شده است، آن را جایگزین فایل اصلی کن
+            if temp_output:
+                os.rename(temp_output, final_output)
+                
+            return final_output
+            
+        except subprocess.TimeoutExpired:
+            process.kill()
+            print("⚠️ خطا: فرآیند فشرده‌سازی ویدیو با تایم‌اوت مواجه شد")
+            if temp_output and os.path.exists(temp_output):
+                os.unlink(temp_output)
+            return None
+            
+    except Exception as e:
+        print(f"⚠️ خطا در فشرده‌سازی ویدیو: {str(e)}")
+        return None
+
 # 📌 پاکسازی پوشه با حفظ فایل‌های جدید
-def clear_folder(folder_path, max_files=5):
+def clear_folder(folder_path, max_files=3):
+    """
+    پاکسازی پوشه با حفظ فایل‌های جدید و حذف قدیمی‌ترین فایل‌ها
+    
+    Args:
+        folder_path: مسیر پوشه
+        max_files: تعداد فایل‌های حداکثر برای نگهداری
+        
+    Returns:
+        تعداد فایل‌های حذف شده
+    """
     files = []
+    total_size = 0
+    deleted_count = 0
+    
+    # جمع‌آوری اطلاعات فایل‌ها
     for filename in os.listdir(folder_path):
         file_path = os.path.join(folder_path, filename)
         if os.path.isfile(file_path):
-            files.append((file_path, os.path.getmtime(file_path)))
+            # اندازه فایل به مگابایت
+            file_size = os.path.getsize(file_path) / (1024 * 1024)
+            files.append((file_path, os.path.getmtime(file_path), file_size))
+            total_size += file_size
     
     # مرتب‌سازی بر اساس زمان تغییر (قدیمی‌ترین اول)
     files.sort(key=lambda x: x[1])
     
     # حذف فایل‌های قدیمی اگر تعداد از حد مجاز بیشتر است
     if len(files) > max_files:
-        for file_path, _ in files[:-max_files]:
+        for file_path, _, file_size in files[:-max_files]:
             try:
                 os.unlink(file_path)
+                deleted_count += 1
+                print(f"✅ فایل {file_path} با حجم {file_size:.2f} MB حذف شد")
             except Exception as e:
-                print(f"Error deleting {file_path}: {e}")
+                print(f"⚠️ خطا در حذف {file_path}: {e}")
+    
+    # گزارش وضعیت فضای ذخیره‌سازی
+    print(f"📊 وضعیت پوشه {folder_path}: {len(files)} فایل، {total_size:.2f} MB")
+    return deleted_count
 
 # 📂 مدیریت پاسخ‌های متنی با کش
 _responses_cache = {}
@@ -648,26 +813,6 @@ def handle_callback(call):
         
         # ذخیره وضعیت کاربر برای دریافت لینک کانال
         STATES[call.from_user.id] = ADD_CHANNEL_WAITING_FOR_LINK
-    elif call.data == "add_channel_start":
-        # بررسی دسترسی ادمین
-        if call.from_user.id != ADMIN_CHAT_ID:
-            bot.send_message(call.message.chat.id, "⛔ شما دسترسی به این قابلیت را ندارید!")
-            return
-            
-        # شروع فرآیند افزودن کانال
-        bot.send_message(
-            call.message.chat.id,
-            "🔗 <b>افزودن کانال به مانیتورینگ</b>\n\n"
-            "لطفاً یکی از موارد زیر را ارسال کنید:\n\n"
-            "• آیدی کانال (مثال: @channel_id)\n"
-            "• لینک دعوت کانال (مثال: https://t.me/+abcdef123456)\n"
-            "• شناسه عددی کانال خصوصی (مثال: -1001234567890)\n\n"
-            "<b>نکته:</b> برای کانال‌های خصوصی یا عمومی محدودیتی وجود ندارد.",
-            parse_mode="HTML"
-        )
-        
-        # ذخیره وضعیت کاربر برای دریافت لینک کانال
-        ADD_CHANNEL_STATES[call.from_user.id] = ADD_CHANNEL_WAITING_FOR_LINK
     elif call.data == "show_channels":
         # نمایش کانال‌های ثبت شده با دکمه
         channels = list(hashtag_manager.registered_channels)
@@ -1030,9 +1175,9 @@ def extract_channel_id(text):
 def handle_message(message):
     try:
         # بررسی وضعیت کاربر - اگر منتظر دریافت آدرس کانال است
-        if message.from_user.id in ADD_CHANNEL_STATES and ADD_CHANNEL_STATES[message.from_user.id] == ADD_CHANNEL_WAITING_FOR_LINK:
+        if message.from_user.id in STATES and STATES[message.from_user.id] == ADD_CHANNEL_WAITING_FOR_LINK:
             # حذف وضعیت کاربر
-            del ADD_CHANNEL_STATES[message.from_user.id]
+            del STATES[message.from_user.id]
             
             # بررسی دسترسی ادمین
             if message.from_user.id != ADMIN_CHAT_ID:

@@ -8,3 +8,4 @@ pytelegrambotapi
 requests
 telebot
 yt-dlp
+psutil
