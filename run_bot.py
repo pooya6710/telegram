@@ -11,9 +11,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # تنظیم توکن ربات (میتوانید مستقیماً اینجا وارد کنید)
-TOKEN = ""  # توکن ربات خود را اینجا قرار دهید
+TOKEN = "7338644071:AAEex9j0nMualdoywHSGFiBoMAzRpkFypPk"  # توکن ربات شما
 if not TOKEN:
-    TOKEN = os.environ.get("7338644071:AAEex9j0nMualdoywHSGFiBoMAzRpkFypPk")
+    TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 
 if not TOKEN:
     logger.error("❌ هیچ توکنی تنظیم نشده است! لطفا توکن را در متغیر TOKEN یا در متغیرهای محیطی تنظیم کنید.")
