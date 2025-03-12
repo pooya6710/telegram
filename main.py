@@ -1,11 +1,10 @@
 import os
 import logging
 import time
-import threading
 from flask import Flask, render_template, jsonify
 from bot import setup_bot
 
-# ⚙️ تنظیم سطح لاگ برای کاهش خروجی اضافی
+# تنظیم سیستم لاگینگ
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -16,95 +15,13 @@ logger = logging.getLogger(__name__)
 logging.getLogger("werkzeug").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
-# 🕸️ تنظیمات فلسک با بهینه‌سازی
-
-import os
-import json
-import psutil
-import threading
-from flask import Flask, render_template
-from utils import get_bot_token
-from bot import setup_bot
-
-app = Flask(__name__)
-
-@app.route('/')
-def index():
-    """Main page of the bot web dashboard"""
-    token = get_bot_token()
-    
-    # Check if files and folders exist
-    video_folder_exists = os.path.exists("videos")
-    instagram_folder_exists = os.path.exists("instagram_videos")
-    responses_file_exists = os.path.exists("responses.json")
-    hashtags_file_exists = os.path.exists("hashtags.json")
-    
-    # Get system info
-    cpu_usage = psutil.cpu_percent()
-    memory = psutil.virtual_memory()
-    memory_usage = memory.percent
-    
-    # Get storage stats
-    storage_stats = {
-        "total_size": 0,
-        "video_count": 0
-    }
-    
-    # Count videos in folders
-    if video_folder_exists:
-        for file in os.listdir("videos"):
-            file_path = os.path.join("videos", file)
-            if os.path.isfile(file_path):
-                storage_stats["total_size"] += os.path.getsize(file_path) / (1024 * 1024)  # MB
-                storage_stats["video_count"] += 1
-                
-    if instagram_folder_exists:
-        for file in os.listdir("instagram_videos"):
-            file_path = os.path.join("instagram_videos", file)
-            if os.path.isfile(file_path):
-                storage_stats["total_size"] += os.path.getsize(file_path) / (1024 * 1024)  # MB
-                storage_stats["video_count"] += 1
-    
-    # Get processes using most CPU
-    processes = []
-    for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info']):
-        try:
-            p_info = proc.info
-            mem_mb = p_info['memory_info'].rss / (1024 * 1024) if p_info['memory_info'] else 0
-            if p_info['cpu_percent'] > 1.0 or mem_mb > 50:
-                processes.append({
-                    'name': p_info['name'],
-                    'cpu': p_info['cpu_percent'],
-                    'memory_mb': mem_mb
-                })
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            pass
-    
-    # Sort by CPU usage (highest first)
-    processes.sort(key=lambda x: x['cpu'], reverse=True)
-    top_processes = processes[:5]  # Get top 5
-    
-    return render_template(
-        'index.html',
-        bot_name="ربات چندکاره تلگرام",
-        token_available=bool(token),
-        bot_status="فعال" if token else "غیرفعال (توکن یافت نشد)",
-        video_folder_exists=video_folder_exists,
-        instagram_folder_exists=instagram_folder_exists,
-        responses_file_exists=responses_file_exists,
-        hashtags_file_exists=hashtags_file_exists,
-        cpu_usage=cpu_usage,
-        memory_usage=memory_usage,
-        storage_stats=storage_stats,
-        top_processes=top_processes
-    )
-
+# ایجاد اپلیکیشن فلسک
 app = Flask(__name__, static_folder='static', template_folder='templates')
 app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key")
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 86400  # کش 1 روزه برای فایل‌های استاتیک
 app.config['TEMPLATES_AUTO_RELOAD'] = True  # در محیط توسعه
 
-# 📊 وضعیت ربات با قابلیت بروزرسانی خودکار
+# وضعیت ربات با قابلیت بروزرسانی خودکار
 bot_status = {
     "running": False,
     "error": None,
@@ -118,7 +35,156 @@ bot_status = {
     "last_update": time.time()
 }
 
-# 🚀 راه‌اندازی ربات تلگرام در هنگام شروع برنامه
+# بروزرسانی آمار ربات
+def update_bot_stats():
+    # بررسی پوشه‌های ویدیو
+    youtube_folder = "videos"
+    instagram_folder = "instagram_videos"
+
+    # شمارش ویدیوها
+    youtube_count = len(os.listdir(youtube_folder)) if os.path.exists(youtube_folder) else 0
+    instagram_count = len(os.listdir(instagram_folder)) if os.path.exists(instagram_folder) else 0
+
+    # بررسی تعداد پاسخ‌ها
+    response_count = 0
+    if os.path.exists("responses.json"):
+        try:
+            import json
+            with open("responses.json", "r", encoding="utf-8") as f:
+                response_count = len(json.load(f))
+        except:
+            pass
+
+    # بررسی آمار هشتگ‌ها
+    hashtag_count = 0
+    registered_channels = 0
+    hashtag_stats = {}
+    if os.path.exists("hashtags.json"):
+        try:
+            import json
+            with open("hashtags.json", "r", encoding="utf-8") as f:
+                data = json.load(f)
+                hashtags = data.get("hashtags", {})
+                hashtag_count = len(hashtags)
+                registered_channels = len(data.get("channels", []))
+
+                # پیدا کردن 5 هشتگ پرکاربرد
+                sorted_hashtags = sorted(hashtags.items(), key=lambda x: len(x[1]), reverse=True)[:5]
+                hashtag_stats = {tag: len(msgs) for tag, msgs in sorted_hashtags}
+        except Exception as e:
+            print(f"خطا در بارگذاری آمار هشتگ‌ها: {e}")
+
+    # محاسبه فضای استفاده شده و باقی‌مانده
+    import shutil
+
+    # بررسی فضای کل دیسک
+    total_space, used_space, free_space = shutil.disk_usage('/')
+
+    # تبدیل به مگابایت
+    total_space_mb = total_space / (1024 * 1024)
+    used_space_mb = used_space / (1024 * 1024)
+    free_space_mb = free_space / (1024 * 1024)
+
+    # محاسبه درصد استفاده شده
+    usage_percent = (used_space / total_space) * 100
+
+    # بررسی فضای اشغال شده توسط ویدیوها
+    video_size = 0
+    for folder in [youtube_folder, instagram_folder]:
+        if os.path.exists(folder):
+            for file in os.listdir(folder):
+                file_path = os.path.join(folder, file)
+                if os.path.isfile(file_path):
+                    video_size += os.path.getsize(file_path)
+
+    # تبدیل به مگابایت
+    video_size_mb = video_size / (1024 * 1024)
+
+    # محاسبه سهم ویدیوها از فضای کل
+    video_percent = (video_size / total_space) * 100 if total_space > 0 else 0
+
+    # بروزرسانی آمار
+    bot_status["stats"]["youtube_downloads"] = youtube_count
+    bot_status["stats"]["instagram_downloads"] = instagram_count
+    bot_status["stats"]["videos_processed"] = youtube_count + instagram_count
+    bot_status["stats"]["response_count"] = response_count
+    bot_status["stats"]["hashtag_count"] = hashtag_count
+    bot_status["stats"]["registered_channels"] = registered_channels
+    bot_status["stats"]["top_hashtags"] = hashtag_stats
+
+    # اضافه کردن آمار فضای دیسک
+    bot_status["stats"]["disk_total_mb"] = round(total_space_mb, 2)
+    bot_status["stats"]["disk_used_mb"] = round(used_space_mb, 2)
+    bot_status["stats"]["disk_free_mb"] = round(free_space_mb, 2)
+    bot_status["stats"]["disk_usage_percent"] = round(usage_percent, 2)
+    bot_status["stats"]["video_size_mb"] = round(video_size_mb, 2)
+    bot_status["stats"]["video_percent"] = round(video_percent, 2)
+
+    bot_status["last_update"] = time.time()
+
+# صفحه اصلی
+@app.route('/')
+def home():
+    """صفحه اصلی داشبورد ربات"""
+    # بروزرسانی آمار قبل از نمایش
+    update_bot_stats()
+
+    token_available = os.environ.get("TELEGRAM_BOT_TOKEN") is not None
+    status_message = "فعال" if bot_status["running"] else "در انتظار توکن تلگرام"
+
+    # محاسبه زمان آپتایم
+    uptime_seconds = int(time.time() - bot_status["start_time"])
+    days, remainder = divmod(uptime_seconds, 86400)
+    hours, remainder = divmod(remainder, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    uptime = f"{days} روز, {hours} ساعت, {minutes} دقیقه"
+
+    # بررسی وضعیت پوشه‌ها و فایل‌ها
+    video_folder_exists = os.path.exists("videos")
+    instagram_folder_exists = os.path.exists("instagram_videos")
+    responses_file_exists = os.path.exists("responses.json")
+    hashtags_file_exists = os.path.exists("hashtags.json")
+
+    # پردازش هشتگ‌های پرکاربرد برای نمودار
+    top_hashtags = bot_status["stats"].get("top_hashtags", {})
+    hashtag_labels = list(top_hashtags.keys())
+    hashtag_values = list(top_hashtags.values())
+
+    return render_template(
+        'index.html', 
+        bot_name="ربات چندکاره تلگرام",
+        bot_status=status_message,
+        token_available=token_available,
+        error_message=bot_status["error"],
+        video_folder_exists=video_folder_exists,
+        instagram_folder_exists=instagram_folder_exists,
+        responses_file_exists=responses_file_exists,
+        hashtags_file_exists=hashtags_file_exists,
+        stats=bot_status["stats"],
+        uptime=uptime,
+        hashtag_labels=hashtag_labels,
+        hashtag_values=hashtag_values
+    )
+
+# API برای دریافت وضعیت ربات
+@app.route('/api/status')
+def api_status():
+    """API برای دریافت وضعیت ربات"""
+    update_bot_stats()
+    return jsonify({
+        "status": "active" if bot_status["running"] else "inactive",
+        "uptime": int(time.time() - bot_status["start_time"]),
+        "stats": bot_status["stats"],
+        "error": bot_status["error"]
+    })
+
+# بررسی سلامت سرور
+@app.route('/ping')
+def ping():
+    """بررسی سلامت سرور"""
+    return "ربات فعال است!", 200
+
+# راه‌اندازی ربات تلگرام در هنگام شروع برنامه
 token = os.environ.get("TELEGRAM_BOT_TOKEN")
 if token:
     try:
@@ -136,163 +202,7 @@ else:
     logger.warning("⚠️ توکن تلگرام یافت نشد. در حالت وب-فقط اجرا می‌شود.")
     bot_status["error"] = "توکن تلگرام موجود نیست"
 
-# 🔄 بروزرسانی آمار ربات
-def update_bot_stats():
-    # بررسی پوشه‌های ویدیو
-    youtube_folder = "videos"
-    instagram_folder = "instagram_videos"
-    
-    # شمارش ویدیوها
-    youtube_count = len(os.listdir(youtube_folder)) if os.path.exists(youtube_folder) else 0
-    instagram_count = len(os.listdir(instagram_folder)) if os.path.exists(instagram_folder) else 0
-    
-    # بررسی تعداد پاسخ‌ها
-    response_count = 0
-    if os.path.exists("responses.json"):
-        try:
-            import json
-            with open("responses.json", "r", encoding="utf-8") as f:
-                response_count = len(json.load(f))
-        except:
-            pass
-    
-    # بررسی آمار هشتگ‌ها
-    hashtag_count = 0
-    registered_channels = 0
-    hashtag_stats = {}
-    if os.path.exists("hashtags.json"):
-        try:
-            import json
-            with open("hashtags.json", "r", encoding="utf-8") as f:
-                data = json.load(f)
-                hashtags = data.get("hashtags", {})
-                hashtag_count = len(hashtags)
-                registered_channels = len(data.get("channels", []))
-                
-                # پیدا کردن 5 هشتگ پرکاربرد
-                sorted_hashtags = sorted(hashtags.items(), key=lambda x: len(x[1]), reverse=True)[:5]
-                hashtag_stats = {tag: len(msgs) for tag, msgs in sorted_hashtags}
-        except Exception as e:
-            print(f"خطا در بارگذاری آمار هشتگ‌ها: {e}")
-    
-    # محاسبه فضای استفاده شده و باقی‌مانده
-    import shutil
-    
-    # بررسی فضای کل دیسک
-    total_space, used_space, free_space = shutil.disk_usage('/')
-    
-    # تبدیل به مگابایت
-    total_space_mb = total_space / (1024 * 1024)
-    used_space_mb = used_space / (1024 * 1024)
-    free_space_mb = free_space / (1024 * 1024)
-    
-    # محاسبه درصد استفاده شده
-    usage_percent = (used_space / total_space) * 100
-    
-    # بررسی فضای اشغال شده توسط ویدیوها
-    video_size = 0
-    for folder in [youtube_folder, instagram_folder]:
-        if os.path.exists(folder):
-            for file in os.listdir(folder):
-                file_path = os.path.join(folder, file)
-                if os.path.isfile(file_path):
-                    video_size += os.path.getsize(file_path)
-    
-    # تبدیل به مگابایت
-    video_size_mb = video_size / (1024 * 1024)
-    
-    # محاسبه سهم ویدیوها از فضای کل
-    video_percent = (video_size / total_space) * 100 if total_space > 0 else 0
-    
-    # بروزرسانی آمار
-    bot_status["stats"]["youtube_downloads"] = youtube_count
-    bot_status["stats"]["instagram_downloads"] = instagram_count
-    bot_status["stats"]["videos_processed"] = youtube_count + instagram_count
-    bot_status["stats"]["response_count"] = response_count
-    bot_status["stats"]["hashtag_count"] = hashtag_count
-    bot_status["stats"]["registered_channels"] = registered_channels
-    bot_status["stats"]["top_hashtags"] = hashtag_stats
-    
-    # اضافه کردن آمار فضای دیسک
-    bot_status["stats"]["disk_total_mb"] = round(total_space_mb, 2)
-    bot_status["stats"]["disk_used_mb"] = round(used_space_mb, 2)
-    bot_status["stats"]["disk_free_mb"] = round(free_space_mb, 2)
-    bot_status["stats"]["disk_usage_percent"] = round(usage_percent, 2)
-    bot_status["stats"]["video_size_mb"] = round(video_size_mb, 2)
-    bot_status["stats"]["video_percent"] = round(video_percent, 2)
-    
-    bot_status["last_update"] = time.time()
-
-# 🏠 صفحه اصلی
-@app.route('/')
-def home():
-    """صفحه اصلی داشبورد ربات"""
-    # بروزرسانی آمار قبل از نمایش
-    update_bot_stats()
-    
-    token_available = os.environ.get("TELEGRAM_BOT_TOKEN") is not None
-    status_message = "فعال" if bot_status["running"] else "در انتظار توکن تلگرام"
-    
-    # محاسبه زمان آپتایم
-    uptime_seconds = int(time.time() - bot_status["start_time"])
-    days, remainder = divmod(uptime_seconds, 86400)
-    hours, remainder = divmod(remainder, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    uptime = f"{days} روز, {hours} ساعت, {minutes} دقیقه"
-    
-    # بررسی وضعیت پوشه‌ها و فایل‌ها
-    video_folder_exists = os.path.exists("videos")
-    instagram_folder_exists = os.path.exists("instagram_videos")
-    responses_file_exists = os.path.exists("responses.json")
-    hashtags_file_exists = os.path.exists("hashtags.json")
-    
-    # پردازش هشتگ‌های پرکاربرد برای نمودار
-    top_hashtags = bot_status["stats"].get("top_hashtags", {})
-    hashtag_labels = list(top_hashtags.keys())
-    hashtag_values = list(top_hashtags.values())
-    
-    return render_template(
-        'index.html', 
-        bot_name="ربات چندکاره تلگرام",
-        bot_status=status_message,
-        token_available=token_available,
-        error_message=bot_status["error"],
-        video_folder_exists=video_folder_exists,
-        instagram_folder_exists=instagram_folder_exists,
-        responses_file_exists=responses_file_exists,
-        hashtags_file_exists=hashtags_file_exists,
-        stats=bot_status["stats"],
-        uptime=uptime,
-        hashtag_labels=hashtag_labels,
-        hashtag_values=hashtag_values
-    )
-
-# 🔍 API برای دریافت وضعیت ربات
-@app.route('/api/status')
-def api_status():
-    """API برای دریافت وضعیت ربات"""
-    update_bot_stats()
-    return jsonify({
-        "status": "active" if bot_status["running"] else "inactive",
-        "uptime": int(time.time() - bot_status["start_time"]),
-        "stats": bot_status["stats"],
-        "error": bot_status["error"]
-    })
-
-# 🩺 سلامت سرور
-@app.route('/ping')
-def ping():
-    """بررسی سلامت سرور"""
-    return "ربات فعال است!", 200
-
-# 🚀 تابع اجرای سرور فلسک
-def run_flask():
-    """اجرای سرور وب فلسک"""
-    # از حالت دیباگ در محیط تولید استفاده نمی‌کنیم
-    debug_mode = os.environ.get("FLASK_DEBUG", "false").lower() == "true"
-    app.run(host='0.0.0.0', port=5000, debug=debug_mode, threaded=True)
-
-# ورودی اصلی برنامه
 if __name__ == "__main__":
+    # اجرای سرور وب فلسک
     logger.info("🌐 شروع سرور وب...")
-    run_flask()
+    app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
