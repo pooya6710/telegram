@@ -8,7 +8,6 @@ deploymentTarget = "autoscale"
 run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
 
 [workflows]
-runButton = "اجرای ربات ساده"
 
 [[workflows.workflow]]
 name = "Project"
@@ -31,7 +30,7 @@ task = "packager.installForAll"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "gunicorn --bind 0.0.0.0:5000 --reuse-port --reload main:app"
+args = "gunicorn --bind 0.0.0.0:5000 --reuse-port --timeout 120 main:app"
 waitForPort = 5000
 
 [[workflows.workflow]]
