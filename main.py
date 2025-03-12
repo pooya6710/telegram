@@ -93,6 +93,35 @@ def update_bot_stats():
         except Exception as e:
             print(f"خطا در بارگذاری آمار هشتگ‌ها: {e}")
     
+    # محاسبه فضای استفاده شده و باقی‌مانده
+    import shutil
+    
+    # بررسی فضای کل دیسک
+    total_space, used_space, free_space = shutil.disk_usage('/')
+    
+    # تبدیل به مگابایت
+    total_space_mb = total_space / (1024 * 1024)
+    used_space_mb = used_space / (1024 * 1024)
+    free_space_mb = free_space / (1024 * 1024)
+    
+    # محاسبه درصد استفاده شده
+    usage_percent = (used_space / total_space) * 100
+    
+    # بررسی فضای اشغال شده توسط ویدیوها
+    video_size = 0
+    for folder in [youtube_folder, instagram_folder]:
+        if os.path.exists(folder):
+            for file in os.listdir(folder):
+                file_path = os.path.join(folder, file)
+                if os.path.isfile(file_path):
+                    video_size += os.path.getsize(file_path)
+    
+    # تبدیل به مگابایت
+    video_size_mb = video_size / (1024 * 1024)
+    
+    # محاسبه سهم ویدیوها از فضای کل
+    video_percent = (video_size / total_space) * 100 if total_space > 0 else 0
+    
     # بروزرسانی آمار
     bot_status["stats"]["youtube_downloads"] = youtube_count
     bot_status["stats"]["instagram_downloads"] = instagram_count
@@ -101,6 +130,15 @@ def update_bot_stats():
     bot_status["stats"]["hashtag_count"] = hashtag_count
     bot_status["stats"]["registered_channels"] = registered_channels
     bot_status["stats"]["top_hashtags"] = hashtag_stats
+    
+    # اضافه کردن آمار فضای دیسک
+    bot_status["stats"]["disk_total_mb"] = round(total_space_mb, 2)
+    bot_status["stats"]["disk_used_mb"] = round(used_space_mb, 2)
+    bot_status["stats"]["disk_free_mb"] = round(free_space_mb, 2)
+    bot_status["stats"]["disk_usage_percent"] = round(usage_percent, 2)
+    bot_status["stats"]["video_size_mb"] = round(video_size_mb, 2)
+    bot_status["stats"]["video_percent"] = round(video_percent, 2)
+    
     bot_status["last_update"] = time.time()
 
 # 🏠 صفحه اصلی

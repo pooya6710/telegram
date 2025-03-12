@@ -694,6 +694,25 @@ def safe_polling():
                 
             time.sleep(30)  # انتظار طولانی‌تر برای خطاهای بحرانی
 
+# 🔄 تابع پینگ خودکار برای جلوگیری از خاموشی ربات
+def keep_alive_ping():
+    """ارسال پینگ به ربات هر دقیقه برای جلوگیری از خاموش شدن"""
+    import requests
+    ping_url = f"https://api.telegram.org/bot{TOKEN}/getMe"
+    ping_interval = 60  # هر دقیقه یکبار
+    
+    while True:
+        try:
+            response = requests.get(ping_url, timeout=10)
+            if response.status_code == 200:
+                print(f"🔄 پینگ موفقیت‌آمیز به ربات در {time.strftime('%H:%M:%S')}")
+            else:
+                print(f"⚠️ خطا در پینگ: {response.status_code}")
+        except Exception as e:
+            print(f"⚠️ خطا در ارسال پینگ: {str(e)}")
+        
+        time.sleep(ping_interval)
+
 def setup_bot():
     """Set up and configure the Telegram bot."""
     if not TOKEN:
@@ -711,6 +730,11 @@ def setup_bot():
         bot_thread = threading.Thread(target=safe_polling)
         bot_thread.daemon = True
         bot_thread.start()
+        
+        # شروع تابع نگهدارنده ربات در یک ترد جداگانه
+        ping_thread = threading.Thread(target=keep_alive_ping)
+        ping_thread.daemon = True
+        ping_thread.start()
         
         print("🤖 ربات شروع به کار کرد!")
         return True
