@@ -303,26 +303,53 @@ def send_video_with_handling(chat_id, video_path):
         bot.send_message(chat_id, "⚠️ مشکلی در ارسال ویدیو رخ داد. لطفاً دوباره امتحان کنید.")
         return False
 
-# دستور شروع - با طراحی بهتر
+# دستور شروع - با طراحی بهتر و دکمه‌های کاربری بیشتر
 @bot.message_handler(commands=['start'])
 def handle_start(message):
     user = message.from_user
     markup = telebot.types.InlineKeyboardMarkup(row_width=2)
+    
+    # دکمه‌های اصلی - ردیف اول
     markup.add(
         telebot.types.InlineKeyboardButton("📚 راهنما", callback_data="help"),
-        telebot.types.InlineKeyboardButton("🎬 دریافت ویدیو", callback_data="video_info")
+        telebot.types.InlineKeyboardButton("🎬 دانلود ویدیو", callback_data="video_info")
     )
+    
+    # دکمه‌های هشتگ و مدیریت کانال - ردیف دوم
     markup.add(
-        telebot.types.InlineKeyboardButton("🔍 جستجوی هشتگ", callback_data="hashtag_info")
+        telebot.types.InlineKeyboardButton("🔍 جستجوی هشتگ", callback_data="hashtag_info"),
+        telebot.types.InlineKeyboardButton("🖊️ ذخیره پاسخ", callback_data="auto_reply_info")
+    )
+    
+    # برای ادمین دکمه‌های مدیریتی نمایش داده شود
+    if message.from_user.id == ADMIN_CHAT_ID:
+        markup.add(
+            telebot.types.InlineKeyboardButton("📊 وضعیت ربات", callback_data="bot_status"),
+            telebot.types.InlineKeyboardButton("📋 لیست کانال‌ها", callback_data="show_channels")
+        )
+        markup.add(
+            telebot.types.InlineKeyboardButton("➕ افزودن کانال جدید", callback_data="add_channel_start")
+        )
+    
+    # متن خوش‌آمدگویی با اطلاعات جامع‌تر
+    welcome_text = (
+        f"🌟 سلام <b>{user.first_name}</b>! 👋\n\n"
+        f"به ربات چندکاره خوش آمدید!\n\n"
+        f"<b>✨ قابلیت‌های اصلی:</b>\n"
+        f"• <b>دانلود ویدیو:</b> لینک اینستاگرام یا یوتیوب را ارسال کنید\n"
+        f"• <b>جستجوی هشتگ:</b> #هشتگ_موردنظر را ارسال کنید\n"
+        f"• <b>پاسخ خودکار:</b> با فرمت «سوال، جواب» ذخیره کنید\n\n"
+        f"<b>🔄 به‌روزرسانی‌های جدید:</b>\n"
+        f"• امکان استفاده از کانال‌های خصوصی\n"
+        f"• مدیریت کانال‌ها با دکمه‌های شیشه‌ای\n"
+        f"• بهینه‌سازی مصرف CPU و سرعت دانلود\n\n"
+        f"از دکمه‌های زیر برای شروع استفاده کنید:"
     )
     
     bot.send_message(
         message.chat.id,
-        f"سلام {user.first_name}! 👋\n\n"
-        f"به ربات چندکاره خوش آمدید!\n\n"
-        f"• لینک ویدیوی اینستاگرام یا یوتیوب را برای من ارسال کنید\n"
-        f"• برای جستجوی هشتگ‌ها، کافیست #هشتگ را ارسال کنید\n"
-        f"• از دکمه‌های زیر برای دسترسی سریع استفاده کنید:",
+        welcome_text,
+        parse_mode="HTML",
         reply_markup=markup
     )
 
@@ -350,6 +377,11 @@ def handle_help(message):
     )
     bot.send_message(message.chat.id, help_text, parse_mode="HTML")
 
+# حالت‌های مختلف گفتگو
+ADD_CHANNEL_WAITING_FOR_LINK = "waiting_for_channel_link"
+ADD_RESPONSE_WAITING_FOR_QA = "waiting_for_qa"
+STATES = {}  # نگهداری وضعیت کاربران در فرآیندهای مختلف
+
 # پردازش کلیک روی دکمه‌ها - با پاسخ سریع‌تر
 @bot.callback_query_handler(func=lambda call: True)
 def handle_callback(call):
@@ -373,9 +405,317 @@ def handle_callback(call):
             "برای جستجوی پیام‌ها با هشتگ کافیست هشتگ مورد نظر را ارسال کنید.\n"
             "مثال: #آناتومی\n\n"
             "<b>نکته:</b> برای استفاده از این قابلیت، ابتدا باید ربات در کانال مورد نظر عضو شود "
-            "و به عنوان ادمین تنظیم گردد، سپس با دستور /add_channel آن را به لیست مانیتورینگ اضافه کنید.",
+            "و به عنوان ادمین تنظیم گردد.",
             parse_mode="HTML"
         )
+    elif call.data == "auto_reply_info":
+        # راهنمای استفاده از پاسخ خودکار با دکمه اضافه کردن
+        markup = telebot.types.InlineKeyboardMarkup()
+        markup.add(telebot.types.InlineKeyboardButton("➕ افزودن پاسخ جدید", callback_data="add_response_start"))
+        markup.add(telebot.types.InlineKeyboardButton("📋 مشاهده پاسخ‌ها", callback_data="list_responses"))
+        
+        bot.send_message(
+            call.message.chat.id,
+            "🖊️ <b>پاسخ‌های خودکار</b>\n\n"
+            "با این قابلیت می‌توانید پاسخ‌های خودکار تعریف کنید.\n"
+            "هنگامی که کاربری سوالی مشابه سوالات تعریف شده بپرسد، ربات به صورت خودکار پاسخ می‌دهد.\n\n"
+            "<b>روش افزودن پاسخ خودکار:</b>\n"
+            "1. روی دکمه «افزودن پاسخ جدید» کلیک کنید\n"
+            "2. پیامی با فرمت «سوال، جواب» ارسال کنید\n\n"
+            "<b>مثال:</b> سلام، سلام! چطور می‌توانم کمک کنم؟",
+            parse_mode="HTML",
+            reply_markup=markup
+        )
+    elif call.data == "add_response_start":
+        # شروع فرآیند افزودن پاسخ خودکار
+        bot.send_message(
+            call.message.chat.id,
+            "🖊️ <b>افزودن پاسخ خودکار</b>\n\n"
+            "لطفاً پیامی با فرمت زیر ارسال کنید:\n"
+            "<code>سوال، جواب</code>\n\n"
+            "<b>نکته:</b> از علامت ویرگول (،) برای جدا کردن سوال و جواب استفاده کنید.",
+            parse_mode="HTML"
+        )
+        
+        # ذخیره وضعیت کاربر
+        STATES[call.from_user.id] = ADD_RESPONSE_WAITING_FOR_QA
+    elif call.data == "list_responses":
+        # نمایش لیست پاسخ‌های خودکار
+        if not responses:
+            bot.send_message(call.message.chat.id, "⚠️ هیچ پاسخ خودکاری تعریف نشده است!")
+            return
+            
+        # ایجاد متن پاسخ‌ها با محدودیت طول
+        responses_text = "📋 <b>پاسخ‌های خودکار تعریف شده:</b>\n\n"
+        
+        # ایجاد صفحه‌بندی برای پاسخ‌ها
+        items_per_page = 5
+        total_items = len(responses)
+        total_pages = (total_items + items_per_page - 1) // items_per_page
+        
+        # برای ساده‌سازی فقط صفحه اول را نمایش می‌دهیم
+        page = 1
+        start_idx = (page - 1) * items_per_page
+        end_idx = min(start_idx + items_per_page, total_items)
+        
+        # ایجاد لیست پاسخ‌های خودکار
+        items = list(responses.items())[start_idx:end_idx]
+        for i, (question, answer) in enumerate(items, start=start_idx+1):
+            responses_text += f"{i}. <b>س:</b> {question}\n<b>ج:</b> {answer}\n\n"
+        
+        # اضافه کردن اطلاعات صفحه‌بندی
+        if total_pages > 1:
+            responses_text += f"<i>صفحه {page} از {total_pages}</i>"
+        
+        # ایجاد دکمه‌های مدیریت پاسخ‌ها
+        markup = telebot.types.InlineKeyboardMarkup()
+        markup.add(telebot.types.InlineKeyboardButton("➕ افزودن پاسخ جدید", callback_data="add_response_start"))
+        
+        # دکمه‌های صفحه‌بندی
+        if total_pages > 1:
+            pagination_buttons = []
+            if page > 1:
+                pagination_buttons.append(telebot.types.InlineKeyboardButton("◀️ قبلی", callback_data=f"responses_page_{page-1}"))
+            if page < total_pages:
+                pagination_buttons.append(telebot.types.InlineKeyboardButton("بعدی ▶️", callback_data=f"responses_page_{page+1}"))
+            markup.add(*pagination_buttons)
+        
+        # ارسال پیام با دکمه‌ها
+        bot.send_message(
+            call.message.chat.id,
+            responses_text,
+            parse_mode="HTML",
+            reply_markup=markup
+        )
+    elif call.data.startswith("responses_page_"):
+        # پردازش صفحه‌بندی پاسخ‌ها
+        try:
+            page = int(call.data.split("_")[-1])
+            
+            # نمایش صفحه جدید
+            if not responses:
+                bot.send_message(call.message.chat.id, "⚠️ هیچ پاسخ خودکاری تعریف نشده است!")
+                return
+                
+            # محاسبات صفحه‌بندی
+            items_per_page = 5
+            total_items = len(responses)
+            total_pages = (total_items + items_per_page - 1) // items_per_page
+            
+            # محدود کردن شماره صفحه
+            page = max(1, min(page, total_pages))
+            
+            start_idx = (page - 1) * items_per_page
+            end_idx = min(start_idx + items_per_page, total_items)
+            
+            # ایجاد متن پاسخ‌ها
+            responses_text = "📋 <b>پاسخ‌های خودکار تعریف شده:</b>\n\n"
+            
+            # ایجاد لیست پاسخ‌های خودکار
+            items = list(responses.items())[start_idx:end_idx]
+            for i, (question, answer) in enumerate(items, start=start_idx+1):
+                responses_text += f"{i}. <b>س:</b> {question}\n<b>ج:</b> {answer}\n\n"
+            
+            # اضافه کردن اطلاعات صفحه‌بندی
+            if total_pages > 1:
+                responses_text += f"<i>صفحه {page} از {total_pages}</i>"
+            
+            # ایجاد دکمه‌های مدیریت پاسخ‌ها
+            markup = telebot.types.InlineKeyboardMarkup()
+            markup.add(telebot.types.InlineKeyboardButton("➕ افزودن پاسخ جدید", callback_data="add_response_start"))
+            
+            # دکمه‌های صفحه‌بندی
+            if total_pages > 1:
+                pagination_buttons = []
+                if page > 1:
+                    pagination_buttons.append(telebot.types.InlineKeyboardButton("◀️ قبلی", callback_data=f"responses_page_{page-1}"))
+                if page < total_pages:
+                    pagination_buttons.append(telebot.types.InlineKeyboardButton("بعدی ▶️", callback_data=f"responses_page_{page+1}"))
+                markup.add(*pagination_buttons)
+            
+            # ویرایش پیام قبلی
+            bot.edit_message_text(
+                responses_text,
+                call.message.chat.id,
+                call.message.message_id,
+                parse_mode="HTML",
+                reply_markup=markup
+            )
+        except Exception as e:
+            print(f"⚠️ خطا در صفحه‌بندی پاسخ‌ها: {str(e)}")
+    elif call.data == "bot_status":
+        # نمایش آمار و وضعیت ربات
+        if call.from_user.id != ADMIN_CHAT_ID:
+            bot.send_message(call.message.chat.id, "⛔ شما دسترسی به این قابلیت را ندارید!")
+            return
+            
+        # جمع‌آوری اطلاعات
+        import psutil
+        import shutil
+        
+        # اطلاعات سیستم
+        cpu_percent = psutil.cpu_percent()
+        memory = psutil.virtual_memory()
+        disk = shutil.disk_usage("/")
+        
+        # اطلاعات ربات
+        channels_count = len(hashtag_manager.registered_channels)
+        hashtags_count = len(hashtag_manager.hashtag_cache)
+        responses_count = len(responses)
+        
+        # تبدیل مقادیر به واحدهای مناسب
+        def convert_size(size_bytes):
+            if size_bytes >= 1024 * 1024 * 1024:
+                return f"{size_bytes / (1024 * 1024 * 1024):.2f} GB"
+            elif size_bytes >= 1024 * 1024:
+                return f"{size_bytes / (1024 * 1024):.2f} MB"
+            elif size_bytes >= 1024:
+                return f"{size_bytes / 1024:.2f} KB"
+            else:
+                return f"{size_bytes} Bytes"
+        
+        # ایجاد متن اطلاعات
+        status_text = (
+            "📊 <b>وضعیت فعلی ربات:</b>\n\n"
+            f"<b>🤖 آمار ربات:</b>\n"
+            f"• کانال‌های مانیتورینگ: {channels_count}\n"
+            f"• هشتگ‌های ذخیره شده: {hashtags_count}\n"
+            f"• پاسخ‌های خودکار: {responses_count}\n\n"
+            f"<b>💻 اطلاعات سیستم:</b>\n"
+            f"• مصرف CPU: {cpu_percent}%\n"
+            f"• حافظه: {convert_size(memory.used)} از {convert_size(memory.total)} ({memory.percent}%)\n"
+            f"• فضای ذخیره‌سازی: {convert_size(disk.used)} از {convert_size(disk.total)} ({disk.used / disk.total * 100:.1f}%)\n\n"
+            f"<b>⚙️ سیستم‌های فعال:</b>\n"
+            f"• سیستم پینگ خودکار: هر 5 دقیقه\n"
+            f"• حداکثر ویدیوهای ذخیره: {MAX_VIDEOS_PER_FOLDER}\n"
+            f"• قابلیت کانال خصوصی: فعال"
+        )
+        
+        # ایجاد دکمه‌های مدیریتی
+        markup = telebot.types.InlineKeyboardMarkup()
+        markup.add(
+            telebot.types.InlineKeyboardButton("🧹 پاکسازی ویدیوها", callback_data="clear_videos"),
+            telebot.types.InlineKeyboardButton("🔍 نمایش کانال‌ها", callback_data="show_channels")
+        )
+        
+        bot.send_message(
+            call.message.chat.id,
+            status_text,
+            parse_mode="HTML",
+            reply_markup=markup
+        )
+    elif call.data == "clear_videos":
+        # پاکسازی ویدیوهای ذخیره شده
+        if call.from_user.id != ADMIN_CHAT_ID:
+            bot.send_message(call.message.chat.id, "⛔ شما دسترسی به این قابلیت را ندارید!")
+            return
+            
+        try:
+            # پاکسازی پوشه‌های ویدیو
+            cleared_youtube = clear_folder("videos", 0)
+            cleared_instagram = clear_folder("instagram_videos", 0)
+            
+            bot.send_message(
+                call.message.chat.id,
+                f"✅ پاکسازی ویدیوها با موفقیت انجام شد!\n\n"
+                f"• ویدیوهای یوتیوب پاک شده: {cleared_youtube}\n"
+                f"• ویدیوهای اینستاگرام پاک شده: {cleared_instagram}",
+                parse_mode="HTML"
+            )
+        except Exception as e:
+            bot.send_message(
+                call.message.chat.id,
+                f"⚠️ خطا در پاکسازی ویدیوها: {str(e)}",
+                parse_mode="HTML"
+            )
+    elif call.data == "add_channel_start":
+        # بررسی دسترسی ادمین
+        if call.from_user.id != ADMIN_CHAT_ID:
+            bot.send_message(call.message.chat.id, "⛔ شما دسترسی به این قابلیت را ندارید!")
+            return
+            
+        # شروع فرآیند افزودن کانال
+        bot.send_message(
+            call.message.chat.id,
+            "🔗 <b>افزودن کانال به مانیتورینگ</b>\n\n"
+            "لطفاً یکی از موارد زیر را ارسال کنید:\n\n"
+            "• آیدی کانال (مثال: @channel_id)\n"
+            "• لینک دعوت کانال (مثال: https://t.me/+abcdef123456)\n"
+            "• شناسه عددی کانال خصوصی (مثال: -1001234567890)\n\n"
+            "<b>نکته:</b> برای کانال‌های خصوصی یا عمومی محدودیتی وجود ندارد.",
+            parse_mode="HTML"
+        )
+        
+        # ذخیره وضعیت کاربر برای دریافت لینک کانال
+        STATES[call.from_user.id] = ADD_CHANNEL_WAITING_FOR_LINK
+    elif call.data == "add_channel_start":
+        # بررسی دسترسی ادمین
+        if call.from_user.id != ADMIN_CHAT_ID:
+            bot.send_message(call.message.chat.id, "⛔ شما دسترسی به این قابلیت را ندارید!")
+            return
+            
+        # شروع فرآیند افزودن کانال
+        bot.send_message(
+            call.message.chat.id,
+            "🔗 <b>افزودن کانال به مانیتورینگ</b>\n\n"
+            "لطفاً یکی از موارد زیر را ارسال کنید:\n\n"
+            "• آیدی کانال (مثال: @channel_id)\n"
+            "• لینک دعوت کانال (مثال: https://t.me/+abcdef123456)\n"
+            "• شناسه عددی کانال خصوصی (مثال: -1001234567890)\n\n"
+            "<b>نکته:</b> برای کانال‌های خصوصی یا عمومی محدودیتی وجود ندارد.",
+            parse_mode="HTML"
+        )
+        
+        # ذخیره وضعیت کاربر برای دریافت لینک کانال
+        ADD_CHANNEL_STATES[call.from_user.id] = ADD_CHANNEL_WAITING_FOR_LINK
+    elif call.data == "show_channels":
+        # نمایش کانال‌های ثبت شده با دکمه
+        channels = list(hashtag_manager.registered_channels)
+        
+        if not channels:
+            bot.send_message(call.message.chat.id, "📢 هیچ کانالی در لیست مانیتورینگ ثبت نشده است.")
+        else:
+            channels_text = "📢 <b>کانال‌های ثبت شده:</b>\n\n"
+            for i, channel in enumerate(channels, 1):
+                channels_text += f"{i}. <code>{channel}</code>\n"
+            
+            # ایجاد دکمه‌های حذف کانال
+            markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+            for channel in channels:
+                btn_text = f"❌ حذف {channel}"
+                markup.add(telebot.types.InlineKeyboardButton(
+                    btn_text, 
+                    callback_data=f"remove_channel_{channel}"
+                ))
+            
+            markup.add(telebot.types.InlineKeyboardButton("➕ افزودن کانال جدید", callback_data="add_channel_start"))
+            
+            bot.send_message(
+                call.message.chat.id, 
+                channels_text, 
+                parse_mode="HTML",
+                reply_markup=markup
+            )
+    elif call.data.startswith("remove_channel_"):
+        # حذف کانال با دکمه
+        if call.from_user.id != ADMIN_CHAT_ID:
+            bot.send_message(call.message.chat.id, "⛔ شما دسترسی به این قابلیت را ندارید!")
+            return
+            
+        channel_id = call.data.replace("remove_channel_", "")
+        
+        if hashtag_manager.remove_channel(channel_id):
+            bot.send_message(
+                call.message.chat.id, 
+                f"✅ کانال <code>{channel_id}</code> با موفقیت از لیست مانیتورینگ حذف شد.",
+                parse_mode="HTML"
+            )
+        else:
+            bot.send_message(
+                call.message.chat.id, 
+                f"⚠️ کانال <code>{channel_id}</code> در لیست مانیتورینگ یافت نشد!",
+                parse_mode="HTML"
+            )
 
 # دستور نمایش کانال‌های ثبت شده
 @bot.message_handler(commands=['channels'])
@@ -650,10 +990,77 @@ def unregister_channel_command(message):
     else:
         bot.reply_to(message, f"⚠️ کانال {channel_id} در لیست مانیتورینگ وجود ندارد!")
 
+# تشخیص و استخراج آیدی کانال از فرمت‌های مختلف
+def extract_channel_id(text):
+    """از متن ورودی، آیدی کانال را استخراج می‌کند"""
+    import re
+    
+    # حذف فاصله‌های اضافی
+    text = text.strip()
+    
+    # الگو برای آیدی منفی (کانال خصوصی)
+    negative_id_pattern = r'-\d+'
+    if re.match(negative_id_pattern, text):
+        return text
+    
+    # الگو برای لینک دعوت تلگرام
+    invite_link_pattern = r'(?:https?://)?(?:t(?:elegram)?\.(?:me|dog))/(?:\+|joinchat/)([\w-]+)'
+    invite_match = re.search(invite_link_pattern, text)
+    if invite_match:
+        # برای کانال‌های خصوصی، از کد دعوت استفاده می‌کنیم
+        return f"invite_{invite_match.group(1)}"
+    
+    # الگو برای لینک کانال عمومی
+    public_link_pattern = r'(?:https?://)?(?:t(?:elegram)?\.(?:me|dog))/([a-zA-Z][\w_]{3,30}[a-zA-Z\d])'
+    public_match = re.search(public_link_pattern, text)
+    if public_match:
+        return public_match.group(1)
+    
+    # الگو برای نام کاربری کانال با یا بدون @
+    username_pattern = r'@?([a-zA-Z][\w_]{3,30}[a-zA-Z\d])'
+    username_match = re.match(username_pattern, text)
+    if username_match:
+        return username_match.group(1)
+    
+    # الگوی دیگری پیدا نشد
+    return None
+
 # 📩 مدیریت پیام‌های دریافتی - با پردازش بهتر
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
     try:
+        # بررسی وضعیت کاربر - اگر منتظر دریافت آدرس کانال است
+        if message.from_user.id in ADD_CHANNEL_STATES and ADD_CHANNEL_STATES[message.from_user.id] == ADD_CHANNEL_WAITING_FOR_LINK:
+            # حذف وضعیت کاربر
+            del ADD_CHANNEL_STATES[message.from_user.id]
+            
+            # بررسی دسترسی ادمین
+            if message.from_user.id != ADMIN_CHAT_ID:
+                bot.reply_to(message, "⛔ شما دسترسی به این دستور را ندارید!")
+                return
+                
+            # استخراج آیدی کانال
+            channel_id = extract_channel_id(message.text)
+            
+            if not channel_id:
+                bot.reply_to(message, "⚠️ فرمت آدرس کانال یا لینک دعوت نامعتبر است!\nلطفاً مجدداً تلاش کنید یا از دستور /add_channel استفاده نمایید.")
+                return
+                
+            # اضافه کردن کانال به لیست مانیتورینگ
+            hashtag_manager.add_channel(channel_id)
+            
+            # ایجاد دکمه برای نمایش کانال‌های فعلی
+            markup = telebot.types.InlineKeyboardMarkup()
+            markup.add(telebot.types.InlineKeyboardButton("📋 مشاهده لیست کانال‌ها", callback_data="show_channels"))
+            
+            bot.reply_to(
+                message, 
+                f"✅ کانال <code>{channel_id}</code> با موفقیت به لیست مانیتورینگ اضافه شد!",
+                parse_mode="HTML",
+                reply_markup=markup
+            )
+            return
+        
         if not message.text:
             # ثبت پیام برای هشتگ‌ها اگر از کانال مورد نظر باشد
             hashtag_manager.register_message(message)
@@ -752,6 +1159,85 @@ def handle_edited_channel_post(message):
     except Exception as e:
         notify_admin(f"⚠️ خطا در پردازش پیام ویرایش شده کانال: {str(e)}")
 
+# 🚀 اضافه کردن ربات به کانال‌های خصوصی
+def join_private_channel(invite_link):
+    """تلاش برای ورود به کانال خصوصی با لینک دعوت"""
+    import requests
+    
+    try:
+        # استخراج کد دعوت از لینک
+        if invite_link.startswith("invite_"):
+            invite_hash = invite_link[7:]  # حذف "invite_" از ابتدای رشته
+        else:
+            # الگو برای استخراج کد دعوت از لینک
+            import re
+            match = re.search(r'/\+([a-zA-Z0-9_-]+)', invite_link)
+            if match:
+                invite_hash = match.group(1)
+            else:
+                return None, False
+            
+        # API تلگرام برای پیوستن به چت
+        join_url = f"https://api.telegram.org/bot{TOKEN}/joinChat"
+        
+        # تبدیل کد دعوت به فرمت مناسب
+        invite_link = f"https://t.me/+{invite_hash}"
+        
+        # ارسال درخواست به API تلگرام
+        response = requests.post(join_url, json={
+            "invite_link": invite_link
+        }, timeout=30)
+        
+        data = response.json()
+        
+        if data.get("ok", False):
+            # موفقیت‌آمیز - اطلاعات چت را برگردان
+            chat_id = data.get("result", {}).get("id")
+            return chat_id, True
+        else:
+            # خطا - نمایش پیام خطا
+            error = data.get("description", "خطای نامشخص")
+            print(f"⚠️ خطا در پیوستن به کانال خصوصی: {error}")
+            return None, False
+            
+    except Exception as e:
+        print(f"⚠️ خطا در پیوستن به کانال خصوصی: {str(e)}")
+        return None, False
+
+# 🔍 تشخیص و ورود به کانال‌ها در زمان اضافه شدن
+def register_channel_with_auto_join(user_id, channel_id):
+    """با تشخیص نوع کانال (خصوصی یا عمومی) سعی در ورود می‌کند"""
+    if not channel_id:
+        return False, "آدرس کانال یا لینک دعوت نامعتبر است!"
+        
+    # بررسی اگر کانال خصوصی با لینک دعوت است
+    if "t.me/+" in channel_id or "t.me/joinchat/" in channel_id or channel_id.startswith("invite_"):
+        # تلاش برای ورود به کانال
+        chat_id, success = join_private_channel(channel_id)
+        
+        if success and chat_id:
+            # اضافه کردن با آیدی عددی
+            hashtag_manager.add_channel(str(chat_id))
+            return True, f"✅ با موفقیت به کانال خصوصی پیوست و آن را به لیست مانیتورینگ اضافه کرد."
+        else:
+            return False, "⚠️ خطا در پیوستن به کانال خصوصی. ممکن است دسترسی‌های لازم را نداشته باشید یا لینک منقضی شده باشد."
+    
+    # بررسی اگر آیدی عددی منفی است (کانال خصوصی)
+    elif channel_id.startswith("-"):
+        # مستقیماً به لیست اضافه کن
+        hashtag_manager.add_channel(channel_id)
+        return True, f"✅ کانال خصوصی با آیدی <code>{channel_id}</code> با موفقیت به لیست مانیتورینگ اضافه شد!"
+        
+    # در غیر این صورت، کانال عمومی است
+    else:
+        # حذف @ از ابتدای نام کاربری
+        if channel_id.startswith('@'):
+            channel_id = channel_id[1:]
+            
+        # اضافه کردن کانال عمومی
+        hashtag_manager.add_channel(channel_id)
+        return True, f"✅ کانال عمومی <code>{channel_id}</code> با موفقیت به لیست مانیتورینگ اضافه شد!"
+
 # 🔄 اجرای ایمن ربات با تلاش مجدد هوشمند
 def safe_polling():
     consecutive_failures = 0
@@ -789,10 +1275,10 @@ def safe_polling():
 
 # 🔄 تابع پینگ خودکار برای جلوگیری از خاموشی ربات
 def keep_alive_ping():
-    """ارسال پینگ به ربات هر دقیقه برای جلوگیری از خاموش شدن"""
+    """ارسال پینگ به ربات هر 5 دقیقه برای جلوگیری از خاموش شدن"""
     import requests
     ping_url = f"https://api.telegram.org/bot{TOKEN}/getMe"
-    ping_interval = 60  # هر دقیقه یکبار
+    ping_interval = 300  # هر 5 دقیقه یکبار
     
     while True:
         try:
