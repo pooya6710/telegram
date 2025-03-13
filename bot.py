@@ -7,12 +7,23 @@ import json
 import sqlite3
 import datetime
 import threading
-from flask import Flask
+from flask import Flask, request
 import time
 import traceback
 from yt_dlp import YoutubeDL
 from requests.exceptions import ReadTimeout, ProxyError, ConnectionError
 
+app = Flask(__name__)
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    try:
+        json_str = request.get_data().decode("UTF-8")
+        update = telebot.types.Update.de_json(json_str)
+        bot.process_new_updates([update])
+    except Exception as e:
+        print(f"❌ خطا در دریافت پیام: {e}")
+    return "✅ Webhook دریافت شد!", 200
 SERVER_CACHE = {"status": None, "timestamp": None}
 
 def get_cached_server_status():
@@ -280,5 +291,5 @@ def start_bot():
             print(f"⚠ خطای بحرانی در اجرای ربات:\n{e}")
             time.sleep(15)
 if __name__ == "__main__":
-    print("🤖 Bot is running...")
-    safe_polling()
+    print("🚀 Webhook فعال شد!")
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
