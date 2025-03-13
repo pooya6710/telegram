@@ -1,139 +1,284 @@
-
-import os
 import telebot
-import logging
-import traceback
+import os
+import shutil  # برای دریافت وضعیت دیسک
+import psutil  # برای دریافت اطلاعات CPU و RAM
+import platform  # برای دریافت اطلاعات سیستم‌عامل
+import json
+import sqlite3
+import datetime
 import threading
+from flask import Flask
+import time
+import traceback
+from yt_dlp import YoutubeDL
+from requests.exceptions import ReadTimeout, ProxyError, ConnectionError
 
-# تنظیم سیستم لاگینگ
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+SERVER_CACHE = {"status": None, "timestamp": None}
 
-# تنظیم توکن ربات
-TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "7338644071:AAEex9j0nMualdoywHSGFiBoMAzRpkFypPk")
-OWNER_ID = os.environ.get("OWNER_ID", "")  # آیدی مالک ربات (اختیاری)
+def get_cached_server_status():
+    global SERVER_CACHE
+    if SERVER_CACHE["status"] and (datetime.datetime.now() - SERVER_CACHE["timestamp"]).seconds < 600:
+        return SERVER_CACHE["status"]
 
-if not TOKEN:
-    logger.error("❌ هیچ توکنی تنظیم نشده است! لطفا توکن را در متغیر محیطی TELEGRAM_BOT_TOKEN تنظیم کنید.")
-    exit(1)
+    if os.path.exists("server_status.json"):
+        try:
+            with open("server_status.json", "r", encoding="utf-8") as file:
+                data = json.load(file)
+                SERVER_CACHE["status"] = data["status"]
+                SERVER_CACHE["timestamp"] = datetime.datetime.strptime(data["timestamp"], "%Y-%m-%d %H:%M:%S")
+                return data["status"]
+        except Exception:
+            return None
+    return None
 
-# ایجاد نمونه ربات
+
+MESSAGES_DB_TEXT = "channel_messages.json"
+MESSAGES_DB_LINKS = "channel_links.json"
+MAX_MESSAGES = 100000  # حداکثر تعداد لینک‌های ذخیره‌شده
+
+# 📂 اگر فایل ذخیره‌ی پیام‌ها وجود نداشت، ایجادش کن
+if not os.path.exists(MESSAGES_DB_LINKS):
+    with open(MESSAGES_DB_LINKS, "w", encoding="utf-8") as file:
+        json.dump({}, file, ensure_ascii=False, indent=4)
+
+# 🔑 توکن ربات تلگرام
+TOKEN = '7338644071:AAEex9j0nMualdoywHSGFiBoMAzRpkFypPk'
 bot = telebot.TeleBot(TOKEN)
 
-# تعریف دستور /start
-@bot.message_handler(commands=['start'])
-def handle_start(message):
-    bot.reply_to(message, "سلام! به ربات چندکاره خوش آمدید. 🤖\nبرای دیدن راهنما دستور /help را بفرستید.")
+# 📢 آیدی عددی ادمین
+ADMIN_CHAT_ID = 286420965  
 
-# تعریف دستور /help
-@bot.message_handler(commands=['help'])
-def handle_help(message):
-    help_text = """
-🤖 راهنمای استفاده از ربات:
-/start - شروع کار با ربات
-/help - نمایش این راهنما
-/info - دریافت اطلاعات
+# 📂 مسیر ذخیره ویدیوها
+VIDEO_FOLDER = "videos"
+INSTAGRAM_FOLDER = "instagram_videos"
+os.makedirs(VIDEO_FOLDER, exist_ok=True)
+os.makedirs(INSTAGRAM_FOLDER, exist_ok=True)
+# 📌 بررسی وضعیت سرور
+@bot.message_handler(commands=["server_status"])
+def server_status(message):
+    try:
+        cached_status = get_cached_server_status()
+        if cached_status:
+            bot.send_message(message.chat.id, cached_status, parse_mode="Markdown")
+            return
 
-همچنین می‌توانید لینک ویدیوی یوتیوب یا اینستاگرام را ارسال کنید تا دانلود شود.
-    """
-    bot.reply_to(message, help_text)
+        # اطلاعات دیسک
+        total, used, free = shutil.disk_usage("/")
+        total_gb = total / (1024 ** 3)
+        used_gb = used / (1024 ** 3)
+        free_gb = free / (1024 ** 3)
 
-# تعریف دستور /info
-@bot.message_handler(commands=['info'])
-def handle_info(message):
-    info_text = "🤖 این ربات چندکاره است و قابلیت‌های متنوعی دارد."
-    bot.reply_to(message, info_text)
+        # مصرف CPU و RAM
+        cpu_usage = psutil.cpu_percent(interval=1)
+        ram = psutil.virtual_memory()
+        ram_used = ram.used / (1024 ** 3)
+        ram_total = ram.total / (1024 ** 3)
 
-# پاسخ به پیام های معمولی
+        # مدت زمان روشن بودن سرور
+        uptime_seconds = time.time() - psutil.boot_time()
+        uptime_hours = uptime_seconds // 3600
+        uptime_minutes = (uptime_seconds % 3600) // 60
+
+        status_msg = (
+            f"📊 **وضعیت سرور:**\n"
+            f"🔹 **CPU:** `{cpu_usage}%`\n"
+            f"🔹 **RAM:** `{ram_used:.2f}GB / {ram_total:.2f}GB`\n"
+            f"🔹 **فضای باقی‌مانده:** `{free_gb:.2f}GB`\n"
+            f"🔹 **مدت روشن بودن:** `{int(uptime_hours)} ساعت`\n"
+        )
+
+        # ذخیره وضعیت سرور در یک فایل JSON برای کش کردن
+        with open("server_status.json", "w", encoding="utf-8") as file:
+            json.dump({"timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "status": status_msg}, file)
+
+        bot.send_message(message.chat.id, status_msg, parse_mode="Markdown")
+
+    except Exception as e:
+        bot.send_message(message.chat.id, "⚠ خطا در دریافت وضعیت سرور!")
+
+# 📂 مدیریت پاسخ‌های متنی
+def load_responses():
+    try:
+        with open("responses.json", "r", encoding="utf-8") as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return {}
+
+def save_responses():
+    with open("responses.json", "w", encoding="utf-8") as file:
+        json.dump(responses, file, ensure_ascii=False, indent=4)
+
+responses = load_responses()
+
+# 📌 استخراج لینک مستقیم ویدیو بدون دانلود
+def get_direct_video_url(link):
+    try:
+        ydl_opts = {
+            'quiet': True,
+            'skip_download': True,
+            'noplaylist': True,
+            'force_generic_extractor': False,
+            'format': 'best[ext=mp4]/best',
+        }
+        with YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(link, download=False)
+            return info.get('url', None)
+    except Exception as e:
+        notify_admin(f"⚠️ خطا در دریافت لینک مستقیم ویدیو:\n{traceback.format_exc()}")
+        return None
+
+# 📌 دانلود ویدیو از اینستاگرام
+def download_instagram(link):
+    try:
+        clear_folder(INSTAGRAM_FOLDER)  # حذف فایل‌های قدیمی
+
+        ydl_opts = {
+            'outtmpl': f'{INSTAGRAM_FOLDER}/%(id)s.%(ext)s',
+            'format': 'mp4/best',
+            'quiet': False,
+            'noplaylist': True,
+        }
+
+        with YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(link, download=True)
+            video_path = f"{INSTAGRAM_FOLDER}/{info['id']}.mp4"
+            return video_path if os.path.exists(video_path) else None
+
+    except Exception as e:
+        notify_admin(f"⚠️ خطا در دانلود ویدیو از اینستاگرام:\n{traceback.format_exc()}")
+        return None
+
+# 📌 دانلود ویدیو از یوتیوب
+def download_youtube(link):
+    try:
+        clear_folder(VIDEO_FOLDER)  # حذف فایل‌های قدیمی
+
+        ydl_opts = {
+            'outtmpl': f'{VIDEO_FOLDER}/%(id)s.%(ext)s',
+            'format': 'mp4/best',
+            'quiet': False,
+            'noplaylist': True,
+        }
+
+        with YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(link, download=True)
+            video_path = f"{VIDEO_FOLDER}/{info['id']}.mp4"
+            return video_path if os.path.exists(video_path) else None
+
+    except Exception as e:
+        notify_admin(f"⚠️ خطا در دانلود ویدیو از یوتیوب:\n{traceback.format_exc()}")
+        return None
+
+# 📢 ارسال پیام به ادمین در صورت وقوع خطا
+def notify_admin(message):
+    try:
+        bot.send_message(ADMIN_CHAT_ID, message[:4000])
+    except Exception as e:
+        print(f"⚠️ خطا در ارسال پیام به ادمین: {e}")
+
+# 📩 مدیریت پیام‌های دریافتی
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
-    text = message.text
-    
-    # بررسی لینک یوتیوب یا اینستاگرام
-    if "youtube.com" in text or "youtu.be" in text:
-        bot.reply_to(message, "لینک یوتیوب شناسایی شد. در حال پردازش...")
-    elif "instagram.com" in text:
-        bot.reply_to(message, "لینک اینستاگرام شناسایی شد. در حال پردازش...")
-    else:
-        bot.reply_to(message, f"پیام دریافت شد: {text}")
-
-# پاکسازی فایل‌های قدیمی
-def cleanup_old_videos():
-    """پاکسازی ویدیوهای قدیمی برای صرفه‌جویی در فضای ذخیره‌سازی"""
     try:
-        import os
-        import time
-        
-        # حداکثر عمر فایل (2 روز)
-        MAX_AGE = 2 * 24 * 60 * 60
-        
-        # بررسی پوشه‌های ویدیو
-        for folder in ["videos", "instagram_videos"]:
-            if not os.path.exists(folder):
-                continue
-                
-            now = time.time()
-            count = 0
-            
-            for filename in os.listdir(folder):
-                file_path = os.path.join(folder, filename)
-                
-                # بررسی سن فایل
-                if os.path.isfile(file_path) and (now - os.path.getctime(file_path)) > MAX_AGE:
-                    os.remove(file_path)
-                    count += 1
-                    
-            if count > 0:
-                logger.info(f"🧹 {count} فایل قدیمی از پوشه {folder} پاک شد.")
-                
-    except Exception as e:
-        logger.error(f"❌ خطا در پاکسازی فایل‌های قدیمی: {e}")
+        text = message.text.strip()
 
-# تابع setup_bot برای راه‌اندازی ربات
-def setup_bot():
-    """راه‌اندازی ربات تلگرام و ثبت تمام هندلرها"""
-    logger.info("🤖 ربات شروع به کار کرد!")
+        if "instagram.com" in text or "youtube.com" in text or "youtu.be" in text:
+            direct_url = get_direct_video_url(text)
+            if direct_url:
+                bot.send_video(chat_id=message.chat.id, video=direct_url)
+            else:
+                video_path = download_instagram(text) if "instagram.com" in text else download_youtube(text)
+                if video_path and os.path.exists(video_path):
+                    send_video_with_handling(message.chat.id, video_path)
+                else:
+                    bot.reply_to(message, "⚠️ ویدیوی موردنظر دانلود نشد. لطفاً لینک را بررسی کنید.")
+            return
 
-    try:
-        # ایجاد پوشه‌های مورد نیاز
-        os.makedirs("videos", exist_ok=True)
-        os.makedirs("instagram_videos", exist_ok=True)
-        
-        # شروع پولینگ ربات در یک ترد جداگانه
-        polling_thread = threading.Thread(target=bot.infinity_polling, kwargs={'none_stop': True})
-        polling_thread.daemon = True  # اجازه می‌دهد برنامه اصلی بسته شود حتی اگر این ترد همچنان اجرا می‌شود
-        polling_thread.start()
-
-        # ارسال پیام به مالک در صورت راه‌اندازی مجدد
-        if OWNER_ID:
+        elif "،" in text:
             try:
-                bot.send_message(OWNER_ID, "🔄 ربات مجدداً راه‌اندازی شد و آماده کار است!")
-            except Exception as e:
-                logger.error(f"خطا در ارسال پیام به مالک: {e}")
+                question, answer = map(str.strip, text.split("،", 1))
+                responses[question.lower()] = answer
+                save_responses()
+                bot.reply_to(message, f"✅ سوال '{question}' با پاسخ '{answer}' اضافه شد!")
+            except ValueError:
+                bot.reply_to(message, "⚠️ لطفاً فرمت 'سوال، جواب' را رعایت کنید.")
+            return
 
-        # زمانبندی پاکسازی فایل‌های قدیمی
-        def schedule_cleanup():
-            cleanup_old_videos()
-            # اجرای مجدد هر 6 ساعت
-            threading.Timer(6 * 60 * 60, schedule_cleanup).start()
-            
-        # شروع زمانبندی پاکسازی
-        schedule_cleanup()
-        
-        return True
+        else:
+            key = text.lower()
+            if key in responses:
+                bot.reply_to(message, responses[key])
+
     except Exception as e:
-        logger.error(f"❌ خطا در راه‌اندازی ربات: {e}")
-        traceback.print_exc()
-        return False
+        notify_admin(f"⚠️ خطا در پردازش پیام:\n{traceback.format_exc()}")
 
+def keep_awake():
+    while True:
+        # بررسی مقدار استفاده از CPU
+        cpu_usage = psutil.cpu_percent(interval=1)
+        if cpu_usage < 5:  # اگر پردازش تقریباً غیرفعال شد، یک عملیات کوچک انجام بده
+            print("✅ جلوگیری از خوابیدن ربات با افزایش پردازش")
+            _ = [x**2 for x in range(10000)]  # انجام یک پردازش کوچک
+
+        time.sleep(300)  # ⏳ هر 5 دقیقه یک‌بار بررسی شود
+
+# اجرای تابع در یک ترد جداگانه
+threading.Thread(target=keep_awake, daemon=True).start()
+LAST_USAGE = {"cpu": 0, "ram": 0}
+high_usage_alert = {"cpu": False, "ram": False}  # وضعیت هشدار CPU و RAM
+
+def monitor_server():
+    global LAST_USAGE, high_usage_alert
+    while True:
+        cpu_usage = psutil.cpu_percent(interval=1)
+        ram_usage = psutil.virtual_memory().percent
+
+        # اگر CPU بالای ۸۰٪ باشد و قبلاً هشدار نداده باشد
+        if cpu_usage > 80:
+            if not high_usage_alert["cpu"]:
+                time.sleep(300)  # بررسی مجدد بعد از 5 دقیقه
+                cpu_recheck = psutil.cpu_percent(interval=1)
+                if cpu_recheck > 80:  # هنوز بالای ۸۰٪ است
+                    bot.send_message(ADMIN_CHAT_ID, f"⚠ **هشدار: مصرف CPU بالای ۸۰٪ باقی مانده!**\n🔹 **CPU:** {cpu_recheck}%")
+                    high_usage_alert["cpu"] = True  # ثبت هشدار
+        else:
+            high_usage_alert["cpu"] = False  # اگر CPU کاهش یافت، هشدار را ریست کن
+
+        # اگر RAM بالای ۸۰٪ باشد و قبلاً هشدار نداده باشد
+        if ram_usage > 80:
+            if not high_usage_alert["ram"]:
+                time.sleep(300)  # بررسی مجدد بعد از 5 دقیقه
+                ram_recheck = psutil.virtual_memory().percent
+                if ram_recheck > 80:  # هنوز بالای ۸۰٪ است
+                    bot.send_message(ADMIN_CHAT_ID, f"⚠ **هشدار: مصرف RAM بالای ۸۰٪ باقی مانده!**\n🔹 **RAM:** {ram_recheck}%")
+                    high_usage_alert["ram"] = True  # ثبت هشدار
+        else:
+            high_usage_alert["ram"] = False  # اگر RAM کاهش یافت، هشدار را ریست کن
+
+        LAST_USAGE["cpu"] = cpu_usage
+        LAST_USAGE["ram"] = ram_usage
+
+        time.sleep(60)  # هر ۱ دقیقه بررسی شود
+threading.Thread(target=monitor_server, daemon=True).start()
+
+# 🔄 اجرای ایمن ربات
+def safe_polling():
+    while True:
+        try:
+            bot.polling(none_stop=True, interval=15, timeout=30)  # ⬅ افزایش timeout برای کاهش مصرف CPU
+        except (ReadTimeout, ProxyError, ConnectionResetError):
+            time.sleep(30)  # ⬅ جلوگیری از درخواست‌های مکرر در صورت قطع شدن ارتباط
+        except Exception as e:
+            notify_admin(f"⚠️ خطای بحرانی در اجرای ربات:\n{traceback.format_exc()}")
+            time.sleep(30)
+# 📌 تابع شروع ربات برای اجرا از main.py
+def start_bot():
+    while True:
+        try:
+            bot.polling(none_stop=True, interval=10, timeout=30)
+        except Exception as e:
+            print(f"⚠ خطای بحرانی در اجرای ربات:\n{e}")
+            time.sleep(15)
 if __name__ == "__main__":
-    if setup_bot():
-        # ادامه اجرای ربات
-        logger.info("ربات در حال اجرا...")
-        # جلوگیری از خاتمه برنامه
-        import time
-        while True:
-            time.sleep(10)
+    print("🤖 Bot is running...")
+    safe_polling()
