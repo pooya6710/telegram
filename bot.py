@@ -7,6 +7,7 @@ import concurrent.futures
 import time
 import traceback
 import logging
+import types
 from requests.exceptions import ReadTimeout, ProxyError, ConnectionError
 
 # تنظیم لاگر اصلی
@@ -552,8 +553,9 @@ def help_command(message):
         # ایجاد کیبورد اینلاین با دکمه‌های مختلف
         markup = telebot.types.InlineKeyboardMarkup(row_width=2)
         quality_btn = telebot.types.InlineKeyboardButton("📊 انتخاب کیفیت ویدیو", callback_data="select_quality")
+        hashtag_btn = telebot.types.InlineKeyboardButton("🔖 راهنمای هشتگ", callback_data="hashtag_help")
         
-        markup.add(quality_btn)
+        markup.add(quality_btn, hashtag_btn)
         
         # ارسال پیام راهنما
         bot.send_message(
@@ -566,6 +568,10 @@ def help_command(message):
             "📥 <b>دانلود ویدیو:</b>\n"
             "• کافیست لینک ویدیوی مورد نظر را از یوتیوب یا اینستاگرام ارسال کنید\n"
             "• می‌توانید کیفیت مورد نظر را از منوی زیر انتخاب کنید\n\n"
+            "🔖 <b>جستجوی هشتگ:</b>\n"
+            "• برای مدیریت هشتگ‌ها از دستورات /add_hashtag، /remove_hashtag و /hashtags استفاده کنید\n"
+            "• برای مدیریت کانال‌ها از دستورات /add_channel، /remove_channel و /channels استفاده کنید\n"
+            "• برای جستجوی هشتگ در کانال‌ها از دستور /search استفاده کنید\n\n"
             "⚠️ <b>نکات مهم:</b>\n"
             "• برای صرفه‌جویی در حجم اینترنت و سرعت بالاتر، از کیفیت‌های پایین‌تر استفاده کنید\n"
             "• کیفیت پیش‌فرض 240p است\n"
@@ -879,9 +885,46 @@ def search_hashtag_in_channels(message, hashtag, processing_msg_id):
                 # دریافت پیام‌های کانال
                 messages = []
                 
-                # اینجا کد دریافت پیام‌های کانال پیاده‌سازی شود
-                # این بخش به تابع اختصاصی bot.get_channel_history نیاز دارد
-                # که باید به صورت جداگانه پیاده‌سازی شود
+                try:
+                    # تبدیل channel_id به عدد اگر ممکن باشد (برای کانال‌های با آیدی عددی)
+                    numeric_channel_id = None
+                    if isinstance(channel_id, str):
+                        if channel_id.startswith('-100') and channel_id[4:].isdigit():
+                            numeric_channel_id = int(channel_id)
+                        elif channel_id.lstrip('-').isdigit():
+                            numeric_channel_id = int(channel_id)
+                
+                    # استفاده از channel_links.json برای بازیابی پیام‌ها
+                    channel_data = {}
+                    if os.path.exists('channel_links.json'):
+                        with open('channel_links.json', 'r', encoding='utf-8') as f:
+                            channel_data = json.load(f)
+                    
+                    # بررسی وجود پیام‌های کانال در فایل
+                    channel_key = str(numeric_channel_id) if numeric_channel_id else channel_id
+                    if channel_key in channel_data:
+                        debug_log(f"پیام‌های کانال {channel_id} از فایل بازیابی شد", "INFO")
+                        
+                        # تبدیل داده‌های کانال به فرمت مناسب
+                        for msg_data in channel_data[channel_key]:
+                            # اطمینان از وجود فیلد text
+                            if 'text' not in msg_data:
+                                continue
+                                
+                            messages.append(types.SimpleNamespace(
+                                chat_id=msg_data.get('chat_id'),
+                                message_id=msg_data.get('message_id'),
+                                text=msg_data.get('text', ''),
+                                date=datetime.datetime.strptime(
+                                    msg_data.get('date', '2025-01-01 00:00:00'), 
+                                    '%Y-%m-%d %H:%M:%S'
+                                )
+                            ))
+                    else:
+                        debug_log(f"پیام‌های کانال {channel_id} در فایل یافت نشد", "INFO")
+                        
+                except Exception as get_history_error:
+                    debug_log(f"خطا در دریافت تاریخچه کانال: {str(get_history_error)}", "WARNING")
                 
                 # بررسی هشتگ در پیام‌ها
                 for msg in messages:
