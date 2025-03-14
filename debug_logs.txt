@@ -614,3 +614,536 @@
   }
 }
 ==================================================
+2025-03-14 02:55:39,472 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 02:55:39",
+  "level": "INFO",
+  "message": "توکن تلگرام با موفقیت خوانده شد (طول: 46)",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 361
+  }
+}
+{
+  "timestamp": "2025-03-14 02:55:39",
+  "level": "INFO",
+  "message": "توکن تلگرام با موفقیت خوانده شد (طول: 46)",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 361
+  }
+}
+==================================================
+2025-03-14 03:04:26,385 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 03:04:26",
+  "level": "INFO",
+  "message": "توکن تلگرام با موفقیت خوانده شد (طول: 46)",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 361
+  }
+}
+{
+  "timestamp": "2025-03-14 03:04:26",
+  "level": "INFO",
+  "message": "توکن تلگرام با موفقیت خوانده شد (طول: 46)",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 361
+  }
+}
+==================================================
+2025-03-14 03:04:35,802 - telegram_bot_debug - DEBUG - {
+  "timestamp": "2025-03-14 03:04:35",
+  "level": "DEBUG",
+  "message": "شروع اجرای bot_check",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 383
+  },
+  "context": {
+    "args": "()",
+    "kwargs": "{}"
+  }
+}
+{
+  "timestamp": "2025-03-14 03:04:35",
+  "level": "DEBUG",
+  "message": "شروع اجرای bot_check",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 383
+  },
+  "context": {
+    "args": "()",
+    "kwargs": "{}"
+  }
+}
+==================================================
+2025-03-14 03:04:35,802 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 03:04:35",
+  "level": "INFO",
+  "message": "درخواست بررسی وضعیت ربات دریافت شد",
+  "location": {
+    "file": "main.py",
+    "function": "bot_check",
+    "line": 375
+  }
+}
+{
+  "timestamp": "2025-03-14 03:04:35",
+  "level": "INFO",
+  "message": "درخواست بررسی وضعیت ربات دریافت شد",
+  "location": {
+    "file": "main.py",
+    "function": "bot_check",
+    "line": 375
+  }
+}
+==================================================
+2025-03-14 03:04:35,802 - telegram_bot_debug - DEBUG - {
+  "timestamp": "2025-03-14 03:04:35",
+  "level": "DEBUG",
+  "message": "در حال دریافت اطلاعات ربات از API تلگرام",
+  "location": {
+    "file": "main.py",
+    "function": "bot_check",
+    "line": 379
+  }
+}
+{
+  "timestamp": "2025-03-14 03:04:35",
+  "level": "DEBUG",
+  "message": "در حال دریافت اطلاعات ربات از API تلگرام",
+  "location": {
+    "file": "main.py",
+    "function": "bot_check",
+    "line": 379
+  }
+}
+==================================================
+2025-03-14 03:04:36,360 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 03:04:36",
+  "level": "INFO",
+  "message": "اطلاعات ربات با موفقیت دریافت شد",
+  "location": {
+    "file": "main.py",
+    "function": "bot_check",
+    "line": 391
+  },
+  "context": {
+    "bot_username": "sarbaazzz_bot",
+    "bot_id": 7338644071
+  }
+}
+{
+  "timestamp": "2025-03-14 03:04:36",
+  "level": "INFO",
+  "message": "اطلاعات ربات با موفقیت دریافت شد",
+  "location": {
+    "file": "main.py",
+    "function": "bot_check",
+    "line": 391
+  },
+  "context": {
+    "bot_username": "sarbaazzz_bot",
+    "bot_id": 7338644071
+  }
+}
+==================================================
+2025-03-14 03:04:36,361 - telegram_bot_debug - DEBUG - {
+  "timestamp": "2025-03-14 03:04:36",
+  "level": "DEBUG",
+  "message": "اطلاعات محیط اجرا",
+  "location": {
+    "file": "main.py",
+    "function": "bot_check",
+    "line": 418
+  },
+  "context": {
+    "environment": {
+      "webhook_mode": "true",
+      "port": "5000",
+      "has_token": true
+    }
+  }
+}
+{
+  "timestamp": "2025-03-14 03:04:36",
+  "level": "DEBUG",
+  "message": "اطلاعات محیط اجرا",
+  "location": {
+    "file": "main.py",
+    "function": "bot_check",
+    "line": 418
+  },
+  "context": {
+    "environment": {
+      "webhook_mode": "true",
+      "port": "5000",
+      "has_token": true
+    }
+  }
+}
+==================================================
+2025-03-14 03:04:36,361 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 03:04:36",
+  "level": "INFO",
+  "message": "پاسخ بررسی وضعیت ربات ارسال شد",
+  "location": {
+    "file": "main.py",
+    "function": "bot_check",
+    "line": 430
+  },
+  "context": {
+    "status": "ok",
+    "timestamp": "2025-03-14 03:04:36"
+  }
+}
+{
+  "timestamp": "2025-03-14 03:04:36",
+  "level": "INFO",
+  "message": "پاسخ بررسی وضعیت ربات ارسال شد",
+  "location": {
+    "file": "main.py",
+    "function": "bot_check",
+    "line": 430
+  },
+  "context": {
+    "status": "ok",
+    "timestamp": "2025-03-14 03:04:36"
+  }
+}
+==================================================
+2025-03-14 03:04:36,361 - telegram_bot_debug - DEBUG - {
+  "timestamp": "2025-03-14 03:04:36",
+  "level": "DEBUG",
+  "message": "پایان اجرای bot_check",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 393
+  },
+  "context": {
+    "execution_time": "0.5590 seconds",
+    "result": "(<Response 258 bytes [200 OK]>, 200)"
+  }
+}
+{
+  "timestamp": "2025-03-14 03:04:36",
+  "level": "DEBUG",
+  "message": "پایان اجرای bot_check",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 393
+  },
+  "context": {
+    "execution_time": "0.5590 seconds",
+    "result": "(<Response 258 bytes [200 OK]>, 200)"
+  }
+}
+==================================================
+2025-03-14 03:04:48,639 - telegram_bot_debug - DEBUG - {
+  "timestamp": "2025-03-14 03:04:48",
+  "level": "DEBUG",
+  "message": "شروع اجرای send_test_message",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 383
+  },
+  "context": {
+    "args": "()",
+    "kwargs": "{}"
+  }
+}
+{
+  "timestamp": "2025-03-14 03:04:48",
+  "level": "DEBUG",
+  "message": "شروع اجرای send_test_message",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 383
+  },
+  "context": {
+    "args": "()",
+    "kwargs": "{}"
+  }
+}
+==================================================
+2025-03-14 03:04:48,640 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 03:04:48",
+  "level": "INFO",
+  "message": "درخواست ارسال پیام آزمایشی به ادمین دریافت شد",
+  "location": {
+    "file": "main.py",
+    "function": "send_test_message",
+    "line": 443
+  }
+}
+{
+  "timestamp": "2025-03-14 03:04:48",
+  "level": "INFO",
+  "message": "درخواست ارسال پیام آزمایشی به ادمین دریافت شد",
+  "location": {
+    "file": "main.py",
+    "function": "send_test_message",
+    "line": 443
+  }
+}
+==================================================
+2025-03-14 03:04:48,640 - telegram_bot_debug - DEBUG - {
+  "timestamp": "2025-03-14 03:04:48",
+  "level": "DEBUG",
+  "message": "در حال ارسال پیام آزمایشی",
+  "location": {
+    "file": "main.py",
+    "function": "send_test_message",
+    "line": 448
+  },
+  "context": {
+    "message": "🔄 پیام آزمایشی: 2025-03-14 03:04:48",
+    "admin_chat_id": 286420965
+  }
+}
+{
+  "timestamp": "2025-03-14 03:04:48",
+  "level": "DEBUG",
+  "message": "در حال ارسال پیام آزمایشی",
+  "location": {
+    "file": "main.py",
+    "function": "send_test_message",
+    "line": 448
+  },
+  "context": {
+    "message": "🔄 پیام آزمایشی: 2025-03-14 03:04:48",
+    "admin_chat_id": 286420965
+  }
+}
+==================================================
+2025-03-14 03:04:48,883 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 03:04:48",
+  "level": "INFO",
+  "message": "پیام با موفقیت ارسال شد",
+  "location": {
+    "file": "main.py",
+    "function": "send_test_message",
+    "line": 456
+  },
+  "context": {
+    "message_id": 1165
+  }
+}
+{
+  "timestamp": "2025-03-14 03:04:48",
+  "level": "INFO",
+  "message": "پیام با موفقیت ارسال شد",
+  "location": {
+    "file": "main.py",
+    "function": "send_test_message",
+    "line": 456
+  },
+  "context": {
+    "message_id": 1165
+  }
+}
+==================================================
+2025-03-14 03:04:49,145 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 03:04:49",
+  "level": "INFO",
+  "message": "پیام اطلاع‌رسانی با موفقیت ارسال شد",
+  "location": {
+    "file": "main.py",
+    "function": "send_test_message",
+    "line": 462
+  }
+}
+{
+  "timestamp": "2025-03-14 03:04:49",
+  "level": "INFO",
+  "message": "پیام اطلاع‌رسانی با موفقیت ارسال شد",
+  "location": {
+    "file": "main.py",
+    "function": "send_test_message",
+    "line": 462
+  }
+}
+==================================================
+2025-03-14 03:04:49,145 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 03:04:49",
+  "level": "INFO",
+  "message": "پاسخ ارسال پیام آزمایشی آماده شد",
+  "location": {
+    "file": "main.py",
+    "function": "send_test_message",
+    "line": 472
+  },
+  "context": {
+    "status": "ok",
+    "timestamp": "2025-03-14 03:04:49"
+  }
+}
+{
+  "timestamp": "2025-03-14 03:04:49",
+  "level": "INFO",
+  "message": "پاسخ ارسال پیام آزمایشی آماده شد",
+  "location": {
+    "file": "main.py",
+    "function": "send_test_message",
+    "line": 472
+  },
+  "context": {
+    "status": "ok",
+    "timestamp": "2025-03-14 03:04:49"
+  }
+}
+==================================================
+2025-03-14 03:04:49,146 - telegram_bot_debug - DEBUG - {
+  "timestamp": "2025-03-14 03:04:49",
+  "level": "DEBUG",
+  "message": "پایان اجرای send_test_message",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 393
+  },
+  "context": {
+    "execution_time": "0.5059 seconds",
+    "result": "<Response 268 bytes [200 OK]>"
+  }
+}
+{
+  "timestamp": "2025-03-14 03:04:49",
+  "level": "DEBUG",
+  "message": "پایان اجرای send_test_message",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 393
+  },
+  "context": {
+    "execution_time": "0.5059 seconds",
+    "result": "<Response 268 bytes [200 OK]>"
+  }
+}
+==================================================
+2025-03-14 03:05:06,356 - telegram_bot_debug - ERROR - {
+  "timestamp": "2025-03-14 03:05:06",
+  "level": "ERROR",
+  "message": "⚠️ متغیر محیطی TELEGRAM_BOT_TOKEN تنظیم نشده است!",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 345
+  }
+}
+{
+  "timestamp": "2025-03-14 03:05:06",
+  "level": "ERROR",
+  "message": "⚠️ متغیر محیطی TELEGRAM_BOT_TOKEN تنظیم نشده است!",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 345
+  }
+}
+==================================================
+2025-03-14 03:05:06,357 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 03:05:06",
+  "level": "INFO",
+  "message": "توکن تلگرام با موفقیت خوانده شد (طول: 13)",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 361
+  }
+}
+{
+  "timestamp": "2025-03-14 03:05:06",
+  "level": "INFO",
+  "message": "توکن تلگرام با موفقیت خوانده شد (طول: 13)",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 361
+  }
+}
+==================================================
+2025-03-14 03:05:06,360 - telegram_bot_debug - ERROR - {
+  "timestamp": "2025-03-14 03:05:06",
+  "level": "ERROR",
+  "message": "⚠️ خطا در تنظیم توکن ربات: invalid literal for int() with base 10: 'missing'",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 367
+  },
+  "context": {
+    "error_type": "ValueError",
+    "traceback": "{\n  \"error_type\": \"ValueError\",\n  \"error_message\": \"invalid literal for int() with base 10: 'missing'\",\n  \"timestamp\": \"2025-03-14 03:05:06\",\n  \"stack_trace\": [\n    {\n      \"file\": \"/home/runner/workspace/bot.py\",\n      \"line\": 364,\n      \"function\": \"<module>\",\n      \"code\": \"bot = telebot.TeleBot(TOKEN)\"\n    },\n    {\n      \"file\": \"/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/telebot/__init__.py\",\n      \"line\": 198,\n      \"function\": \"__init__\",\n      \"code\": \"self.bot_id: Union[int, None] = util.extract_bot_id(self.token) # subject to change in future, unspecified\"\n    },\n    {\n      \"file\": \"/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/telebot/util.py\",\n      \"line\": 706,\n      \"function\": \"extract_bot_id\",\n      \"code\": \"return int(token.split(':')[0])\"\n    }\n  ]\n}"
+  }
+}
+{
+  "timestamp": "2025-03-14 03:05:06",
+  "level": "ERROR",
+  "message": "⚠️ خطا در تنظیم توکن ربات: invalid literal for int() with base 10: 'missing'",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 367
+  },
+  "context": {
+    "error_type": "ValueError",
+    "traceback": "{\n  \"error_type\": \"ValueError\",\n  \"error_message\": \"invalid literal for int() with base 10: 'missing'\",\n  \"timestamp\": \"2025-03-14 03:05:06\",\n  \"stack_trace\": [\n    {\n      \"file\": \"/home/runner/workspace/bot.py\",\n      \"line\": 364,\n      \"function\": \"<module>\",\n      \"code\": \"bot = telebot.TeleBot(TOKEN)\"\n    },\n    {\n      \"file\": \"/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/telebot/__init__.py\",\n      \"line\": 198,\n      \"function\": \"__init__\",\n      \"code\": \"self.bot_id: Union[int, None] = util.extract_bot_id(self.token) # subject to change in future, unspecified\"\n    },\n    {\n      \"file\": \"/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/telebot/util.py\",\n      \"line\": 706,\n      \"function\": \"extract_bot_id\",\n      \"code\": \"return int(token.split(':')[0])\"\n    }\n  ]\n}"
+  }
+}
+==================================================
+2025-03-14 03:10:58,664 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 03:10:58",
+  "level": "INFO",
+  "message": "توکن تلگرام با موفقیت خوانده شد (طول: 46)",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 362
+  }
+}
+{
+  "timestamp": "2025-03-14 03:10:58",
+  "level": "INFO",
+  "message": "توکن تلگرام با موفقیت خوانده شد (طول: 46)",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 362
+  }
+}
+==================================================
+2025-03-14 03:12:38,480 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 03:12:38",
+  "level": "INFO",
+  "message": "توکن تلگرام با موفقیت خوانده شد (طول: 46)",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 362
+  }
+}
+{
+  "timestamp": "2025-03-14 03:12:38",
+  "level": "INFO",
+  "message": "توکن تلگرام با موفقیت خوانده شد (طول: 46)",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 362
+  }
+}
+==================================================

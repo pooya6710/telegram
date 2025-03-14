@@ -1,4 +1,5 @@
 import os
+import sys
 import logging
 import time
 import threading
@@ -37,6 +38,33 @@ except ImportError as e:
     
     def format_exception_with_context(e):
         return traceback.format_exc()
+
+# بررسی توکن تلگرام قبل از وارد کردن ماژول بات
+def check_telegram_token():
+    token = os.environ.get('TELEGRAM_BOT_TOKEN')
+    if not token:
+        logger.error("⚠️ متغیر محیطی TELEGRAM_BOT_TOKEN تنظیم نشده است!")
+        return False, "توکن تلگرام تنظیم نشده است"
+    
+    # بررسی فرمت توکن (باید شامل کولون باشد و بخش اول آن عدد باشد)
+    if ":" not in token:
+        logger.error("⚠️ فرمت توکن معتبر نیست (باید شامل کولون (:) باشد)")
+        return False, "فرمت توکن تلگرام نامعتبر است - کولون یافت نشد"
+    
+    # تلاش برای تبدیل بخش اول توکن به عدد صحیح (برای اطمینان از صحت فرمت)
+    try:
+        int(token.split(':')[0])
+        return True, None
+    except ValueError:
+        logger.error("⚠️ بخش اول توکن باید یک عدد صحیح باشد")
+        return False, "فرمت توکن تلگرام نامعتبر است - بخش اول باید عدد باشد"
+
+# بررسی توکن
+token_valid, token_error = check_telegram_token()
+if not token_valid:
+    logger.error(f"⚠️ خطا در توکن تلگرام: {token_error}")
+    print(f"⚠️ برنامه به دلیل خطا در توکن تلگرام متوقف می‌شود: {token_error}")
+    sys.exit(1)
 
 # وارد کردن ماژول‌های بات 
 from bot import start_bot, get_cached_server_status
