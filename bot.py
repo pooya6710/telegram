@@ -857,17 +857,28 @@ def start_bot():
     if WEBHOOK_MODE:
         # تنظیمات وب‌هوک
         try:
-            webhook_host = os.environ.get('WEBHOOK_HOST', 'https://yourbotdomain.repl.co')
+            # برای سرور ریل‌وی، آدرس دامنه را تنظیم می‌کنیم
+            # اگر متغیر محیطی RAILWAY_PUBLIC_DOMAIN تنظیم شده باشد، از آن استفاده می‌کنیم
+            webhook_host = os.environ.get('DOMAIN_URL')
+            
+            if not webhook_host:
+                webhook_host = "https://workshop.railway.app"
+                
+            print(f"📌 آدرس وب‌هوک: {webhook_host}")
+                
             webhook_path = f"/{TOKEN}/"
             webhook_url = f"{webhook_host}{webhook_path}"
+            
+            print(f"🔄 در حال تنظیم وب‌هوک با آدرس: {webhook_host}")
             
             # حذف وب‌هوک قبلی (اگر وجود داشته باشد)
             bot.remove_webhook()
             time.sleep(0.2)
             
-            # تنظیم وب‌هوک جدید
+            # تنظیم وب‌هوک جدید - بدون نمایش توکن در لاگ‌ها
             bot.set_webhook(url=webhook_url)
-            print(f"🔌 وب‌هوک با موفقیت در {webhook_url} تنظیم شد")
+            masked_url = webhook_url.replace(TOKEN, "***TOKEN***")
+            print(f"🔌 وب‌هوک با موفقیت در {masked_url} تنظیم شد")
             return True  # وب‌هوک با موفقیت تنظیم شد
         except Exception as e:
             print(f"⚠ خطا در تنظیم وب‌هوک: {e}")

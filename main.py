@@ -99,8 +99,18 @@ def run_bot():
         # ذخیره وضعیت در فایل
         with open(SERVER_STATUS_FILE, 'w', encoding='utf-8') as f:
             json.dump({"is_bot_running": True}, f)
+            
         # اجرای ربات در یک ترد جداگانه
-        bot_thread = threading.Thread(target=start_bot)
+        def bot_runner():
+            # تلاش برای اجرا با وب‌هوک
+            webhook_success = start_bot()
+            if not webhook_success:
+                # اگر وب‌هوک موفق نبود، به حالت polling تغییر وضعیت می‌دهیم
+                logger.info("⚠️ وب‌هوک با خطا مواجه شد. تغییر به حالت polling...")
+                os.environ['WEBHOOK_MODE'] = 'false'
+                start_bot()  # اجرای مجدد در حالت polling
+        
+        bot_thread = threading.Thread(target=bot_runner)
         bot_thread.daemon = True
         bot_thread.start()
         logger.info("🚀 ربات تلگرام با موفقیت راه‌اندازی شد!")
