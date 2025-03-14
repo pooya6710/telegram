@@ -477,47 +477,73 @@ def handle_callback_query(call):
                     call.message.message_id
                 )
                 
-                # بررسی وضعیت سرور
-                cached_status = get_cached_server_status()
-                if cached_status:
-                    bot.edit_message_text(
-                        cached_status,
-                        call.message.chat.id,
-                        call.message.message_id,
-                        parse_mode="Markdown"
-                    )
-                    return
+                # بررسی وضعیت سرور از کش
+                try:
+                    cached_status = get_cached_server_status()
+                    if cached_status:
+                        bot.edit_message_text(
+                            cached_status,
+                            call.message.chat.id,
+                            call.message.message_id,
+                            parse_mode="Markdown"
+                        )
+                        return
+                except Exception as cache_error:
+                    print(f"خطا در بررسی کش وضعیت سرور: {cache_error}")
+                
+                # ساخت پیام وضعیت سیستم با مدیریت خطا برای هر بخش
+                status_sections = []
+                status_sections.append("📊 **وضعیت سرور:**\n")
+                
+                # اطلاعات CPU
+                try:
+                    cpu_usage = psutil.cpu_percent(interval=0.5)
+                    status_sections.append(f"🔹 **CPU:** `{cpu_usage}%`\n")
+                except Exception as cpu_error:
+                    status_sections.append("🔹 **CPU:** `اطلاعات در دسترس نیست`\n")
+                    print(f"خطا در دریافت اطلاعات CPU: {cpu_error}")
+                
+                # اطلاعات حافظه
+                try:
+                    ram = psutil.virtual_memory()
+                    ram_used = ram.used / (1024**3)
+                    ram_total = ram.total / (1024**3)
+                    status_sections.append(f"🔹 **RAM:** `{ram_used:.2f}GB / {ram_total:.2f}GB`\n")
+                except Exception as ram_error:
+                    status_sections.append("🔹 **RAM:** `اطلاعات در دسترس نیست`\n")
+                    print(f"خطا در دریافت اطلاعات RAM: {ram_error}")
                 
                 # اطلاعات دیسک
-                total, used, free = shutil.disk_usage("/")
-                total_gb = total / (1024**3)
-                used_gb = used / (1024**3)
-                free_gb = free / (1024**3)
-                
-                # مصرف CPU و RAM
-                cpu_usage = psutil.cpu_percent(interval=1)
-                ram = psutil.virtual_memory()
-                ram_used = ram.used / (1024**3)
-                ram_total = ram.total / (1024**3)
+                try:
+                    total, used, free = shutil.disk_usage("/")
+                    free_gb = free / (1024**3)
+                    status_sections.append(f"🔹 **فضای باقی‌مانده:** `{free_gb:.2f}GB`\n")
+                except Exception as disk_error:
+                    status_sections.append("🔹 **فضای باقی‌مانده:** `اطلاعات در دسترس نیست`\n")
+                    print(f"خطا در دریافت اطلاعات دیسک: {disk_error}")
                 
                 # مدت زمان روشن بودن سرور
-                uptime_seconds = time.time() - psutil.boot_time()
-                uptime_hours = uptime_seconds // 3600
-                uptime_minutes = (uptime_seconds % 3600) // 60
+                try:
+                    uptime_seconds = time.time() - psutil.boot_time()
+                    uptime_hours = uptime_seconds // 3600
+                    status_sections.append(f"🔹 **مدت روشن بودن:** `{int(uptime_hours)} ساعت`\n")
+                except Exception as uptime_error:
+                    status_sections.append("🔹 **مدت روشن بودن:** `اطلاعات در دسترس نیست`\n")
+                    print(f"خطا در دریافت اطلاعات uptime: {uptime_error}")
                 
-                status_msg = (f"📊 **وضعیت سرور:**\n"
-                             f"🔹 **CPU:** `{cpu_usage}%`\n"
-                             f"🔹 **RAM:** `{ram_used:.2f}GB / {ram_total:.2f}GB`\n"
-                             f"🔹 **فضای باقی‌مانده:** `{free_gb:.2f}GB`\n"
-                             f"🔹 **مدت روشن بودن:** `{int(uptime_hours)} ساعت`\n")
+                # ترکیب بخش‌های پیام
+                status_msg = "".join(status_sections)
                 
                 # ذخیره وضعیت سرور در یک فایل JSON برای کش کردن
-                with open("server_status.json", "w", encoding="utf-8") as file:
-                    json.dump(
-                        {
-                            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                            "status": status_msg
-                        }, file)
+                try:
+                    with open("server_status.json", "w", encoding="utf-8") as file:
+                        json.dump(
+                            {
+                                "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                "status": status_msg
+                            }, file)
+                except Exception as cache_write_error:
+                    print(f"خطا در ذخیره کش وضعیت سرور: {cache_write_error}")
                 
                 # ایجاد دکمه بازگشت به منوی اصلی
                 markup = telebot.types.InlineKeyboardMarkup()
@@ -531,7 +557,17 @@ def handle_callback_query(call):
                     reply_markup=markup
                 )
             except Exception as e:
-                bot.send_message(call.message.chat.id, f"⚠ خطا در دریافت وضعیت سرور: {str(e)}")
+                error_message = f"⚠ خطا در دریافت وضعیت سرور: {str(e)}"
+                try:
+                    # تلاش برای ویرایش پیام فعلی
+                    bot.edit_message_text(
+                        error_message,
+                        call.message.chat.id,
+                        call.message.message_id
+                    )
+                except:
+                    # اگر ویرایش پیام با خطا مواجه شد، پیام جدید ارسال کن
+                    bot.send_message(call.message.chat.id, error_message)
             return
             
         # 🔙 بازگشت به منوی اصلی
