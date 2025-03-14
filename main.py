@@ -171,10 +171,20 @@ def webhook_handler(token):
     from bot import webhook
     if token == os.environ.get('TELEGRAM_BOT_TOKEN', ''):
         print(f"✅ درخواست وب‌هوک دریافت شد!")
-        return webhook()
+        try:
+            result = webhook()
+            print(f"✅ وب‌هوک با موفقیت پردازش شد. نتیجه: {result}")
+            return result
+        except Exception as e:
+            print(f"❌ خطا در پردازش وب‌هوک: {e}")
+            import traceback
+            print(traceback.format_exc())
+            return f"خطای سرور: {str(e)}", 500
     else:
-        print(f"⚠️ درخواست وب‌هوک با توکن نامعتبر: {token[:5]}...")
-    return '', 403
+        # برای امنیت بیشتر، تمام توکن را نمایش نمی‌دهیم
+        masked_token = token[:5] + "..." if len(token) > 5 else token
+        print(f"⚠️ درخواست وب‌هوک با توکن نامعتبر: {masked_token}")
+        return '', 403
 
 # مسیر ساده برای تست وب‌هوک
 @app.route('/webhook-test', methods=['GET'])
@@ -184,6 +194,75 @@ def webhook_test():
         "message": "سرور وب‌هوک فعال است",
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     })
+
+# مسیر برای بررسی وضعیت ربات و اطلاعات آن
+@app.route('/bot-check', methods=['GET'])
+def bot_check():
+    from bot import bot  # واردکردن ربات
+    bot_info = None
+    try:
+        # تلاش برای دریافت اطلاعات از تلگرام
+        bot_info = bot.get_me()
+        bot_status = {
+            "id": bot_info.id,
+            "username": bot_info.username,
+            "first_name": bot_info.first_name,
+            "is_bot": bot_info.is_bot,
+            "can_receive_messages": True
+        }
+        status_code = 200
+    except Exception as e:
+        # در صورت خطا
+        bot_status = {
+            "error": str(e),
+            "is_connected": False,
+            "traceback": traceback.format_exc()
+        }
+        status_code = 500
+    
+    # برگرداندن اطلاعات
+    return jsonify({
+        "status": "ok" if bot_info else "error",
+        "bot": bot_status,
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "environment": {
+            "webhook_mode": os.environ.get('WEBHOOK_MODE', 'true'),
+            "port": os.environ.get('PORT', '5000'),
+            "has_token": bool(os.environ.get('TELEGRAM_BOT_TOKEN', ''))
+        }
+    }), status_code
+
+# مسیر برای ارسال پیام آزمایشی به ادمین
+@app.route('/send-test-message', methods=['GET'])
+def send_test_message():
+    from bot import bot, ADMIN_CHAT_ID, notify_admin  # واردکردن ربات و آیدی ادمین
+    
+    try:
+        # تلاش برای ارسال پیام آزمایشی به ادمین
+        message = f"🔄 پیام آزمایشی: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        
+        # روش اول: مستقیم با تابع ربات
+        result = bot.send_message(ADMIN_CHAT_ID, message)
+        message_id = result.message_id
+        
+        # روش دوم: استفاده از تابع notify_admin
+        notify_admin("📢 یک پیام آزمایشی با تابع notify_admin")
+        
+        return jsonify({
+            "status": "ok",
+            "message": "پیام آزمایشی با موفقیت ارسال شد",
+            "message_id": message_id,
+            "admin_chat_id": ADMIN_CHAT_ID,
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        })
+    except Exception as e:
+        # در صورت خطا
+        return jsonify({
+            "status": "error",
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }), 500
 
 # اجرای سرور Flask
 if __name__ == "__main__":

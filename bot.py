@@ -53,12 +53,30 @@ thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=3)
 # برای دریافت وب‌هوک از فلسک استفاده می‌کنیم
 def webhook():
     try:
+        # دریافت داده‌های JSON از درخواست
         json_str = request.get_data().decode("UTF-8")
+        print(f"📥 داده دریافتی وب‌هوک: {json_str[:100]}...")  # نمایش 100 کاراکتر اول برای دیباگ
+        
+        # تبدیل به آبجکت Update تلگرام
         update = telebot.types.Update.de_json(json_str)
+        
+        # بررسی برای دیباگ
+        if hasattr(update, 'message') and update.message is not None:
+            print(f"🔔 پیام جدید از کاربر {update.message.from_user.id}: {update.message.text}")
+        
+        # پردازش پیام
         bot.process_new_updates([update])
+        print("✅ پیام با موفقیت پردازش شد.")
         return "✅ Webhook دریافت شد!", 200
+    except UnicodeDecodeError as ude:
+        print(f"❌ خطا در رمزگشایی داده‌ها: {ude}")
+        return f"خطای رمزگشایی", 400
+    except ValueError as ve:
+        print(f"❌ خطا در تبدیل JSON: {ve}")
+        return f"خطای JSON", 400
     except Exception as e:
         print(f"❌ خطا در دریافت پیام: {e}")
+        print(f"❌ جزئیات خطا: {traceback.format_exc()}")
         return f"❌ خطا: {e}", 500
 
 
