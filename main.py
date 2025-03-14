@@ -17,6 +17,7 @@ except ImportError:
 
 # ایجاد اپلیکیشن Flask
 app = Flask(__name__)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'default-secret-key-for-development')
 
 # تنظیم لاگ‌ها
 logging.basicConfig(level=logging.INFO)

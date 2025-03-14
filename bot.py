@@ -66,20 +66,37 @@ SERVER_CACHE = {"status": None, "timestamp": None}
 
 
 def get_cached_server_status():
+    """دریافت وضعیت سرور از کش با مدیریت خطای بهتر"""
     global SERVER_CACHE
-    if SERVER_CACHE["status"] and (datetime.datetime.now() -
-                                   SERVER_CACHE["timestamp"]).seconds < 600:
-        return SERVER_CACHE["status"]
+    
+    # اگر وضعیت در کش موجود باشد و کمتر از 10 دقیقه (600 ثانیه) از آخرین بروزرسانی گذشته باشد
+    try:
+        if SERVER_CACHE["status"] is not None and SERVER_CACHE["timestamp"] is not None:
+            time_diff = (datetime.datetime.now() - SERVER_CACHE["timestamp"]).total_seconds()
+            if time_diff < 600:
+                return SERVER_CACHE["status"]
+    except Exception as e:
+        print(f"⚠️ خطا در بررسی کش: {e}")
 
+    # اگر وضعیت در کش نباشد یا منقضی شده باشد، از فایل بخوان
     if os.path.exists("server_status.json"):
         try:
             with open("server_status.json", "r", encoding="utf-8") as file:
                 data = json.load(file)
-                SERVER_CACHE["status"] = data["status"]
-                SERVER_CACHE["timestamp"] = datetime.datetime.strptime(
-                    data["timestamp"], "%Y-%m-%d %H:%M:%S")
-                return data["status"]
-        except Exception:
+                
+                if "status" in data and "timestamp" in data:
+                    try:
+                        timestamp = datetime.datetime.strptime(data["timestamp"], "%Y-%m-%d %H:%M:%S")
+                        SERVER_CACHE["status"] = data["status"]
+                        SERVER_CACHE["timestamp"] = timestamp
+                        return data["status"]
+                    except ValueError as e:
+                        print(f"⚠️ خطا در تبدیل تاریخ: {e}")
+                        return None
+                else:
+                    return None
+        except Exception as e:
+            print(f"⚠️ خطا در خواندن فایل کش: {e}")
             return None
     return None
 
@@ -208,6 +225,7 @@ def help_command(message):
 @bot.message_handler(commands=["server_status"])
 def server_status(message):
     try:
+        # ابتدا بررسی شود که آیا وضعیت در کش موجود است
         cached_status = get_cached_server_status()
         if cached_status:
             bot.send_message(message.chat.id,
@@ -215,43 +233,84 @@ def server_status(message):
                              parse_mode="Markdown")
             return
 
-        # اطلاعات دیسک
-        total, used, free = shutil.disk_usage("/")
-        total_gb = total / (1024**3)
-        used_gb = used / (1024**3)
-        free_gb = free / (1024**3)
-
-        # مصرف CPU و RAM
-        cpu_usage = psutil.cpu_percent(interval=1)
-        ram = psutil.virtual_memory()
-        ram_used = ram.used / (1024**3)
-        ram_total = ram.total / (1024**3)
-
-        # مدت زمان روشن بودن سرور
-        uptime_seconds = time.time() - psutil.boot_time()
-        uptime_hours = uptime_seconds // 3600
-        uptime_minutes = (uptime_seconds % 3600) // 60
-
-        status_msg = (f"📊 **وضعیت سرور:**\n"
-                      f"🔹 **CPU:** `{cpu_usage}%`\n"
-                      f"🔹 **RAM:** `{ram_used:.2f}GB / {ram_total:.2f}GB`\n"
-                      f"🔹 **فضای باقی‌مانده:** `{free_gb:.2f}GB`\n"
-                      f"🔹 **مدت روشن بودن:** `{int(uptime_hours)} ساعت`\n")
-
+        # ساخت پیام وضعیت سیستم با مدیریت خطا برای هر بخش
+        status_sections = []
+        status_sections.append("📊 **وضعیت سرور:**\n")
+        
+        # سیستم عامل و پایتون
+        try:
+            status_sections.append(f"🔹 **سیستم عامل:** `{platform.platform()}`\n")
+            status_sections.append(f"🔹 **پایتون:** `{platform.python_version()}`\n")
+        except Exception as sys_error:
+            status_sections.append("🔹 **سیستم عامل:** `اطلاعات در دسترس نیست`\n")
+            print(f"خطا در دریافت اطلاعات سیستم: {sys_error}")
+            
+        # وضعیت ربات
+        status_sections.append(f"🔹 **وضعیت ربات:** `فعال ✅`\n")
+        
+        # اگر psutil موجود باشد، از آن استفاده کن
+        if 'psutil' in globals():
+            # اطلاعات CPU
+            try:
+                cpu_usage = psutil.cpu_percent(interval=0.5)
+                status_sections.append(f"🔹 **CPU:** `{cpu_usage}%`\n")
+            except Exception as cpu_error:
+                status_sections.append("🔹 **CPU:** `اطلاعات در دسترس نیست`\n")
+                print(f"خطا در دریافت اطلاعات CPU: {cpu_error}")
+            
+            # اطلاعات حافظه
+            try:
+                ram = psutil.virtual_memory()
+                ram_used = ram.used / (1024**3)
+                ram_total = ram.total / (1024**3)
+                status_sections.append(f"🔹 **RAM:** `{ram_used:.2f}GB / {ram_total:.2f}GB`\n")
+            except Exception as ram_error:
+                status_sections.append("🔹 **RAM:** `اطلاعات در دسترس نیست`\n")
+                print(f"خطا در دریافت اطلاعات RAM: {ram_error}")
+        else:
+            status_sections.append("🔹 **CPU/RAM:** `اطلاعات در دسترس نیست`\n")
+        
+        # اطلاعات دیسک با shutil
+        if 'shutil' in globals():
+            try:
+                total, used, free = shutil.disk_usage("/")
+                free_gb = free / (1024**3)
+                status_sections.append(f"🔹 **فضای باقی‌مانده:** `{free_gb:.2f}GB`\n")
+            except Exception as disk_error:
+                status_sections.append("🔹 **فضای باقی‌مانده:** `اطلاعات در دسترس نیست`\n")
+                print(f"خطا در دریافت اطلاعات دیسک: {disk_error}")
+        else:
+            status_sections.append("🔹 **فضای دیسک:** `اطلاعات در دسترس نیست`\n")
+        
+        # اطلاعات زمان
+        try:
+            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            status_sections.append(f"🔹 **زمان سرور:** `{current_time}`\n")
+        except Exception as time_error:
+            status_sections.append("🔹 **زمان سرور:** `اطلاعات در دسترس نیست`\n")
+            print(f"خطا در دریافت اطلاعات زمان: {time_error}")
+        
+        # ترکیب بخش‌های پیام
+        status_msg = "".join(status_sections)
+        
         # ذخیره وضعیت سرور در یک فایل JSON برای کش کردن
-        with open("server_status.json", "w", encoding="utf-8") as file:
-            json.dump(
-                {
-                    "timestamp":
-                    datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "status":
-                    status_msg
-                }, file)
+        try:
+            with open("server_status.json", "w", encoding="utf-8") as file:
+                json.dump(
+                    {
+                        "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "status": status_msg
+                    }, file)
+        except Exception as cache_write_error:
+            print(f"خطا در ذخیره کش وضعیت سرور: {cache_write_error}")
 
+        # ارسال پیام نهایی به کاربر
         bot.send_message(message.chat.id, status_msg, parse_mode="Markdown")
 
     except Exception as e:
-        bot.send_message(message.chat.id, "⚠ خطا در دریافت وضعیت سرور!")
+        error_message = f"⚠ خطا در دریافت وضعیت سرور: {str(e)}"
+        bot.send_message(message.chat.id, error_message)
+        notify_admin(f"خطا در اجرای دستور server_status: {str(e)}\n{traceback.format_exc()}")
 
 
 # 📂 مدیریت پاسخ‌های متنی
@@ -525,41 +584,68 @@ def handle_callback_query(call):
                 status_sections = []
                 status_sections.append("📊 **وضعیت سرور:**\n")
                 
-                # اطلاعات CPU
+                # سیستم عامل و پایتون
                 try:
-                    cpu_usage = psutil.cpu_percent(interval=0.5)
-                    status_sections.append(f"🔹 **CPU:** `{cpu_usage}%`\n")
-                except Exception as cpu_error:
-                    status_sections.append("🔹 **CPU:** `اطلاعات در دسترس نیست`\n")
-                    print(f"خطا در دریافت اطلاعات CPU: {cpu_error}")
+                    status_sections.append(f"🔹 **سیستم عامل:** `{platform.platform()}`\n")
+                    status_sections.append(f"🔹 **پایتون:** `{platform.python_version()}`\n")
+                except Exception as sys_error:
+                    status_sections.append("🔹 **سیستم عامل:** `اطلاعات در دسترس نیست`\n")
+                    print(f"خطا در دریافت اطلاعات سیستم: {sys_error}")
+                    
+                # وضعیت ربات
+                status_sections.append(f"🔹 **وضعیت ربات:** `فعال ✅`\n")
                 
-                # اطلاعات حافظه
-                try:
-                    ram = psutil.virtual_memory()
-                    ram_used = ram.used / (1024**3)
-                    ram_total = ram.total / (1024**3)
-                    status_sections.append(f"🔹 **RAM:** `{ram_used:.2f}GB / {ram_total:.2f}GB`\n")
-                except Exception as ram_error:
-                    status_sections.append("🔹 **RAM:** `اطلاعات در دسترس نیست`\n")
-                    print(f"خطا در دریافت اطلاعات RAM: {ram_error}")
+                # اگر psutil موجود باشد، از آن استفاده کن
+                if 'psutil' in globals():
+                    # اطلاعات CPU
+                    try:
+                        cpu_usage = psutil.cpu_percent(interval=0.5)
+                        status_sections.append(f"🔹 **CPU:** `{cpu_usage}%`\n")
+                    except Exception as cpu_error:
+                        status_sections.append("🔹 **CPU:** `اطلاعات در دسترس نیست`\n")
+                        print(f"خطا در دریافت اطلاعات CPU: {cpu_error}")
+                    
+                    # اطلاعات حافظه
+                    try:
+                        ram = psutil.virtual_memory()
+                        ram_used = ram.used / (1024**3)
+                        ram_total = ram.total / (1024**3)
+                        status_sections.append(f"🔹 **RAM:** `{ram_used:.2f}GB / {ram_total:.2f}GB`\n")
+                    except Exception as ram_error:
+                        status_sections.append("🔹 **RAM:** `اطلاعات در دسترس نیست`\n")
+                        print(f"خطا در دریافت اطلاعات RAM: {ram_error}")
+                else:
+                    status_sections.append("🔹 **CPU/RAM:** `اطلاعات در دسترس نیست`\n")
                 
-                # اطلاعات دیسک
-                try:
-                    total, used, free = shutil.disk_usage("/")
-                    free_gb = free / (1024**3)
-                    status_sections.append(f"🔹 **فضای باقی‌مانده:** `{free_gb:.2f}GB`\n")
-                except Exception as disk_error:
-                    status_sections.append("🔹 **فضای باقی‌مانده:** `اطلاعات در دسترس نیست`\n")
-                    print(f"خطا در دریافت اطلاعات دیسک: {disk_error}")
+                # اطلاعات دیسک با shutil
+                if 'shutil' in globals():
+                    try:
+                        total, used, free = shutil.disk_usage("/")
+                        free_gb = free / (1024**3)
+                        status_sections.append(f"🔹 **فضای باقی‌مانده:** `{free_gb:.2f}GB`\n")
+                    except Exception as disk_error:
+                        status_sections.append("🔹 **فضای باقی‌مانده:** `اطلاعات در دسترس نیست`\n")
+                        print(f"خطا در دریافت اطلاعات دیسک: {disk_error}")
+                else:
+                    status_sections.append("🔹 **فضای دیسک:** `اطلاعات در دسترس نیست`\n")
                 
-                # مدت زمان روشن بودن سرور
+                # اطلاعات زمان
                 try:
-                    uptime_seconds = time.time() - psutil.boot_time()
-                    uptime_hours = uptime_seconds // 3600
-                    status_sections.append(f"🔹 **مدت روشن بودن:** `{int(uptime_hours)} ساعت`\n")
-                except Exception as uptime_error:
-                    status_sections.append("🔹 **مدت روشن بودن:** `اطلاعات در دسترس نیست`\n")
-                    print(f"خطا در دریافت اطلاعات uptime: {uptime_error}")
+                    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    status_sections.append(f"🔹 **زمان سرور:** `{current_time}`\n")
+                    
+                    # مدت زمان روشن بودن سرور با psutil
+                    if 'psutil' in globals():
+                        try:
+                            uptime_seconds = time.time() - psutil.boot_time()
+                            uptime_hours = uptime_seconds // 3600
+                            status_sections.append(f"🔹 **مدت روشن بودن:** `{int(uptime_hours)} ساعت`\n")
+                        except Exception as uptime_error:
+                            status_sections.append("🔹 **مدت روشن بودن:** `اطلاعات در دسترس نیست`\n")
+                            print(f"خطا در دریافت اطلاعات uptime: {uptime_error}")
+                except Exception as time_error:
+                    status_sections.append("🔹 **زمان سرور:** `اطلاعات در دسترس نیست`\n")
+                    print(f"خطا در دریافت اطلاعات زمان: {time_error}")
                 
                 # ترکیب بخش‌های پیام
                 status_msg = "".join(status_sections)
