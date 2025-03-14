@@ -387,8 +387,8 @@ except Exception as e:
 ADMIN_CHAT_ID = 286420965
 
 # 📊 تنظیمات بهینه‌سازی فضا
-MAX_VIDEOS_TO_KEEP = 2  # حداکثر تعداد ویدئو‌های ذخیره‌شده برای هر کاربر (کاهش برای بهبود عملکرد)
-VIDEO_CACHE_TIMEOUT = 60 * 60 * 6  # مدت زمان نگهداری کش ویدیو (6 ساعت)
+MAX_VIDEOS_TO_KEEP = 0  # حداکثر تعداد ویدئو‌های ذخیره‌شده (صفر = حذف تمام فایل‌ها پس از ارسال)
+VIDEO_CACHE_TIMEOUT = 60 * 10  # مدت زمان نگهداری کش ویدیو (10 دقیقه)
 
 # 📂 مسیر ذخیره ویدیوها
 VIDEO_FOLDER = "videos"
@@ -411,8 +411,11 @@ DEFAULT_VIDEO_QUALITY = "240p"  # کیفیت پیش‌فرض برای صرفه�
 # 🔖 فایل ذخیره اطلاعات هشتگ‌ها
 HASHTAGS_FILE = "hashtags.json"
 
-# پیام‌های بازیابی شده برای هر هشتگ
+# پیام‌های بازیابی شده برای هر هشتگ 
 hashtag_cache = {}
+
+# زمان آخرین پاکسازی فایل‌ها
+last_cleanup_time = 0
 
 # تعداد حداکثر پیام برای جستجو در هر کانال
 MAX_SEARCH_MESSAGES = 1000
@@ -451,7 +454,7 @@ def save_hashtags(data):
         debug_log(f"خطا در ذخیره اطلاعات هشتگ‌ها: {e}", "ERROR")
         return False
 
-# 🧹 پاکسازی فایل‌های قدیمی و نگهداری حداکثر تعداد مشخصی فایل
+# 🧹 پاکسازی فایل‌های قدیمی و حذف تمام فایل‌ها
 def clear_folder(folder_path, max_files=MAX_VIDEOS_TO_KEEP):
     """حذف فایل‌های قدیمی و نگهداری حداکثر تعداد مشخصی فایل"""
     try:
@@ -474,9 +477,12 @@ def clear_folder(folder_path, max_files=MAX_VIDEOS_TO_KEEP):
                 # فقط فایل‌ها را پردازش می‌کنیم (نه پوشه‌ها)
                 if os.path.isfile(item_path):
                     files.append(item)
-                    
-            # بررسی آیا به پاکسازی نیاز است
-            if len(files) >= max_files:
+            
+            # اگر max_files صفر باشد، همه فایل‌ها را حذف می‌کنیم
+            if max_files == 0:
+                files_to_delete = files
+            # در غیر این صورت، فقط فایل‌های قدیمی را حذف می‌کنیم
+            elif len(files) > max_files:
                 # مرتب‌سازی فایل‌ها بر اساس زمان تغییر (قدیمی‌ترین اول)
                 try:
                     files = sorted(files, key=lambda x: os.path.getmtime(os.path.join(folder_path, x)))
@@ -486,25 +492,28 @@ def clear_folder(folder_path, max_files=MAX_VIDEOS_TO_KEEP):
                     files = sorted(files)
                 
                 # تعداد فایل‌هایی که باید حذف شوند
-                files_to_delete = files[:-max_files+1]  # یک فایل کمتر حذف می‌کنیم تا جا برای فایل جدید باشد
+                files_to_delete = files[:-max_files] if max_files > 0 else files
+            else:
+                # اگر تعداد فایل‌ها کمتر از حد مجاز است و max_files غیرصفر است، نیازی به حذف نیست
+                return
                 
-                debug_log(f"پاکسازی پوشه {folder_path}", "INFO", {
-                    "total_files": len(files),
-                    "files_to_delete": len(files_to_delete),
-                    "max_files": max_files
-                })
-                
-                # حذف فایل‌های قدیمی
-                deleted_count = 0
-                for old_file in files_to_delete:
-                    try:
-                        file_path = os.path.join(folder_path, old_file)
-                        os.remove(file_path)
-                        deleted_count += 1
-                    except Exception as delete_error:
-                        debug_log(f"خطا در حذف فایل {old_file}", "WARNING", {"error": str(delete_error)})
-                
-                debug_log(f"پاکسازی پوشه {folder_path} انجام شد", "INFO", {"deleted_files": deleted_count})
+            debug_log(f"پاکسازی پوشه {folder_path}", "INFO", {
+                "total_files": len(files),
+                "files_to_delete": len(files_to_delete),
+                "max_files": max_files
+            })
+            
+            # حذف فایل‌های قدیمی
+            deleted_count = 0
+            for old_file in files_to_delete:
+                try:
+                    file_path = os.path.join(folder_path, old_file)
+                    os.remove(file_path)
+                    deleted_count += 1
+                except Exception as delete_error:
+                    debug_log(f"خطا در حذف فایل {old_file}", "WARNING", {"error": str(delete_error)})
+            
+            debug_log(f"پاکسازی پوشه {folder_path} انجام شد", "INFO", {"deleted_files": deleted_count})
         except Exception as list_error:
             debug_log(f"خطا در خواندن لیست فایل‌های پوشه", "ERROR", {"error": str(list_error)})
             
@@ -1115,12 +1124,27 @@ responses = load_responses()
 
 
 # 📌 استخراج لینک مستقیم ویدیو بدون دانلود
+# کش لینک‌های ویدیو برای جلوگیری از استخراج مجدد
+video_url_cache = {}
+
 def get_direct_video_url(link):
     try:
         # بررسی معتبر بودن لینک
         if not link or not isinstance(link, str):
             debug_log("لینک نامعتبر در get_direct_video_url", "WARNING", {"link": str(link)})
             return None
+        
+        # بررسی وجود لینک در کش
+        current_time = time.time()
+        if link in video_url_cache:
+            cache_data = video_url_cache[link]
+            # بررسی اعتبار کش (6 ساعت)
+            if current_time - cache_data['timestamp'] < VIDEO_CACHE_TIMEOUT:
+                debug_log(f"لینک مستقیم از کش بازیابی شد: {link}", "INFO")
+                return cache_data['direct_url']
+            else:
+                # حذف کش منقضی شده
+                del video_url_cache[link]
             
         # بررسی YoutubeDL
         if 'YoutubeDL' not in globals():
@@ -1133,12 +1157,15 @@ def get_direct_video_url(link):
             'noplaylist': True,
             'force_generic_extractor': False,
             'format': 'best[ext=mp4]/best',
+            'socket_timeout': 10,  # کاهش زمان انتظار برای اتصال
+            'retries': 2,         # کاهش تعداد تلاش‌های مجدد
         }
         
         debug_log(f"تلاش برای استخراج لینک مستقیم از {link}", "INFO")
         
         with YoutubeDL(ydl_opts) as ydl:
             try:
+                # تنظیم محدودیت زمانی برای استخراج اطلاعات
                 info = ydl.extract_info(link, download=False)
                 
                 if not info:
@@ -1146,6 +1173,18 @@ def get_direct_video_url(link):
                     return None
                     
                 direct_url = info.get('url', None)
+                
+                # ذخیره لینک در کش
+                if direct_url:
+                    video_url_cache[link] = {
+                        'direct_url': direct_url,
+                        'timestamp': current_time
+                    }
+                    # محدود کردن اندازه کش به حداکثر 50 مورد
+                    if len(video_url_cache) > 50:
+                        # حذف قدیمی‌ترین مورد کش
+                        oldest_link = min(video_url_cache.items(), key=lambda x: x[1]['timestamp'])[0]
+                        del video_url_cache[oldest_link]
                 
                 if direct_url:
                     debug_log("لینک مستقیم با موفقیت استخراج شد", "INFO")
@@ -1194,6 +1233,12 @@ def download_instagram(link):
             debug_log("YoutubeDL در دسترس نیست", "ERROR")
             return None
 
+        # بررسی امکان استفاده از لینک مستقیم (سریع‌تر)
+        direct_url = get_direct_video_url(link)
+        if direct_url:
+            debug_log(f"از لینک مستقیم برای ویدیوی اینستاگرام استفاده می‌شود", "INFO")
+            return direct_url
+
         # پاکسازی فایل‌های قدیمی
         try:
             clear_folder(INSTAGRAM_FOLDER)
@@ -1206,8 +1251,10 @@ def download_instagram(link):
         ydl_opts = {
             'outtmpl': f'{INSTAGRAM_FOLDER}/%(id)s.%(ext)s',
             'format': 'mp4/best',
-            'quiet': False,
+            'quiet': True,  # ساکت‌تر برای سرعت بیشتر
             'noplaylist': True,
+            'socket_timeout': 10,  # کاهش زمان انتظار برای اتصال
+            'retries': 2,         # کاهش تعداد تلاش‌های مجدد
         }
 
         with YoutubeDL(ydl_opts) as ydl:
@@ -1386,7 +1433,17 @@ def process_video_link(message, link, processing_msg):
     دانلود و ارسال ویدیو از لینک داده شده
     این تابع در یک ترد جداگانه اجرا می‌شود تا ربات حین دانلود پاسخگو باشد
     """
+    global last_cleanup_time
+    current_time = time.time()
+    
     try:
+        # پاکسازی خودکار - هر یک دقیقه یکبار پاکسازی کامل فایل‌ها
+        if current_time - last_cleanup_time > 60:  # هر 60 ثانیه
+            debug_log("پاکسازی اتوماتیک فولدرهای ویدیو", "INFO")
+            clear_folder(VIDEO_FOLDER, 0)  # پاکسازی کامل
+            clear_folder(INSTAGRAM_FOLDER, 0)  # پاکسازی کامل
+            last_cleanup_time = current_time
+            
         # دریافت کیفیت ویدیو انتخاب شده توسط کاربر
         user_id = str(message.from_user.id)
         quality = DEFAULT_VIDEO_QUALITY  # کیفیت پیش‌فرض
@@ -1402,6 +1459,32 @@ def process_video_link(message, link, processing_msg):
             parse_mode="HTML"
         )
         
+        # تلاش برای استفاده از لینک مستقیم برای کاهش مصرف منابع
+        direct_url = get_direct_video_url(link)
+        if direct_url and not "instagram.com" in link:  # برای یوتیوب و سایر سایت‌ها
+            try:
+                bot.edit_message_text(
+                    f"✅ لینک مستقیم پیدا شد! ارسال با کیفیت <b>{quality}</b>...",
+                    message.chat.id,
+                    processing_msg.message_id,
+                    parse_mode="HTML"
+                )
+                
+                # ارسال ویدیو با لینک مستقیم
+                bot.send_message(
+                    message.chat.id,
+                    f"🎬 <b>ویدیوی درخواستی شما</b>\n\n📊 کیفیت: <b>{quality}</b>\n\n🔗 <a href='{direct_url}'>لینک مستقیم دانلود</a>",
+                    parse_mode="HTML",
+                    disable_web_page_preview=False
+                )
+                
+                # حذف پیام "در حال پردازش"
+                bot.delete_message(message.chat.id, processing_msg.message_id)
+                return
+            except Exception as direct_error:
+                debug_log(f"خطا در ارسال لینک مستقیم، ادامه روند دانلود", "WARNING", {"error": str(direct_error)})
+                # در صورت خطا، به دانلود عادی ادامه می‌دهیم
+        
         # تنظیم گزینه‌های دانلود با کیفیت انتخابی
         format_option = VIDEO_QUALITIES.get(quality, VIDEO_QUALITIES["240p"])["format"]
         
@@ -1413,6 +1496,8 @@ def process_video_link(message, link, processing_msg):
                 'outtmpl': f'{INSTAGRAM_FOLDER}/%(id)s.%(ext)s',
                 'quiet': True,
                 'noplaylist': True,
+                'socket_timeout': 10,  # کاهش زمان انتظار برای اتصال
+                'retries': 2,          # کاهش تعداد تلاش‌های مجدد
             }
             folder = INSTAGRAM_FOLDER
         else:
@@ -1422,6 +1507,8 @@ def process_video_link(message, link, processing_msg):
                 'outtmpl': f'{VIDEO_FOLDER}/%(id)s.%(ext)s',
                 'quiet': True,
                 'noplaylist': True,
+                'socket_timeout': 10,  # کاهش زمان انتظار برای اتصال
+                'retries': 2,          # کاهش تعداد تلاش‌های مجدد
             }
             folder = VIDEO_FOLDER
         
@@ -1433,7 +1520,7 @@ def process_video_link(message, link, processing_msg):
             info = ydl.extract_info(link, download=True)
             
             # آماده‌سازی فایل ویدیو برای ارسال
-            if info.get('id'):
+            if info and info.get('id'):
                 video_path = f"{folder}/{info['id']}.mp4"
                 if not os.path.exists(video_path) and info.get('ext'):
                     video_path = f"{folder}/{info['id']}.{info['ext']}"
@@ -1464,6 +1551,14 @@ def process_video_link(message, link, processing_msg):
                                 )
                             # حذف پیام "در حال پردازش"
                             bot.delete_message(message.chat.id, processing_msg.message_id)
+                            
+                            # حذف فوری فایل پس از ارسال برای کاهش مصرف فضا
+                            try:
+                                os.remove(video_path)
+                                debug_log(f"فایل {video_path} پس از ارسال حذف شد", "INFO")
+                            except Exception as rm_error:
+                                debug_log(f"خطا در حذف فایل پس از ارسال", "WARNING", {"error": str(rm_error)})
+                                
                             return
                         else:
                             # برای فایل‌های بزرگتر، قطعه‌بندی یا روش دیگری نیاز است
@@ -1473,6 +1568,11 @@ def process_video_link(message, link, processing_msg):
                                 processing_msg.message_id,
                                 parse_mode="HTML"
                             )
+                            # حذف فایل بزرگ
+                            try:
+                                os.remove(video_path)
+                            except:
+                                pass
                             return
                     except Exception as e:
                         bot.edit_message_text(
