@@ -10,3 +10,4 @@ telebot
 yt-dlp
 psutil
 flask-wtf
+gunicorn

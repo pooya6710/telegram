@@ -195,6 +195,75 @@ def webhook_test():
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     })
 
+# مسیر برای تست وب‌هوک با شبیه‌سازی پیام تلگرام
+@app.route('/simulate-webhook', methods=['GET'])
+def simulate_webhook():
+    from bot import webhook, bot, ADMIN_CHAT_ID
+    token = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+    
+    if not token:
+        return jsonify({"error": "توکن ربات یافت نشد"}), 500
+        
+    try:
+        # یک پیام تست ساده بسازیم که شبیه به فرمت پیام‌های تلگرام باشد
+        test_message = {
+            "update_id": 123456789,
+            "message": {
+                "message_id": 123,
+                "from": {
+                    "id": ADMIN_CHAT_ID,  # آیدی ادمین
+                    "first_name": "ادمین",
+                    "is_bot": False
+                },
+                "chat": {
+                    "id": ADMIN_CHAT_ID,
+                    "first_name": "ادمین",
+                    "type": "private"
+                },
+                "date": int(datetime.now().timestamp()),
+                "text": "/start"
+            }
+        }
+        
+        # تبدیل به JSON
+        json_str = json.dumps(test_message)
+        
+        # ارسال پیام درست به ادمین
+        try:
+            bot.send_message(ADMIN_CHAT_ID, "🔄 در حال اجرای وب‌هوک شبیه‌سازی شده...")
+        except Exception as e:
+            print(f"خطا در ارسال پیام به ادمین: {e}")
+            
+        # شبیه‌سازی درخواست POST به وب‌هوک
+        import requests
+        
+        # آدرس وب‌هوک
+        webhook_url = f"https://telegram-production-cc29.up.railway.app/{token}/"
+        
+        # ارسال درخواست
+        response = requests.post(webhook_url, json=test_message)
+        
+        # نتیجه
+        result = {
+            "status": "ok" if response.status_code == 200 else "error",
+            "url": webhook_url.replace(token, "***TOKEN***"),
+            "response_code": response.status_code,
+            "response_text": response.text,
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        
+        return jsonify(result)
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"خطا در شبیه‌سازی وب‌هوک: {error_details}")
+        return jsonify({
+            "status": "error",
+            "error": str(e),
+            "details": error_details,
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }), 500
+
 # مسیر برای بررسی وضعیت ربات و اطلاعات آن
 @app.route('/bot-check', methods=['GET'])
 def bot_check():
