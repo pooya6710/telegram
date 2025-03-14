@@ -2376,3 +2376,172 @@
   }
 }
 ==================================================
+2025-03-14 05:35:17,095 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:35:17",
+  "level": "INFO",
+  "message": "پیام جدید دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 2147
+  },
+  "context": {
+    "chat_id": -1002282842131,
+    "user_id": 286420965,
+    "text_length": 69,
+    "has_link": true
+  }
+}
+{
+  "timestamp": "2025-03-14 05:35:17",
+  "level": "INFO",
+  "message": "پیام جدید دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 2147
+  },
+  "context": {
+    "chat_id": -1002282842131,
+    "user_id": 286420965,
+    "text_length": 69,
+    "has_link": true
+  }
+}
+==================================================
+2025-03-14 05:35:17,319 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:35:17",
+  "level": "INFO",
+  "message": "پردازش لینک ویدیو آغاز شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 2175
+  },
+  "context": {
+    "user_id": "286420965",
+    "quality": "240p",
+    "link": "https://www.instagram.com/reel/DGsJ8e2oxD9/?igsh=MW1idWRjcHBienZhMA=="
+  }
+}
+{
+  "timestamp": "2025-03-14 05:35:17",
+  "level": "INFO",
+  "message": "پردازش لینک ویدیو آغاز شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 2175
+  },
+  "context": {
+    "user_id": "286420965",
+    "quality": "240p",
+    "link": "https://www.instagram.com/reel/DGsJ8e2oxD9/?igsh=MW1idWRjcHBienZhMA=="
+  }
+}
+==================================================
+2025-03-14 05:35:17,319 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:35:17",
+  "level": "INFO",
+  "message": "تلاش برای استخراج لینک مستقیم از https://www.instagram.com/reel/DGsJ8e2oxD9/?igsh=MW1idWRjcHBienZhMA==",
+  "location": {
+    "file": "bot.py",
+    "function": "get_direct_video_url",
+    "line": 1137
+  }
+}
+{
+  "timestamp": "2025-03-14 05:35:17",
+  "level": "INFO",
+  "message": "تلاش برای استخراج لینک مستقیم از https://www.instagram.com/reel/DGsJ8e2oxD9/?igsh=MW1idWRjcHBienZhMA==",
+  "location": {
+    "file": "bot.py",
+    "function": "get_direct_video_url",
+    "line": 1137
+  }
+}
+==================================================
+2025-03-14 05:35:18,400 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:35:18",
+  "level": "INFO",
+  "message": "لینک مستقیم با موفقیت استخراج شد",
+  "location": {
+    "file": "bot.py",
+    "function": "get_direct_video_url",
+    "line": 1150
+  }
+}
+{
+  "timestamp": "2025-03-14 05:35:18",
+  "level": "INFO",
+  "message": "لینک مستقیم با موفقیت استخراج شد",
+  "location": {
+    "file": "bot.py",
+    "function": "get_direct_video_url",
+    "line": 1150
+  }
+}
+==================================================
+2025-03-14 05:35:18,403 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:35:18",
+  "level": "INFO",
+  "message": "لینک مستقیم ویدیو با موفقیت دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 2196
+  }
+}
+{
+  "timestamp": "2025-03-14 05:35:18",
+  "level": "INFO",
+  "message": "لینک مستقیم ویدیو با موفقیت دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 2196
+  }
+}
+==================================================
+2025-03-14 05:35:22,518 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:35:22",
+  "level": "INFO",
+  "message": "ارسال ویدیو با روش مستقیم موفقیت‌آمیز بود",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 2202
+  }
+}
+{
+  "timestamp": "2025-03-14 05:35:22",
+  "level": "INFO",
+  "message": "ارسال ویدیو با روش مستقیم موفقیت‌آمیز بود",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 2202
+  }
+}
+==================================================
+2025-03-14 05:36:21,099 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:36:21",
+  "level": "INFO",
+  "message": "توکن تلگرام با موفقیت خوانده شد (طول: 46)",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 363
+  }
+}
+{
+  "timestamp": "2025-03-14 05:36:21",
+  "level": "INFO",
+  "message": "توکن تلگرام با موفقیت خوانده شد (طول: 46)",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 363
+  }
+}
+==================================================
