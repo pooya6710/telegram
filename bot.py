@@ -410,17 +410,65 @@ DEFAULT_VIDEO_QUALITY = "240p"  # کیفیت پیش‌فرض برای صرفه�
 def clear_folder(folder_path, max_files=MAX_VIDEOS_TO_KEEP):
     """حذف فایل‌های قدیمی و نگهداری حداکثر تعداد مشخصی فایل"""
     try:
-        files = os.listdir(folder_path)
-        if len(files) >= max_files:
-            # مرتب‌سازی فایل‌ها بر اساس زمان تغییر (قدیمی‌ترین اول)
-            files = sorted(files, key=lambda x: os.path.getmtime(os.path.join(folder_path, x)))
-            # حذف فایل‌های قدیمی
-            for old_file in files[:-max_files+1]:  # یک فایل کمتر حذف می‌کنیم تا جا برای فایل جدید باشد
-                file_path = os.path.join(folder_path, old_file)
-                os.remove(file_path)
-                print(f"🗑️ فایل قدیمی حذف شد: {file_path}")
+        # اطمینان از وجود پوشه
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+            debug_log(f"پوشه {folder_path} ایجاد شد", "INFO")
+            return
+            
+        # بررسی آیا فولدر است یا خیر
+        if not os.path.isdir(folder_path):
+            debug_log(f"مسیر {folder_path} یک پوشه نیست", "ERROR")
+            return
+        
+        try:
+            # لیست فایل‌ها را دریافت می‌کنیم
+            files = []
+            for item in os.listdir(folder_path):
+                item_path = os.path.join(folder_path, item)
+                # فقط فایل‌ها را پردازش می‌کنیم (نه پوشه‌ها)
+                if os.path.isfile(item_path):
+                    files.append(item)
+                    
+            # بررسی آیا به پاکسازی نیاز است
+            if len(files) >= max_files:
+                # مرتب‌سازی فایل‌ها بر اساس زمان تغییر (قدیمی‌ترین اول)
+                try:
+                    files = sorted(files, key=lambda x: os.path.getmtime(os.path.join(folder_path, x)))
+                except Exception as sort_error:
+                    debug_log("خطا در مرتب‌سازی فایل‌ها بر اساس زمان", "WARNING", {"error": str(sort_error)})
+                    # اگر مرتب‌سازی با خطا مواجه شد، به صورت معمولی مرتب می‌کنیم
+                    files = sorted(files)
+                
+                # تعداد فایل‌هایی که باید حذف شوند
+                files_to_delete = files[:-max_files+1]  # یک فایل کمتر حذف می‌کنیم تا جا برای فایل جدید باشد
+                
+                debug_log(f"پاکسازی پوشه {folder_path}", "INFO", {
+                    "total_files": len(files),
+                    "files_to_delete": len(files_to_delete),
+                    "max_files": max_files
+                })
+                
+                # حذف فایل‌های قدیمی
+                deleted_count = 0
+                for old_file in files_to_delete:
+                    try:
+                        file_path = os.path.join(folder_path, old_file)
+                        os.remove(file_path)
+                        deleted_count += 1
+                    except Exception as delete_error:
+                        debug_log(f"خطا در حذف فایل {old_file}", "WARNING", {"error": str(delete_error)})
+                
+                debug_log(f"پاکسازی پوشه {folder_path} انجام شد", "INFO", {"deleted_files": deleted_count})
+        except Exception as list_error:
+            debug_log(f"خطا در خواندن لیست فایل‌های پوشه", "ERROR", {"error": str(list_error)})
+            
     except Exception as e:
-        print(f"❌ خطا در پاکسازی پوشه {folder_path}: {e}")
+        debug_log(f"خطا در پاکسازی پوشه", "ERROR", {
+            "folder": folder_path,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        })
 
 
 # 📌 دستور شروع - Start command
@@ -1548,71 +1596,190 @@ def handle_callback_query(call):
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
     try:
-        text = message.text.strip()
+        # بررسی این که پیام متنی باشد
+        if not hasattr(message, 'text') or not message.text:
+            debug_log("پیام غیر متنی دریافت شد", "INFO", {
+                "chat_id": message.chat.id, 
+                "content_type": message.content_type if hasattr(message, 'content_type') else "نامشخص"
+            })
+            return
 
+        # بررسی اینکه فرستنده‌ی پیام موجود باشد
+        if not hasattr(message, 'from_user') or not message.from_user:
+            debug_log("پیام بدون اطلاعات فرستنده دریافت شد", "WARNING")
+            return
+            
+        text = message.text.strip()
+        
+        # لاگ کردن پیام دریافتی
+        debug_log(f"پیام جدید دریافت شد", "INFO", {
+            "chat_id": message.chat.id,
+            "user_id": message.from_user.id,
+            "text_length": len(text),
+            "has_link": "instagram.com" in text or "youtube.com" in text or "youtu.be" in text
+        })
+
+        # پردازش لینک‌های ویدیو
         if "instagram.com" in text or "youtube.com" in text or "youtu.be" in text:
             # نمایش پیام در حال پردازش
-            processing_msg = bot.reply_to(message, "⏳ درحال پردازش لینک ویدیو... (ممکن است تا 2 دقیقه طول بکشد)")
+            try:
+                processing_msg = bot.reply_to(message, "⏳ درحال پردازش لینک ویدیو... (ممکن است تا 2 دقیقه طول بکشد)")
+            except Exception as reply_error:
+                debug_log("خطا در ارسال پیام پاسخ", "ERROR", {"error": str(reply_error)})
+                try:
+                    processing_msg = bot.send_message(message.chat.id, "⏳ درحال پردازش لینک ویدیو... (ممکن است تا 2 دقیقه طول بکشد)")
+                except Exception as send_error:
+                    debug_log("خطا در ارسال پیام جدید", "ERROR", {"error": str(send_error)})
+                    return
             
             # دریافت کیفیت ویدیو انتخاب شده توسط کاربر
             user_id = str(message.from_user.id)
             quality = DEFAULT_VIDEO_QUALITY  # کیفیت پیش‌فرض
             
-            if hasattr(bot, "user_video_quality") and user_id in bot.user_video_quality:
-                quality = bot.user_video_quality[user_id]
+            try:
+                if hasattr(bot, "user_video_quality") and user_id in bot.user_video_quality:
+                    quality = bot.user_video_quality[user_id]
+                    
+                debug_log(f"پردازش لینک ویدیو آغاز شد", "INFO", {
+                    "user_id": user_id,
+                    "quality": quality,
+                    "link": text[:100]  # محدود کردن طول لینک در لاگ
+                })
+            except Exception as quality_error:
+                debug_log("خطا در دریافت کیفیت ویدیو", "WARNING", {"error": str(quality_error)})
             
             # تنظیم گزینه‌ها برای دانلود
             ydl_opts = {
                 'format': VIDEO_QUALITIES.get(quality, VIDEO_QUALITIES["240p"])["format"],
                 'quiet': True,
-                'noplaylist': True
+                'noplaylist': True,
+                'ignoreerrors': True
             }
             
             # لینک مستقیم (سریع‌ترین روش)
+            direct_method_success = False
             try:
                 direct_url = get_direct_video_url(text)
                 if direct_url:
-                    bot.edit_message_text("✅ ویدیو یافت شد! در حال ارسال...", message.chat.id, processing_msg.message_id)
+                    debug_log("لینک مستقیم ویدیو با موفقیت دریافت شد", "INFO")
                     try:
+                        bot.edit_message_text("✅ ویدیو یافت شد! در حال ارسال...", message.chat.id, processing_msg.message_id)
                         bot.send_video(chat_id=message.chat.id, video=direct_url, timeout=60)
                         bot.delete_message(message.chat.id, processing_msg.message_id)
+                        direct_method_success = True
+                        debug_log("ارسال ویدیو با روش مستقیم موفقیت‌آمیز بود", "INFO")
                         return
-                    except Exception:
+                    except Exception as send_error:
+                        debug_log("خطا در ارسال ویدیو با روش مستقیم", "WARNING", {"error": str(send_error)})
                         bot.edit_message_text("⏳ روش مستقیم موفق نبود. در حال دانلود ویدیو با کیفیت انتخابی...", 
                                              message.chat.id, processing_msg.message_id)
-            except Exception as e:
-                print(f"خطا در دریافت لینک مستقیم: {e}")
+            except Exception as direct_error:
+                debug_log("خطا در دریافت لینک مستقیم", "WARNING", {"error": str(direct_error)})
             
-            # دانلود و ارسال ویدیو
-            try:
-                # شروع دانلود در یک thread جداگانه برای جلوگیری از انسداد
-                thread_pool.submit(process_video_link, message, text, processing_msg)
-            except Exception as e:
-                bot.edit_message_text(f"⚠️ خطا در پردازش ویدیو: {str(e)}", message.chat.id, processing_msg.message_id)
+            # اگر روش مستقیم ناموفق بود، از روش دانلود استفاده می‌کنیم
+            if not direct_method_success:
+                try:
+                    # شروع دانلود در یک thread جداگانه برای جلوگیری از انسداد
+                    debug_log("شروع دانلود ویدیو در ترد جداگانه", "INFO")
+                    thread_pool.submit(process_video_link, message, text, processing_msg)
+                except Exception as thread_error:
+                    debug_log("خطا در راه‌اندازی ترد دانلود", "ERROR", {"error": str(thread_error)})
+                    try:
+                        bot.edit_message_text(f"⚠️ خطا در پردازش ویدیو: {str(thread_error)[:100]}", 
+                                            message.chat.id, processing_msg.message_id)
+                    except:
+                        pass
             
             return
 
         elif "،" in text:
             try:
-                question, answer = map(str.strip, text.split("،", 1))
-                responses[question.lower()] = answer
-                save_responses()
-                bot.reply_to(
-                    message,
-                    f"✅ سوال '{question}' با پاسخ '{answer}' اضافه شد!")
-            except ValueError:
-                bot.reply_to(message,
-                             "⚠️ لطفاً فرمت 'سوال، جواب' را رعایت کنید.")
+                # فقط ادمین می‌تواند پاسخ‌های جدید اضافه کند
+                if message.from_user.id == ADMIN_CHAT_ID:
+                    try:
+                        question, answer = map(str.strip, text.split("،", 1))
+                        
+                        # بررسی معتبر بودن سوال و جواب
+                        if not question or not answer:
+                            bot.reply_to(message, "⚠️ سوال یا جواب نمی‌تواند خالی باشد!")
+                            return
+                            
+                        # محدود کردن طول سوال و جواب
+                        if len(question) > 100:
+                            question = question[:100]
+                        if len(answer) > 500:
+                            answer = answer[:500]
+                            
+                        # ذخیره در پاسخ‌ها
+                        responses[question.lower()] = answer
+                        debug_log(f"پاسخ جدید اضافه شد", "INFO", {"question": question, "answer": answer})
+                        
+                        # ذخیره پاسخ‌ها در فایل
+                        try:
+                            save_responses()
+                        except Exception as save_error:
+                            debug_log("خطا در ذخیره پاسخ‌ها", "ERROR", {"error": str(save_error)})
+                            bot.reply_to(message, "⚠️ خطا در ذخیره پاسخ‌ها. دوباره تلاش کنید.")
+                            return
+                            
+                        bot.reply_to(
+                            message,
+                            f"✅ سوال '{question}' با پاسخ '{answer}' اضافه شد!")
+                    except ValueError:
+                        bot.reply_to(message,
+                                     "⚠️ لطفاً فرمت 'سوال، جواب' را رعایت کنید.")
+                else:
+                    # اگر کاربر ادمین نیست
+                    debug_log("کاربر غیر ادمین تلاش کرد پاسخ جدید اضافه کند", "WARNING", {"user_id": message.from_user.id})
+                    bot.reply_to(message, "⚠️ فقط ادمین می‌تواند پاسخ‌های جدید اضافه کند!")
+            except Exception as reply_error:
+                debug_log("خطا در افزودن پاسخ جدید", "ERROR", {"error": str(reply_error)})
+                try:
+                    bot.reply_to(message, "⚠️ خطا در پردازش درخواست. لطفاً دوباره تلاش کنید.")
+                except:
+                    pass
             return
 
         else:
             # چک کردن اگر پیام مطابق با یکی از سوالات موجود است
-            key = text.lower().strip()
-            if key in responses:
-                bot.reply_to(message, responses[key])
+            try:
+                key = text.lower().strip()
+                if key in responses:
+                    debug_log(f"پاسخ خودکار ارسال شد", "INFO", {"question": key})
+                    bot.reply_to(message, responses[key])
+                else:
+                    # اگر پیام شامل سلام، خوبی و ... باشد، پاسخ مناسب ارسال کنیم
+                    greetings = ['سلام', 'درود', 'خوبی', 'چطوری', 'خوبین', 'چطوری', 'سلام', 'hi', 'hello']
+                    if any(greeting in key for greeting in greetings):
+                        debug_log("پاسخ به سلام کاربر", "INFO")
+                        bot.reply_to(message, f"سلام {message.from_user.first_name} عزیز!\n\nلینک‌های یوتیوب یا اینستاگرام خود را بفرستید تا برایتان ویدیو را دانلود کنم 🎬")
+                    
+                    # در غیر این صورت، لینک راهنما را نمایش دهیم (فقط برای پیام‌های خصوصی)
+                    elif message.chat.type == 'private' and len(key) > 3:
+                        debug_log("ارسال راهنما برای پیام ناشناخته", "INFO")
+                        markup = telebot.types.InlineKeyboardMarkup()
+                        help_btn = telebot.types.InlineKeyboardButton("📚 راهنما", callback_data="download_help")
+                        quality_btn = telebot.types.InlineKeyboardButton("📊 کیفیت ویدیو", callback_data="select_quality")
+                        markup.add(help_btn, quality_btn)
+                        bot.reply_to(
+                            message,
+                            "برای دانلود ویدیو، کافیست لینک یوتیوب یا اینستاگرام را ارسال کنید 🎬",
+                            reply_markup=markup
+                        )
+            except Exception as response_error:
+                debug_log("خطا در ارسال پاسخ", "ERROR", {"error": str(response_error)})
 
     except Exception as e:
-        notify_admin(f"⚠️ خطا در پردازش پیام:\n{traceback.format_exc()}")
+        error_msg = f"⚠️ خطا در پردازش پیام:\n{traceback.format_exc()}"
+        debug_log("خطا در تابع handle_message", "ERROR", {
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        })
+        
+        try:
+            notify_admin(error_msg)
+        except Exception as notify_error:
+            debug_log("خطا در اطلاع به ادمین", "ERROR", {"error": str(notify_error)})
 
 
 def keep_awake():
