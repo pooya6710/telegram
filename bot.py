@@ -1,18 +1,48 @@
-import telebot
 import os
-import shutil  # برای دریافت وضعیت دیسک
-import psutil  # برای دریافت اطلاعات CPU و RAM
-import platform  # برای دریافت اطلاعات سیستم‌عامل
 import json
-import sqlite3
 import datetime
 import threading
 import concurrent.futures
-from flask import Flask, request
 import time
 import traceback
-from yt_dlp import YoutubeDL
 from requests.exceptions import ReadTimeout, ProxyError, ConnectionError
+
+# واردکردن ماژول‌ها با مدیریت خطا
+try:
+    import telebot
+except ImportError:
+    print("⚠️ ماژول telebot نصب نشده است")
+    exit(1)
+
+try:
+    from flask import Flask, request
+except ImportError:
+    print("⚠️ ماژول flask نصب نشده است")
+
+try:
+    import shutil  # برای دریافت وضعیت دیسک
+except ImportError:
+    print("⚠️ ماژول shutil در دسترس نیست")
+    
+try:
+    import psutil  # برای دریافت اطلاعات CPU و RAM
+except ImportError:
+    print("⚠️ ماژول psutil نصب نشده است")
+    
+try:
+    import platform  # برای دریافت اطلاعات سیستم‌عامل
+except ImportError:
+    print("⚠️ ماژول platform در دسترس نیست")
+    
+try:
+    import sqlite3
+except ImportError:
+    print("⚠️ ماژول sqlite3 در دسترس نیست")
+    
+try:
+    from yt_dlp import YoutubeDL
+except ImportError:
+    print("⚠️ ماژول yt_dlp نصب نشده است")
 
 app = Flask(__name__)
 

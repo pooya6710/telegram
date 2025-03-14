@@ -3,11 +3,17 @@ import logging
 import time
 import threading
 import json
-import psutil
+import traceback
 import platform
 from datetime import datetime
 from flask import Flask, jsonify, render_template, redirect, url_for
 from bot import start_bot, get_cached_server_status
+
+# وارد کردن ماژول‌ها با مدیریت خطا
+try:
+    import psutil
+except ImportError:
+    logging.warning("⚠️ ماژول psutil در دسترس نیست. برخی از قابلیت‌های نمایش وضعیت سیستم غیرفعال خواهند بود.")
 
 # ایجاد اپلیکیشن Flask
 app = Flask(__name__)
@@ -65,17 +71,41 @@ def home():
     system_info = {
         "os": platform.platform(),
         "python": platform.python_version(),
-        "cpu_percent": psutil.cpu_percent(),
-        "memory": {
-            "total": round(psutil.virtual_memory().total / (1024**3), 2),  # به گیگابایت
-            "used_percent": psutil.virtual_memory().percent
-        },
-        "disk": {
-            "total": round(psutil.disk_usage('/').total / (1024**3), 2),  # به گیگابایت
-            "used_percent": psutil.disk_usage('/').percent
-        },
         "current_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
+    
+    # اضافه کردن اطلاعات با مدیریت خطا
+    try:
+        system_info["cpu_percent"] = psutil.cpu_percent(interval=0.1)
+    except Exception as e:
+        logger.error(f"خطا در دریافت اطلاعات CPU: {e}")
+        system_info["cpu_percent"] = 0
+        
+    try:
+        memory = psutil.virtual_memory()
+        system_info["memory"] = {
+            "total": round(memory.total / (1024**3), 2),  # به گیگابایت
+            "used_percent": memory.percent
+        }
+    except Exception as e:
+        logger.error(f"خطا در دریافت اطلاعات حافظه: {e}")
+        system_info["memory"] = {
+            "total": 0,
+            "used_percent": 0
+        }
+        
+    try:
+        disk = psutil.disk_usage('/')
+        system_info["disk"] = {
+            "total": round(disk.total / (1024**3), 2),  # به گیگابایت
+            "used_percent": disk.percent
+        }
+    except Exception as e:
+        logger.error(f"خطا در دریافت اطلاعات دیسک: {e}")
+        system_info["disk"] = {
+            "total": 0,
+            "used_percent": 0
+        }
     
     return render_template('index.html', 
                            bot_status=bot_status, 
@@ -121,9 +151,18 @@ def run_bot():
 # راه‌اندازی ربات با استفاده از with app.app_context()
 # توجه: در نسخه‌های جدید Flask، before_first_request حذف شده است
 # بنابراین از روش دیگری استفاده می‌کنیم
-with app.app_context():
-    run_bot()
-    logger.info("🔄 ربات تلگرام در پس‌زمینه اجرا می‌شود...")
+# راه‌اندازی ربات با مدیریت خطا
+try:
+    with app.app_context():
+        try:
+            run_bot()
+            logger.info("🔄 ربات تلگرام در پس‌زمینه اجرا می‌شود...")
+        except Exception as e:
+            logger.error(f"⚠️ خطای غیرمنتظره در راه‌اندازی ربات: {e}")
+            traceback.print_exc()  # چاپ جزئیات خطا برای دیباگ
+except Exception as context_error:
+    logger.error(f"⚠️ خطا در کانتکست اپلیکیشن: {context_error}")
+    traceback.print_exc()
 
 # مسیر برای دریافت وب‌هوک تلگرام
 @app.route('/<path:token>/', methods=['POST'])
