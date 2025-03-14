@@ -6,7 +6,7 @@ import json
 import traceback
 import platform
 from datetime import datetime
-from flask import Flask, jsonify, render_template, redirect, url_for
+from flask import Flask, jsonify, render_template, redirect, url_for, request
 
 # تنظیم لاگر اصلی
 logging.basicConfig(
@@ -252,14 +252,18 @@ def webhook_test():
 
 # مسیر برای تست وب‌هوک با شبیه‌سازی پیام تلگرام
 @app.route('/simulate-webhook', methods=['GET'])
+@debug_decorator
 def simulate_webhook():
     from bot import webhook, bot, ADMIN_CHAT_ID
     token = os.environ.get('TELEGRAM_BOT_TOKEN', '')
     
     if not token:
+        debug_log("خطا در شبیه‌سازی وب‌هوک: توکن ربات یافت نشد", "ERROR")
         return jsonify({"error": "توکن ربات یافت نشد"}), 500
         
     try:
+        debug_log("شروع شبیه‌سازی وب‌هوک", "INFO")
+        
         # یک پیام تست ساده بسازیم که شبیه به فرمت پیام‌های تلگرام باشد
         test_message = {
             "update_id": 123456789,
@@ -282,20 +286,30 @@ def simulate_webhook():
         
         # تبدیل به JSON
         json_str = json.dumps(test_message)
+        debug_log("پیام تست آماده شد", "DEBUG", {
+            "message": test_message
+        })
         
         # ارسال پیام درست به ادمین
         try:
             bot.send_message(ADMIN_CHAT_ID, "🔄 در حال اجرای وب‌هوک شبیه‌سازی شده...")
-        except Exception as e:
-            print(f"خطا در ارسال پیام به ادمین: {e}")
+            debug_log("پیام اطلاع‌رسانی به ادمین ارسال شد", "INFO")
+        except Exception as notify_error:
+            debug_log("خطا در ارسال پیام به ادمین", "ERROR", {
+                "error": str(notify_error)
+            })
             
         # شبیه‌سازی درخواست POST به وب‌هوک
         import requests
         
         # آدرس وب‌هوک
         webhook_url = f"https://telegram-production-cc29.up.railway.app/{token}/"
+        debug_log("آدرس وب‌هوک", "DEBUG", {
+            "url": webhook_url.replace(token, "***TOKEN***"),
+        })
         
         # ارسال درخواست
+        debug_log("ارسال درخواست POST به وب‌هوک", "INFO")
         response = requests.post(webhook_url, json=test_message)
         
         # نتیجه
@@ -307,11 +321,20 @@ def simulate_webhook():
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
         
+        debug_log("شبیه‌سازی وب‌هوک انجام شد", "INFO", {
+            "status": result["status"],
+            "response_code": result["response_code"]
+        })
+        
         return jsonify(result)
     except Exception as e:
-        import traceback
-        error_details = traceback.format_exc()
-        print(f"خطا در شبیه‌سازی وب‌هوک: {error_details}")
+        error_details = format_exception_with_context(e)
+        debug_log("خطا در شبیه‌سازی وب‌هوک", "ERROR", {
+            "error_type": type(e).__name__,
+            "error_message": str(e),
+            "traceback": error_details
+        })
+        
         return jsonify({
             "status": "error",
             "error": str(e),
@@ -321,12 +344,18 @@ def simulate_webhook():
 
 # مسیر برای بررسی وضعیت ربات و اطلاعات آن
 @app.route('/bot-check', methods=['GET'])
+@debug_decorator
 def bot_check():
     from bot import bot  # واردکردن ربات
     bot_info = None
+    
+    debug_log("درخواست بررسی وضعیت ربات دریافت شد", "INFO")
+    
     try:
         # تلاش برای دریافت اطلاعات از تلگرام
+        debug_log("در حال دریافت اطلاعات ربات از API تلگرام", "DEBUG")
         bot_info = bot.get_me()
+        
         bot_status = {
             "id": bot_info.id,
             "username": bot_info.username,
@@ -335,58 +364,111 @@ def bot_check():
             "can_receive_messages": True
         }
         status_code = 200
+        
+        debug_log("اطلاعات ربات با موفقیت دریافت شد", "INFO", {
+            "bot_username": bot_info.username,
+            "bot_id": bot_info.id
+        })
     except Exception as e:
         # در صورت خطا
+        error_details = format_exception_with_context(e)
+        debug_log("خطا در دریافت اطلاعات ربات", "ERROR", {
+            "error_type": type(e).__name__,
+            "error_message": str(e),
+            "traceback": error_details
+        })
+        
         bot_status = {
             "error": str(e),
             "is_connected": False,
-            "traceback": traceback.format_exc()
+            "traceback": error_details
         }
         status_code = 500
     
+    # اطلاعات محیط اجرا
+    environment = {
+        "webhook_mode": os.environ.get('WEBHOOK_MODE', 'true'),
+        "port": os.environ.get('PORT', '5000'),
+        "has_token": bool(os.environ.get('TELEGRAM_BOT_TOKEN', ''))
+    }
+    
+    debug_log("اطلاعات محیط اجرا", "DEBUG", {
+        "environment": environment
+    })
+    
     # برگرداندن اطلاعات
-    return jsonify({
+    result = {
         "status": "ok" if bot_info else "error",
         "bot": bot_status,
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "environment": {
-            "webhook_mode": os.environ.get('WEBHOOK_MODE', 'true'),
-            "port": os.environ.get('PORT', '5000'),
-            "has_token": bool(os.environ.get('TELEGRAM_BOT_TOKEN', ''))
-        }
-    }), status_code
+        "environment": environment
+    }
+    
+    debug_log("پاسخ بررسی وضعیت ربات ارسال شد", "INFO", {
+        "status": result["status"],
+        "timestamp": result["timestamp"]
+    })
+    
+    return jsonify(result), status_code
 
 # مسیر برای ارسال پیام آزمایشی به ادمین
 @app.route('/send-test-message', methods=['GET'])
+@debug_decorator
 def send_test_message():
     from bot import bot, ADMIN_CHAT_ID, notify_admin  # واردکردن ربات و آیدی ادمین
+    
+    debug_log("درخواست ارسال پیام آزمایشی به ادمین دریافت شد", "INFO")
     
     try:
         # تلاش برای ارسال پیام آزمایشی به ادمین
         message = f"🔄 پیام آزمایشی: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        debug_log("در حال ارسال پیام آزمایشی", "DEBUG", {
+            "message": message,
+            "admin_chat_id": ADMIN_CHAT_ID
+        })
         
         # روش اول: مستقیم با تابع ربات
         result = bot.send_message(ADMIN_CHAT_ID, message)
         message_id = result.message_id
+        debug_log("پیام با موفقیت ارسال شد", "INFO", {
+            "message_id": message_id
+        })
         
         # روش دوم: استفاده از تابع notify_admin
         notify_admin("📢 یک پیام آزمایشی با تابع notify_admin")
+        debug_log("پیام اطلاع‌رسانی با موفقیت ارسال شد", "INFO")
         
-        return jsonify({
+        response = {
             "status": "ok",
             "message": "پیام آزمایشی با موفقیت ارسال شد",
             "message_id": message_id,
             "admin_chat_id": ADMIN_CHAT_ID,
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        
+        debug_log("پاسخ ارسال پیام آزمایشی آماده شد", "INFO", {
+            "status": "ok",
+            "timestamp": response["timestamp"]
         })
+        
+        return jsonify(response)
     except Exception as e:
         # در صورت خطا
-        return jsonify({
+        error_details = format_exception_with_context(e)
+        debug_log("خطا در ارسال پیام آزمایشی", "ERROR", {
+            "error_type": type(e).__name__,
+            "error_message": str(e),
+            "traceback": error_details
+        })
+        
+        response = {
             "status": "error",
             "error": str(e),
-            "traceback": traceback.format_exc(),
+            "details": error_details,
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }), 500
+        }
+        
+        return jsonify(response), 500
 
 # اجرای سرور Flask
 if __name__ == "__main__":
