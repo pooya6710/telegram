@@ -1,146 +1,83 @@
-/* 
-  استایل‌های اختصاصی برای ربات تلگرام 
-*/
+/* استایل‌های سفارشی برای داشبورد ربات تلگرام */
 
-@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700&display=swap');
-
-:root {
-  --primary-color: #0088cc;
-  --secondary-color: #005a85;
-  --success-color: #28a745;
-  --warning-color: #ffc107;
-  --danger-color: #dc3545;
-  --dark-color: #1f1f1f;
-  --light-color: #f8f9fa;
+/* استفاده از فونت Vazir برای تمام متن‌ها */
+body, h1, h2, h3, h4, h5, h6, p, span, div, a, button, input, select, textarea {
+    font-family: 'Vazir', tahoma, Arial, sans-serif !important;
 }
 
-body {
-  font-family: 'Vazirmatn', sans-serif;
-  background-color: var(--dark-color);
-  color: var(--light-color);
-  direction: rtl;
-  line-height: 1.6;
-}
-
-/* کارت‌ها */
+/* استایل برای کارت‌ها */
 .card {
-  transition: transform 0.3s, box-shadow 0.3s;
-  margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
 }
 
 .card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 15px 25px rgba(0, 0, 0, 0.2);
+    transform: translateY(-5px);
 }
 
-/* نشانگر وضعیت */
-.status-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 1.5rem;
-}
-
-.status-circle {
-  width: 15px;
-  height: 15px;
-  border-radius: 50%;
-  margin-left: 10px;
-  display: inline-block;
-}
-
-/* آیکون‌های ویژگی‌ها */
-.feature-card {
-  padding: 1.5rem;
-  text-align: center;
-  height: 100%;
-}
-
-.feature-icon {
-  width: 60px;
-  height: 60px;
-  margin: 0 auto 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  font-size: 1.5rem;
-}
-
-/* فهرست دستورات */
-.command-list {
-  list-style: none;
-  padding: 0;
-}
-
-.command-item {
-  display: flex;
-  align-items: center;
-  padding: 10px 15px;
-  margin-bottom: 5px;
-  border-radius: 5px;
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-.command-badge {
-  background-color: var(--primary-color);
-  color: white;
-  padding: 5px 10px;
-  border-radius: 20px;
-  margin-left: 10px;
-  font-family: monospace;
-  font-weight: normal;
-}
-
-/* نوار پیشرفت */
+/* استایل برای بارهای پیشرفت */
 .progress {
-  height: 8px;
-  border-radius: 20px;
-  background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* انیمیشن به‌روزرسانی */
-@keyframes update-highlight {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
+.progress-bar {
+    transition: width 0.5s ease;
+    border-radius: 10px;
 }
 
-.update-highlight {
-  animation: update-highlight 0.6s ease-in-out;
+/* استایل برای سربرگ صفحه */
+header h1 {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* دکمه‌ها */
-.btn {
-  border-radius: 20px;
-  padding: 8px 20px;
-  transition: all 0.3s;
+/* استایل‌های مرتبط با رنگ‌ها در حالت تیره */
+[data-bs-theme=dark] .card {
+    background-color: rgba(33, 37, 41, 0.9);
 }
 
-.btn-primary {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
+[data-bs-theme=dark] .bg-dark-subtle {
+    background-color: rgba(66, 70, 74, 0.5) !important;
 }
 
-.btn-primary:hover {
-  background-color: var(--secondary-color);
-  border-color: var(--secondary-color);
+/* استایل برای لیست‌های گروهی */
+.list-group-item {
+    transition: background-color 0.2s ease;
 }
 
-/* هشدارها */
-.alert {
-  border-radius: 10px;
+.list-group-item:hover {
+    background-color: rgba(var(--bs-info-rgb), 0.1);
 }
 
-/* برای صفحات موبایل */
-@media (max-width: 576px) {
-  .container {
-    padding: 10px;
-  }
-  
-  .feature-icon {
-    width: 50px;
-    height: 50px;
-    font-size: 1.2rem;
-  }
+/* استایل برای کد */
+code {
+    background-color: rgba(var(--bs-info-rgb), 0.1);
+    padding: 2px 5px;
+    border-radius: 3px;
+}
+
+/* استایل‌های واکنش‌گرا برای دستگاه‌های کوچک */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+}
+
+/* انیمیشن چرخش برای آیکون بروزرسانی */
+.rotate {
+    animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }

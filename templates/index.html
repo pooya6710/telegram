@@ -1,419 +1,210 @@
 <!DOCTYPE html>
-<html lang="fa" data-bs-theme="dark" dir="rtl">
+<html lang="fa" dir="rtl" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>وضعیت ربات تلگرام</title>
-    
-    <!-- Bootstrap CSS (Replit dark theme) -->
+    <title>داشبورد ربات تلگرام دانلود ویدیو</title>
     <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700&display=swap');
-        
-        body {
-            font-family: 'Vazirmatn', sans-serif;
-        }
-        
-        .status-circle {
-            width: 15px;
-            height: 15px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-        
-        .feature-icon {
-            font-size: 1.5rem;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 10px;
-        }
-        
-        .card {
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-        }
-        
-        .card-header {
-            background-color: var(--bs-dark);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .badge-command {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-family: monospace;
-            font-weight: normal;
-        }
-    </style>
+    <!-- فونت Vazir برای پشتیبانی از زبان فارسی -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css">
 </head>
 <body>
-    <div class="container mt-5">
-        <div class="row justify-content-center">
-            <div class="col-md-10">
-                <div class="card">
-                    <div class="card-header text-center py-3">
-                        <h2 class="mb-0">{{ bot_name }}</h2>
+    <div class="container py-4">
+        <header class="pb-3 mb-4 border-bottom text-center">
+            <h1 class="display-5 fw-bold">🤖 داشبورد ربات تلگرام دانلود ویدیو</h1>
+            <p class="lead">مانیتورینگ و مدیریت ربات دانلود ویدیوهای یوتیوب و اینستاگرام</p>
+        </header>
+
+        <!-- وضعیت ربات -->
+        <div class="row mb-4">
+            <div class="col-md-6 mb-3">
+                <div class="card h-100 border-primary">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">📊 وضعیت ربات</h4>
                     </div>
                     <div class="card-body">
-                        <div class="d-flex align-items-center justify-content-center mb-4">
-                            {% if token_available %}
-                                <div class="status-circle bg-success me-2"></div>
-                                <h3 class="mb-0">ربات {{ bot_status }} است</h3>
-                            {% else %}
-                                <div class="status-circle bg-warning me-2"></div>
-                                <h3 class="mb-0">ربات {{ bot_status }}</h3>
-                            {% endif %}
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <div class="p-3 rounded 
+                                {{ 'bg-success bg-opacity-25 border border-success' if bot_status.running else 'bg-danger bg-opacity-25 border border-danger' }}">
+                                    <h5>وضعیت فعلی:</h5>
+                                    <p class="fs-4 mb-0 
+                                    {{ 'text-success' if bot_status.running else 'text-danger' }}">
+                                        {{ "✅ ربات فعال است" if bot_status.running else "❌ ربات غیرفعال است" }}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                        
-                        {% if token_available %}
-                            <p class="lead text-center">ربات تلگرام فعال است و آماده دریافت دستورات!</p>
-                            
-                            <div class="row mt-4">
-                                <div class="col-md-6">
-                                    <div class="card h-100">
-                                        <div class="card-body text-center">
-                                            <div class="feature-icon bg-primary mx-auto">
-                                                <i class="fas fa-folder-open text-light"></i>
-                                            </div>
-                                            <h5>وضعیت ذخیره‌سازی</h5>
-                                            <ul class="list-group list-group-flush mt-3">
-                                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                    <span>پوشه ویدیوهای یوتیوب</span>
-                                                    <span class="badge bg-{{ 'success' if video_folder_exists else 'danger' }} rounded-pill">
-                                                        <i class="fas fa-{{ 'check' if video_folder_exists else 'times' }}"></i>
-                                                    </span>
-                                                </li>
-                                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                    <span>پوشه ویدیوهای اینستاگرام</span>
-                                                    <span class="badge bg-{{ 'success' if instagram_folder_exists else 'danger' }} rounded-pill">
-                                                        <i class="fas fa-{{ 'check' if instagram_folder_exists else 'times' }}"></i>
-                                                    </span>
-                                                </li>
-                                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                    <span>فایل پاسخ‌های خودکار</span>
-                                                    <span class="badge bg-{{ 'success' if responses_file_exists else 'warning' }} rounded-pill">
-                                                        <i class="fas fa-{{ 'check' if responses_file_exists else 'sync' }}"></i>
-                                                    </span>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="col-md-6">
-                                    <div class="card h-100">
-                                        <div class="card-body text-center">
-                                            <div class="feature-icon bg-info mx-auto">
-                                                <i class="fas fa-download text-light"></i>
-                                            </div>
-                                            <h5>آمار ربات</h5>
-                                            <ul class="list-group list-group-flush mt-3">
-                                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                    <span>تعداد ویدیوهای پردازش شده</span>
-                                                    <span class="badge bg-primary rounded-pill" data-stat="videos_processed">{{ stats.videos_processed }}</span>
-                                                </li>
-                                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                    <span>دانلودهای یوتیوب</span>
-                                                    <span class="badge bg-danger rounded-pill" data-stat="youtube_downloads">{{ stats.youtube_downloads }}</span>
-                                                </li>
-                                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                    <span>دانلودهای اینستاگرام</span>
-                                                    <span class="badge bg-warning rounded-pill" data-stat="instagram_downloads">{{ stats.instagram_downloads }}</span>
-                                                </li>
-                                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                    <span>تعداد پاسخ‌های ذخیره شده</span>
-                                                    <span class="badge bg-success rounded-pill" data-stat="response_count">{{ stats.response_count }}</span>
-                                                </li>
-                                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                    <span>زمان کارکرد سرور</span>
-                                                    <span class="badge bg-info rounded-pill" data-stat="uptime">{{ uptime }}</span>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="p-3 bg-dark-subtle rounded">
+                                    <h5>⏱️ مدت زمان فعالیت:</h5>
+                                    <p class="fs-5 mb-0 text-info">{{ bot_status.uptime }}</p>
                                 </div>
                             </div>
-                            
-                        {% else %}
-                            <p class="lead text-center">رابط کاربری وب فعال است، اما ربات متصل نیست.</p>
-                            <div class="alert alert-warning text-center">
-                                <strong>توکن وجود ندارد:</strong> یک توکن ربات تلگرام اضافه کنید تا قابلیت‌های ربات فعال شود.
-                            </div>
-                        {% endif %}
-                        
-                        {% if error_message %}
-                            <div class="alert alert-danger mt-3 text-center">
-                                <strong>خطا:</strong> {{ error_message }}
-                            </div>
-                        {% endif %}
-                        
-                        <div class="mt-5">
-                            <h4 class="text-center mb-4">ویژگی‌های ربات</h4>
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="card mb-3">
-                                        <div class="card-body">
-                                            <h5><i class="fas fa-video text-danger me-2"></i>دانلود ویدیو</h5>
-                                            <p class="text-muted">دانلود و ارسال ویدیو از یوتیوب و اینستاگرام با ارسال لینک</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="card mb-3">
-                                        <div class="card-body">
-                                            <h5><i class="fas fa-hashtag text-success me-2"></i>جستجوی هشتگ</h5>
-                                            <p class="text-muted">جستجو و بازیابی پیام‌های دارای هشتگ از کانال‌های ثبت شده</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="card mb-3">
-                                        <div class="card-body">
-                                            <h5><i class="fas fa-comment-dots text-primary me-2"></i>پاسخ‌های خودکار</h5>
-                                            <p class="text-muted">ذخیره و بازیابی پاسخ‌های خودکار با فرمت "سوال، جواب"</p>
-                                        </div>
-                                    </div>
+                            <div class="col-md-6">
+                                <div class="p-3 bg-dark-subtle rounded">
+                                    <h5>👥 تعداد کاربران:</h5>
+                                    <p class="fs-5 mb-0 text-info">{{ bot_status.users_count }} نفر</p>
                                 </div>
                             </div>
-                            
-                            <!-- نمایش وضعیت فضای دیسک -->
-                            <div class="mt-4">
-                                <h4 class="text-center mb-3">وضعیت فضای ذخیره‌سازی</h4>
-                                <div class="card mb-4">
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <h6>فضای کل دیسک</h6>
-                                                    <div class="progress" style="height: 20px;">
-                                                        <div class="progress-bar bg-primary" role="progressbar" 
-                                                             style="width: 100%;" 
-                                                             aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
-                                                            {{ stats.disk_total_mb|round }} مگابایت
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <h6>فضای استفاده شده ({{ stats.disk_usage_percent }}%)</h6>
-                                                    <div class="progress" style="height: 20px;">
-                                                        <div class="progress-bar bg-danger" role="progressbar" 
-                                                             style="width: {{ stats.disk_usage_percent }}%;" 
-                                                             aria-valuenow="{{ stats.disk_usage_percent }}" aria-valuemin="0" aria-valuemax="100">
-                                                            {{ stats.disk_used_mb|round }} مگابایت
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <h6>فضای آزاد</h6>
-                                                    <div class="progress" style="height: 20px;">
-                                                        <div class="progress-bar bg-success" role="progressbar" 
-                                                             style="width: {{ 100 - stats.disk_usage_percent }}%;" 
-                                                             aria-valuenow="{{ 100 - stats.disk_usage_percent }}" aria-valuemin="0" aria-valuemax="100">
-                                                            {{ stats.disk_free_mb|round }} مگابایت
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="card h-100">
-                                                    <div class="card-body">
-                                                        <h6 class="text-center mb-3">فضای اشغال شده توسط ویدیوها</h6>
-                                                        <div class="text-center mb-3">
-                                                            <span class="display-4 text-info">{{ stats.video_size_mb|round(1) }}</span>
-                                                            <span class="text-muted">مگابایت</span>
-                                                        </div>
-                                                        <div class="text-center">
-                                                            <span class="text-white-50">{{ stats.video_percent|round(2) }}% از کل فضا</span>
-                                                        </div>
-                                                        <ul class="list-group list-group-flush mt-3">
-                                                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                <span>ویدیو‌های یوتیوب</span>
-                                                                <span class="badge bg-success rounded-pill">{{ stats.youtube_downloads }}</span>
-                                                            </li>
-                                                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                <span>ویدیو‌های اینستاگرام</span>
-                                                                <span class="badge bg-info rounded-pill">{{ stats.instagram_downloads }}</span>
-                                                            </li>
-                                                        </ul>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                            <div class="col-md-6">
+                                <div class="p-3 bg-dark-subtle rounded">
+                                    <h5>🎬 ویدیوهای دانلود شده:</h5>
+                                    <p class="fs-5 mb-0 text-info">{{ bot_status.downloads_count }} ویدیو</p>
                                 </div>
                             </div>
-                            
-                            {% if stats.hashtag_count > 0 and hashtags_file_exists %}
-                            <div class="mt-4">
-                                <h4 class="text-center mb-3">آمار هشتگ‌ها</h4>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="card mb-3">
-                                            <div class="card-body">
-                                                <h5 class="text-center">آمار کلی</h5>
-                                                <ul class="list-group list-group-flush mt-3">
-                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                        <span>تعداد کل هشتگ‌ها</span>
-                                                        <span class="badge bg-primary rounded-pill" data-stat="hashtag_count">{{ stats.hashtag_count }}</span>
-                                                    </li>
-                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                        <span>کانال‌های ثبت شده</span>
-                                                        <span class="badge bg-success rounded-pill" data-stat="registered_channels">{{ stats.registered_channels }}</span>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="card mb-3">
-                                            <div class="card-body">
-                                                <h5 class="text-center">هشتگ‌های پرکاربرد</h5>
-                                                {% if hashtag_labels %}
-                                                <ul class="list-group list-group-flush mt-3">
-                                                    {% for i in range(hashtag_labels|length) %}
-                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                        <span># {{ hashtag_labels[i] }}</span>
-                                                        <span class="badge bg-info rounded-pill">{{ hashtag_values[i] }}</span>
-                                                    </li>
-                                                    {% endfor %}
-                                                </ul>
-                                                {% else %}
-                                                <p class="text-muted text-center mt-3">هنوز هشتگی ثبت نشده است.</p>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
+                            <div class="col-md-6">
+                                <div class="p-3 bg-dark-subtle rounded">
+                                    <h5>🕒 آخرین فعالیت:</h5>
+                                    <p class="fs-5 mb-0 text-info">{{ bot_status.last_activity }}</p>
                                 </div>
                             </div>
-                            {% endif %}
-                            
-                            <h5 class="text-center mt-4 mb-3">دستورات ربات</h5>
-                            <ul class="list-group list-group-flush">
-                                <li class="list-group-item d-flex align-items-center">
-                                    <span class="badge badge-command bg-primary ms-2">/start</span>
-                                    <span>شروع ربات و دریافت پیام خوش‌آمدگویی</span>
-                                </li>
-                                <li class="list-group-item d-flex align-items-center">
-                                    <span class="badge badge-command bg-primary ms-2">/help</span>
-                                    <span>نمایش دستورات موجود</span>
-                                </li>
-                                <li class="list-group-item d-flex align-items-center">
-                                    <span class="badge badge-command bg-success ms-2">#هشتگ</span>
-                                    <span>جستجوی پیام‌های دارای هشتگ</span>
-                                </li>
-                                <li class="list-group-item d-flex align-items-center">
-                                    <span class="badge badge-command bg-danger ms-2">/add_channel</span>
-                                    <span>افزودن کانال به لیست مانیتورینگ (فقط ادمین)</span>
-                                </li>
-                                <li class="list-group-item d-flex align-items-center">
-                                    <span class="badge badge-command bg-warning ms-2">/channels</span>
-                                    <span>مشاهده کانال‌های ثبت شده (فقط ادمین)</span>
-                                </li>
-                            </ul>
-                        </div>
-                        
-                        <div class="alert alert-info mt-5 text-center">
-                            <strong>راهنمای راه‌اندازی:</strong> متغیر محیطی <code>TELEGRAM_BOT_TOKEN</code> را در تنظیمات Replit قرار دهید تا عملکرد ربات فعال شود.
                         </div>
                     </div>
-                    <div class="card-footer text-center">
-                        <small class="text-muted">آخرین بررسی: <span id="timestamp" dir="ltr"></span></small>
+                </div>
+            </div>
+
+            <!-- اطلاعات سیستم -->
+            <div class="col-md-6 mb-3">
+                <div class="card h-100 border-info">
+                    <div class="card-header bg-info text-white">
+                        <h4 class="mb-0">💻 وضعیت سیستم</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <h5>🔄 CPU:</h5>
+                            <div class="progress mb-2" style="height: 25px;">
+                                <div class="progress-bar bg-warning" role="progressbar" 
+                                    style="width: {{ system_info.cpu_percent }}%;" 
+                                    aria-valuenow="{{ system_info.cpu_percent }}" aria-valuemin="0" aria-valuemax="100">
+                                    {{ system_info.cpu_percent }}%
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <h5>💾 حافظه:</h5>
+                            <p class="small text-muted mb-1">{{ system_info.memory.total }} گیگابایت کل</p>
+                            <div class="progress mb-2" style="height: 25px;">
+                                <div class="progress-bar bg-primary" role="progressbar" 
+                                    style="width: {{ system_info.memory.used_percent }}%;" 
+                                    aria-valuenow="{{ system_info.memory.used_percent }}" aria-valuemin="0" aria-valuemax="100">
+                                    {{ system_info.memory.used_percent }}%
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <h5>💿 فضای دیسک:</h5>
+                            <p class="small text-muted mb-1">{{ system_info.disk.total }} گیگابایت کل</p>
+                            <div class="progress mb-2" style="height: 25px;">
+                                <div class="progress-bar bg-success" role="progressbar" 
+                                    style="width: {{ system_info.disk.used_percent }}%;" 
+                                    aria-valuenow="{{ system_info.disk.used_percent }}" aria-valuemin="0" aria-valuemax="100">
+                                    {{ system_info.disk.used_percent }}%
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-3">
+                            <div>
+                                <h6>🖥️ سیستم عامل:</h6>
+                                <p class="text-muted mb-0">{{ system_info.os }}</p>
+                            </div>
+                            <div>
+                                <h6>🐍 نسخه پایتون:</h6>
+                                <p class="text-muted mb-0">{{ system_info.python }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer text-end text-muted">
+                        <small>به‌روزرسانی: {{ system_info.current_time }}</small>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <!-- Bootstrap JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Update timestamp and stats automatically -->
-    <script>
-        function updateTimestamp() {
-            const now = new Date();
-            document.getElementById('timestamp').textContent = now.toLocaleString('fa-IR');
-        }
-        
-        async function updateStats() {
-            try {
-                const response = await fetch('/api/status');
-                if (response.ok) {
-                    const data = await response.json();
-                    
-                    // بروزرسانی آمار
-                    const statsElements = document.querySelectorAll('[data-stat]');
-                    statsElements.forEach(el => {
-                        const statName = el.getAttribute('data-stat');
-                        if (data.stats[statName] !== undefined) {
-                            // استفاده از انیمیشن برای نمایش تغییر
-                            if (statName !== 'uptime' && el.textContent != data.stats[statName]) {
-                                // حذف کلاس انیمیشن قبلی
-                                el.classList.remove('update-highlight');
+
+        <!-- راهنمای استفاده از ربات -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-secondary">
+                    <div class="card-header bg-secondary text-white">
+                        <h4 class="mb-0">📝 راهنمای استفاده از ربات</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <h5>🎬 دانلود ویدیو</h5>
+                                <ol class="list-group list-group-numbered mb-3">
+                                    <li class="list-group-item">ربات را در تلگرام استارت کنید: <code>@your_bot_username</code></li>
+                                    <li class="list-group-item">دستور <code>/quality</code> را برای انتخاب کیفیت ویدیو بزنید</li>
+                                    <li class="list-group-item">لینک ویدیوی یوتیوب یا اینستاگرام را ارسال کنید</li>
+                                    <li class="list-group-item">منتظر دانلود و ارسال ویدیو باشید</li>
+                                </ol>
                                 
-                                // اعمال انیمیشن با تایمر کوتاه برای اطمینان از اعمال مجدد
-                                setTimeout(() => {
-                                    el.textContent = data.stats[statName];
-                                    el.classList.add('update-highlight');
-                                }, 10);
-                            } else {
-                                el.textContent = data.stats[statName];
-                            }
-                        }
-                    });
-                    
-                    // وضعیت آنلاین
-                    const statusCircle = document.querySelector('.status-circle');
-                    if (statusCircle) {
-                        const previousStatus = statusCircle.classList.contains('bg-success') ? 'active' : 'inactive';
-                        
-                        if (data.status === 'active' && previousStatus !== 'active') {
-                            statusCircle.classList.remove('bg-warning', 'bg-danger');
-                            statusCircle.classList.add('bg-success', 'update-highlight');
-                        } else if (data.status !== 'active' && previousStatus === 'active') {
-                            statusCircle.classList.remove('bg-success', 'bg-danger');
-                            statusCircle.classList.add('bg-warning', 'update-highlight');
-                        }
-                    }
-                    
-                    // محاسبه زمان آپتایم
-                    if (data.uptime) {
-                        const days = Math.floor(data.uptime / 86400);
-                        const hours = Math.floor((data.uptime % 86400) / 3600);
-                        const minutes = Math.floor((data.uptime % 3600) / 60);
-                        const uptimeText = `${days} روز, ${hours} ساعت, ${minutes} دقیقه`;
-                        const uptimeElement = document.querySelector('[data-stat="uptime"]');
-                        if (uptimeElement) {
-                            uptimeElement.textContent = uptimeText;
-                        }
-                    }
-                    
-                    // بروزرسانی آخرین زمان چک
-                    document.getElementById('timestamp').textContent = new Date().toLocaleString('fa-IR');
-                }
-            } catch (error) {
-                console.error('خطا در بروزرسانی آمار:', error);
-            }
-        }
-        
-        // بروزرسانی زمان
-        updateTimestamp();
-        setInterval(updateTimestamp, 30000);
-        
-        // بروزرسانی آمار هر 60 ثانیه
-        updateStats();
-        setInterval(updateStats, 60000);
+                                <h5>⚙️ تنظیمات</h5>
+                                <div class="list-group mb-3">
+                                    <div class="list-group-item">
+                                        <code>/quality</code> - انتخاب کیفیت ویدیو (۱۴۴p تا ۱۰۸۰p)
+                                    </div>
+                                    <div class="list-group-item">
+                                        <code>/help</code> - نمایش راهنما
+                                    </div>
+                                    <div class="list-group-item">
+                                        <code>/status</code> - نمایش وضعیت ربات و سرور
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h5>🔍 سایت‌های پشتیبانی شده</h5>
+                                <div class="list-group mb-3">
+                                    <div class="list-group-item">
+                                        <strong>یوتیوب</strong> - تمام لینک‌های یوتیوب و شورت‌لینک‌ها
+                                    </div>
+                                    <div class="list-group-item">
+                                        <strong>اینستاگرام</strong> - پست‌ها، IGTV، ریلز
+                                    </div>
+                                </div>
+                                
+                                <h5>⚠️ نکات مهم</h5>
+                                <div class="list-group">
+                                    <div class="list-group-item">
+                                        <strong>محدودیت حجم:</strong> حداکثر حجم ویدیو ۵۰ مگابایت است
+                                    </div>
+                                    <div class="list-group-item">
+                                        <strong>کیفیت پیش‌فرض:</strong> ۲۴۰p برای صرفه‌جویی در مصرف اینترنت و فضای سرور
+                                    </div>
+                                    <div class="list-group-item">
+                                        <strong>مدیریت فضا:</strong> حداکثر ۳ ویدیو برای هر کاربر نگهداری می‌شود
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="pt-3 mt-4 text-muted border-top text-center">
+            <p>&copy; ۱۴۰۴ - داشبورد ربات تلگرام دانلود ویدیو</p>
+            <p>
+                <span class="badge bg-primary rounded-pill">Flask</span>
+                <span class="badge bg-info rounded-pill">Python</span>
+                <span class="badge bg-success rounded-pill">Telegram Bot</span>
+                <span class="badge bg-warning rounded-pill text-dark">Bootstrap 5</span>
+            </p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // به‌روزرسانی خودکار صفحه هر ۳۰ ثانیه
+        setTimeout(function() {
+            location.reload();
+        }, 30000);
     </script>
 </body>
 </html>

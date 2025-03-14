@@ -2,8 +2,12 @@ import os
 import logging
 import time
 import threading
-from flask import Flask, jsonify
-from bot import start_bot  # ایمپورت تابعی که ربات را اجرا می‌کند
+import json
+import psutil
+import platform
+from datetime import datetime
+from flask import Flask, jsonify, render_template, redirect, url_for
+from bot import start_bot, get_cached_server_status
 
 # ایجاد اپلیکیشن Flask
 app = Flask(__name__)
@@ -15,22 +19,73 @@ logger = logging.getLogger(__name__)
 # وضعیت ربات
 bot_status = {
     "running": False,
-    "start_time": time.time()
+    "start_time": time.time(),
+    "uptime": "0 ساعت و 0 دقیقه",
+    "users_count": 0,
+    "downloads_count": 0,
+    "last_activity": "هنوز فعالیتی ثبت نشده"
 }
+
+# مسیر ذخیره‌سازی وضعیت سرور
+SERVER_STATUS_FILE = "server_status.json"
 
 # بروزرسانی آمار ربات
 def update_bot_status():
+    # محاسبه زمان آپتایم
     uptime_seconds = int(time.time() - bot_status["start_time"])
-    bot_status["uptime"] = f"{uptime_seconds // 3600} ساعت و {uptime_seconds % 3600 // 60} دقیقه"
+    hours = uptime_seconds // 3600
+    minutes = (uptime_seconds % 3600) // 60
+    bot_status["uptime"] = f"{hours} ساعت و {minutes} دقیقه"
+    
+    # خواندن اطلاعات ذخیره شده از فایل، اگر وجود داشته باشد
+    if os.path.exists(SERVER_STATUS_FILE):
+        try:
+            with open(SERVER_STATUS_FILE, 'r', encoding='utf-8') as f:
+                saved_status = json.load(f)
+                # آپدیت آمار از فایل ذخیره شده
+                if "users_count" in saved_status:
+                    bot_status["users_count"] = saved_status["users_count"]
+                if "downloads_count" in saved_status:
+                    bot_status["downloads_count"] = saved_status["downloads_count"]
+                if "last_activity" in saved_status:
+                    bot_status["last_activity"] = saved_status["last_activity"]
+                # وضعیت فعال بودن ربات را از سرور بگیر
+                server_status = get_cached_server_status()
+                if server_status and "is_bot_running" in server_status:
+                    bot_status["running"] = server_status["is_bot_running"]
+        except Exception as e:
+            logger.error(f"خطا در خواندن فایل وضعیت سرور: {e}")
 
 # صفحه اصلی داشبورد
 @app.route('/')
 def home():
     update_bot_status()
-    return jsonify({
-        "status": "✅ ربات فعال است" if bot_status["running"] else "❌ ربات متوقف است",
-        "uptime": bot_status["uptime"]
-    })
+    
+    # اطلاعات سیستم
+    system_info = {
+        "os": platform.platform(),
+        "python": platform.python_version(),
+        "cpu_percent": psutil.cpu_percent(),
+        "memory": {
+            "total": round(psutil.virtual_memory().total / (1024**3), 2),  # به گیگابایت
+            "used_percent": psutil.virtual_memory().percent
+        },
+        "disk": {
+            "total": round(psutil.disk_usage('/').total / (1024**3), 2),  # به گیگابایت
+            "used_percent": psutil.disk_usage('/').percent
+        },
+        "current_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+    
+    return render_template('index.html', 
+                           bot_status=bot_status, 
+                           system_info=system_info)
+
+# صفحه آمار ربات به فرمت JSON
+@app.route('/api/status')
+def api_status():
+    update_bot_status()
+    return jsonify(bot_status)
 
 # بررسی سلامت سرور
 @app.route('/ping')
@@ -39,17 +94,29 @@ def ping():
 
 # اجرای ربات در یک ترد جداگانه
 def run_bot():
-    bot_status["running"] = True
-    start_bot()  # اجرای ربات
+    try:
+        bot_status["running"] = True
+        # ذخیره وضعیت در فایل
+        with open(SERVER_STATUS_FILE, 'w', encoding='utf-8') as f:
+            json.dump({"is_bot_running": True}, f)
+        # اجرای ربات در یک ترد جداگانه
+        bot_thread = threading.Thread(target=start_bot)
+        bot_thread.daemon = True
+        bot_thread.start()
+        logger.info("🚀 ربات تلگرام با موفقیت راه‌اندازی شد!")
+    except Exception as e:
+        logger.error(f"⚠️ خطا در راه‌اندازی ربات: {e}")
+        bot_status["running"] = False
 
-from bot import app  # ایمپورت سرور Flask
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host="0.0.0.0", port=port)
+# راه‌اندازی ربات با استفاده از with app.app_context()
+# توجه: در نسخه‌های جدید Flask، before_first_request حذف شده است
+# بنابراین از روش دیگری استفاده می‌کنیم
+with app.app_context():
+    run_bot()
+    logger.info("🔄 ربات تلگرام در پس‌زمینه اجرا می‌شود...")
 
 # اجرای سرور Flask
 if __name__ == "__main__":
-    logger.info("🚀 راه‌اندازی سرور Flask...")
-    port = int(os.environ.get("PORT", 8080))  # استفاده از پورت متغیر محیطی
+    logger.info("🚀 راه‌اندازی سرور وب داشبورد...")
+    port = int(os.environ.get("PORT", 5000))  # استفاده از پورت متغیر محیطی
     app.run(host="0.0.0.0", port=port)
