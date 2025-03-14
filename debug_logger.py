@@ -60,40 +60,60 @@ def debug_log(message, level="DEBUG", context=None):
     if not DEBUG_CONFIG["enabled"]:
         return
 
-    # اطلاعات فریم اجرایی فعلی
-    frame = inspect.currentframe().f_back
-    func_name = frame.f_code.co_name
-    file_name = frame.f_code.co_filename
-    line_num = frame.f_lineno
-    
-    # ساخت پیام لاگ با جزئیات
-    log_entry = {
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "level": level,
-        "message": message,
-        "location": {
-            "file": os.path.basename(file_name),
-            "function": func_name,
-            "line": line_num
-        }
-    }
-    
-    # افزودن اطلاعات زمینه اگر ارائه شده باشد
-    if context:
-        log_entry["context"] = context
+    try:
+        # اطلاعات فریم اجرایی فعلی - با مدیریت خطا
+        frame = inspect.currentframe()
+        if frame and frame.f_back:
+            func_name = frame.f_back.f_code.co_name if hasattr(frame.f_back, 'f_code') else "unknown"
+            file_name = frame.f_back.f_code.co_filename if hasattr(frame.f_back, 'f_code') else "unknown"
+            line_num = frame.f_back.f_lineno if hasattr(frame.f_back, 'f_lineno') else 0
+        else:
+            func_name = "unknown"
+            file_name = "unknown"
+            line_num = 0
         
-    # تبدیل به رشته JSON برای خوانایی بهتر
-    log_message = json.dumps(log_entry, ensure_ascii=False, indent=2)
-    
-    # لاگ با سطح مناسب
-    if DEBUG_CONFIG["log_to_console"]:
-        log_func = getattr(logger, level.lower())
-        log_func(log_message)
+        # ساخت پیام لاگ با جزئیات
+        log_entry = {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "level": level,
+            "message": message,
+            "location": {
+                "file": os.path.basename(file_name),
+                "function": func_name,
+                "line": line_num
+            }
+        }
+        
+        # افزودن اطلاعات زمینه اگر ارائه شده باشد
+        if context:
+            log_entry["context"] = context
+            
+        # تبدیل به رشته JSON برای خوانایی بهتر با مدیریت خطا
+        try:
+            log_message = json.dumps(log_entry, ensure_ascii=False, indent=2)
+        except Exception:
+            # اگر JSON سازی خطا داشت، یک پیام ساده استفاده کن
+            log_message = f"{level}: {message}"
+        
+        # لاگ با سطح مناسب
+        if DEBUG_CONFIG["log_to_console"]:
+            # اطمینان از اینکه سطح لاگ معتبر است
+            log_level = level.lower() if level.lower() in ['debug', 'info', 'warning', 'error', 'critical'] else 'debug'
+            log_func = getattr(logger, log_level)
+            log_func(log_message)
 
-    # نوشتن به فایل اگر فعال باشد
-    if DEBUG_CONFIG["log_to_file"]:
-        with open(LOG_FILE, "a", encoding="utf-8") as f:
-            f.write(f"{log_message}\n{'='*50}\n")
+        # نوشتن به فایل اگر فعال باشد - با مدیریت خطا
+        if DEBUG_CONFIG["log_to_file"]:
+            try:
+                with open(LOG_FILE, "a", encoding="utf-8") as f:
+                    f.write(f"{log_message}\n{'='*50}\n")
+            except Exception:
+                # در صورت خطا در نوشتن فایل، به سادگی آن را نادیده بگیر
+                pass
+    
+    except Exception as e:
+        # در صورت هر گونه خطا، به سادگی یک پیام ساده لاگ کن
+        logger.error(f"Error in debug_log: {str(e)} - Original message: {message}")
 
 
 def log_webhook_request(data):
@@ -137,7 +157,7 @@ def log_webhook_request(data):
 
 def log_telegram_update(update):
     """
-    لاگ کردن آپدیت‌های تلگرام با جزئیات
+    لاگ کردن آپدیت‌های تلگرام با جزئیات و مدیریت خطا
     
     Args:
         update: آبجکت Update تلگرام
@@ -146,38 +166,148 @@ def log_telegram_update(update):
         return
         
     try:
-        update_dict = {}
-        # استخراج اطلاعات مهم از آپدیت
-        if hasattr(update, 'update_id'):
-            update_dict["update_id"] = update.update_id
+        # بررسی آیا آپدیت شیء است یا دیکشنری
+        if isinstance(update, dict):
+            # اگر آپدیت یک دیکشنری است، آن را مستقیماً استفاده کن
+            update_dict = {}
             
-        if hasattr(update, 'message') and update.message:
-            update_dict["message"] = {
-                "message_id": update.message.message_id,
-                "chat_id": update.message.chat.id,
-                "user_id": update.message.from_user.id if update.message.from_user else None,
-                "username": update.message.from_user.username if update.message.from_user else None,
-                "text": update.message.text if hasattr(update.message, 'text') else None,
-                "date": update.message.date.strftime("%Y-%m-%d %H:%M:%S") if update.message.date else None,
-            }
+            # استخراج شناسه آپدیت
+            update_dict["update_id"] = update.get("update_id", "unknown")
             
-        elif hasattr(update, 'callback_query') and update.callback_query:
-            update_dict["callback_query"] = {
-                "id": update.callback_query.id,
-                "chat_id": update.callback_query.message.chat.id if update.callback_query.message else None,
-                "user_id": update.callback_query.from_user.id,
-                "username": update.callback_query.from_user.username,
-                "data": update.callback_query.data,
-            }
+            # استخراج اطلاعات پیام
+            if "message" in update:
+                message = update["message"]
+                message_info = {
+                    "message_id": message.get("message_id", "unknown"),
+                }
+                
+                # استخراج اطلاعات چت
+                if "chat" in message:
+                    message_info["chat_id"] = message["chat"].get("id", "unknown")
+                
+                # استخراج اطلاعات کاربر
+                if "from" in message:
+                    message_info["user_id"] = message["from"].get("id", "unknown")
+                    message_info["username"] = message["from"].get("username", "unknown")
+                
+                # استخراج متن پیام
+                message_info["text"] = message.get("text", "no_text")
+                
+                # استخراج تاریخ پیام
+                if "date" in message:
+                    try:
+                        from datetime import datetime
+                        date = datetime.fromtimestamp(message["date"])
+                        message_info["date"] = date.strftime("%Y-%m-%d %H:%M:%S")
+                    except Exception:
+                        message_info["date"] = "unknown"
+                
+                update_dict["message"] = message_info
+                
+            # استخراج اطلاعات کالبک کوئری
+            elif "callback_query" in update:
+                callback = update["callback_query"]
+                callback_info = {
+                    "id": callback.get("id", "unknown"),
+                    "data": callback.get("data", "unknown"),
+                }
+                
+                # استخراج اطلاعات کاربر
+                if "from" in callback:
+                    callback_info["user_id"] = callback["from"].get("id", "unknown")
+                    callback_info["username"] = callback["from"].get("username", "unknown")
+                
+                # استخراج اطلاعات پیام مرتبط
+                if "message" in callback and "chat" in callback["message"]:
+                    callback_info["chat_id"] = callback["message"]["chat"].get("id", "unknown")
+                
+                update_dict["callback_query"] = callback_info
             
-        debug_log("آپدیت تلگرام دریافت شد", "INFO", {
-            "update": update_dict
-        })
+            debug_log("آپدیت تلگرام (JSON) دریافت شد", "INFO", {
+                "update": update_dict
+            })
+            
+        else:
+            # اگر آپدیت یک شیء است، اطلاعات آن را به روش معمول استخراج کن
+            update_dict = {}
+            
+            # استخراج شناسه آپدیت
+            try:
+                if hasattr(update, 'update_id'):
+                    update_dict["update_id"] = update.update_id
+            except Exception:
+                update_dict["update_id"] = "error_extracting"
+                
+            # استخراج اطلاعات پیام
+            try:
+                if hasattr(update, 'message') and update.message:
+                    message_info = {}
+                    
+                    if hasattr(update.message, 'message_id'):
+                        message_info["message_id"] = update.message.message_id
+                    
+                    if hasattr(update.message, 'chat') and hasattr(update.message.chat, 'id'):
+                        message_info["chat_id"] = update.message.chat.id
+                    
+                    if hasattr(update.message, 'from_user'):
+                        if hasattr(update.message.from_user, 'id'):
+                            message_info["user_id"] = update.message.from_user.id
+                        if hasattr(update.message.from_user, 'username'):
+                            message_info["username"] = update.message.from_user.username
+                    
+                    if hasattr(update.message, 'text'):
+                        message_info["text"] = update.message.text
+                    
+                    if hasattr(update.message, 'date'):
+                        try:
+                            message_info["date"] = update.message.date.strftime("%Y-%m-%d %H:%M:%S") if update.message.date else None
+                        except Exception:
+                            message_info["date"] = "error_formatting_date"
+                    
+                    update_dict["message"] = message_info
+            except Exception as msg_error:
+                update_dict["message_extraction_error"] = str(msg_error)
+                
+            # استخراج اطلاعات کالبک کوئری
+            try:
+                if hasattr(update, 'callback_query') and update.callback_query:
+                    callback_info = {}
+                    
+                    if hasattr(update.callback_query, 'id'):
+                        callback_info["id"] = update.callback_query.id
+                    
+                    if hasattr(update.callback_query, 'data'):
+                        callback_info["data"] = update.callback_query.data
+                    
+                    if hasattr(update.callback_query, 'from_user'):
+                        if hasattr(update.callback_query.from_user, 'id'):
+                            callback_info["user_id"] = update.callback_query.from_user.id
+                        if hasattr(update.callback_query.from_user, 'username'):
+                            callback_info["username"] = update.callback_query.from_user.username
+                    
+                    if hasattr(update.callback_query, 'message') and hasattr(update.callback_query.message, 'chat'):
+                        if hasattr(update.callback_query.message.chat, 'id'):
+                            callback_info["chat_id"] = update.callback_query.message.chat.id
+                    
+                    update_dict["callback_query"] = callback_info
+            except Exception as cb_error:
+                update_dict["callback_extraction_error"] = str(cb_error)
+            
+            debug_log("آپدیت تلگرام (شیء) دریافت شد", "INFO", {
+                "update": update_dict
+            })
+            
     except Exception as e:
-        debug_log(f"خطا در لاگ کردن آپدیت تلگرام: {e}", "ERROR", {
-            "error_type": type(e).__name__,
-            "traceback": traceback.format_exc()
-        })
+        # در صورت بروز هر خطایی، یک پیام خطای ساده ثبت کن
+        try:
+            debug_log(f"خطا در لاگ کردن آپدیت تلگرام: {e}", "ERROR", {
+                "error_type": type(e).__name__,
+                "update_type": type(update).__name__ if update else "None",
+                "traceback": traceback.format_exc()
+            })
+        except Exception:
+            # اگر حتی نمی‌توان خطا را لاگ کرد، از یک پیام ساده استفاده کن
+            logger.error("خطای بحرانی در لاگ کردن آپدیت تلگرام")
 
 
 def log_api_call(func_name, args, kwargs, result=None, error=None):
@@ -291,25 +421,51 @@ def format_exception_with_context(e):
     Returns:
         رشته فرمت‌بندی شده از استثنا با اطلاعات اضافی
     """
-    exc_type, exc_value, exc_traceback = sys.exc_info()
-    
-    # استخراج زنجیره کامل فراخوانی
-    stack_trace = traceback.extract_tb(exc_traceback)
-    
-    # ساخت پیام خطا با جزئیات کامل
-    error_details = {
-        "error_type": exc_type.__name__,
-        "error_message": str(exc_value),
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "stack_trace": []
-    }
-    
-    for frame in stack_trace:
-        error_details["stack_trace"].append({
-            "file": frame.filename,
-            "line": frame.lineno,
-            "function": frame.name,
-            "code": frame.line
-        })
-    
-    return json.dumps(error_details, ensure_ascii=False, indent=2)
+    try:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        
+        # بررسی معتبر بودن اطلاعات خطا
+        if not all([exc_type, exc_value, exc_traceback]):
+            # اگر اطلاعات خطا کامل نیست، از خود استثنا استفاده کن
+            return f"Error: {str(e)}\nType: {type(e).__name__}\nTraceback: {traceback.format_exc()}"
+        
+        # استخراج زنجیره کامل فراخوانی با مدیریت خطا
+        try:
+            stack_trace = traceback.extract_tb(exc_traceback)
+            
+            # ساخت پیام خطا با جزئیات کامل
+            error_details = {
+                "error_type": exc_type.__name__ if hasattr(exc_type, "__name__") else str(exc_type),
+                "error_message": str(exc_value),
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "stack_trace": []
+            }
+            
+            # اضافه کردن اطلاعات فریم‌ها با مدیریت خطا
+            for frame in stack_trace:
+                try:
+                    frame_info = {
+                        "file": frame.filename if hasattr(frame, "filename") else "unknown",
+                        "line": frame.lineno if hasattr(frame, "lineno") else 0,
+                        "function": frame.name if hasattr(frame, "name") else "unknown",
+                        "code": frame.line if hasattr(frame, "line") else "unknown"
+                    }
+                    error_details["stack_trace"].append(frame_info)
+                except Exception:
+                    # اگر دسترسی به اطلاعات فریم با خطا مواجه شد، یک مقدار پیش‌فرض قرار بده
+                    error_details["stack_trace"].append({"info": "frame info extraction failed"})
+            
+            # تبدیل به JSON با مدیریت خطا
+            try:
+                return json.dumps(error_details, ensure_ascii=False, indent=2)
+            except Exception:
+                # اگر تبدیل به JSON با خطا مواجه شد، از فرمت متنی استفاده کن
+                return f"Error: {str(exc_value)}\nType: {exc_type.__name__ if hasattr(exc_type, '__name__') else str(exc_type)}\nTraceback: {traceback.format_exc()}"
+                
+        except Exception:
+            # اگر استخراج اطلاعات فریم با خطا مواجه شد، از traceback ساده استفاده کن
+            return traceback.format_exc()
+            
+    except Exception:
+        # در صورت هر گونه خطای غیرمنتظره، یک پیام ساده برگردان
+        return f"Error occurred: {str(e)}"

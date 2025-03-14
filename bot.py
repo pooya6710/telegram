@@ -95,59 +95,196 @@ thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=3)
 # برای دریافت وب‌هوک از فلسک استفاده می‌کنیم
 @debug_decorator
 def webhook():
+    json_str = None
+    debug_log("شروع دریافت وب‌هوک جدید", "INFO")
+    
     try:
-        # دریافت داده‌های JSON از درخواست
-        json_str = request.get_data().decode("UTF-8")
-        debug_log(f"داده دریافتی وب‌هوک: {json_str[:100]}...", "INFO")
-        
-        # ثبت داده‌های خام برای تحلیل بیشتر
-        log_webhook_request(json_str)
-        
-        # تبدیل به آبجکت Update تلگرام
-        update = telebot.types.Update.de_json(json_str)
-        
-        # ثبت آپدیت تلگرام در لاگ
-        log_telegram_update(update)
-        
-        # بررسی نوع پیام برای لاگ
-        if hasattr(update, 'message') and update.message is not None:
-            debug_log(f"پیام جدید از کاربر {update.message.from_user.id}: {update.message.text}", "INFO", {
-                "user_id": update.message.from_user.id,
-                "username": update.message.from_user.username if hasattr(update.message.from_user, 'username') else None,
-                "chat_id": update.message.chat.id,
-                "message_id": update.message.message_id
+        # دریافت داده‌های از درخواست با مدیریت خطا
+        try:
+            json_raw = request.get_data()
+            debug_log(f"داده خام وب‌هوک دریافت شد: {len(json_raw)} بایت", "DEBUG")
+            
+            # تلاش برای رمزگشایی داده‌ها
+            try:
+                json_str = json_raw.decode("UTF-8")
+            except UnicodeDecodeError:
+                # اگر UTF-8 کار نکرد، روش‌های دیگر را امتحان کن
+                try:
+                    json_str = json_raw.decode("latin-1")
+                    debug_log("داده وب‌هوک با latin-1 رمزگشایی شد", "WARNING")
+                except Exception:
+                    # اگر همه روش‌ها شکست خورد، فقط داده باینری را لاگ کن
+                    debug_log("عدم توانایی در رمزگشایی داده وب‌هوک", "ERROR")
+                    log_webhook_request(json_raw)
+                    return "خطای رمزگشایی داده", 400
+            
+            # لاگ کردن بخشی از داده دریافتی
+            if json_str:
+                preview = json_str[:100] + ("..." if len(json_str) > 100 else "")
+                debug_log(f"داده دریافتی وب‌هوک: {preview}", "INFO")
+                log_webhook_request(json_str)
+                
+        except Exception as req_error:
+            debug_log(f"خطا در دریافت داده از درخواست وب‌هوک", "ERROR", {
+                "error_type": type(req_error).__name__,
+                "error_message": str(req_error)
             })
-        elif hasattr(update, 'callback_query') and update.callback_query is not None:
-            debug_log(f"کالبک کوئری جدید از کاربر {update.callback_query.from_user.id}", "INFO", {
-                "user_id": update.callback_query.from_user.id,
-                "data": update.callback_query.data,
-                "query_id": update.callback_query.id
+            return "خطا در دریافت داده درخواست", 400
+            
+        # تبدیل JSON به آبجکت Update تلگرام با مدیریت خطا
+        try:
+            # اطمینان از وجود داده
+            if not json_str:
+                debug_log("JSON خالی یا نامعتبر", "ERROR")
+                return "داده JSON نامعتبر است", 400
+                
+            # تبدیل به آبجکت Update
+            try:
+                update = telebot.types.Update.de_json(json_str)
+                if not update:
+                    debug_log("تبدیل JSON به آبجکت Update با مشکل مواجه شد", "ERROR")
+                    return "تبدیل JSON ناموفق بود", 400
+            except Exception as json_error:
+                debug_log(f"خطا در تبدیل JSON به آبجکت Update", "ERROR", {
+                    "error_type": type(json_error).__name__,
+                    "error_message": str(json_error),
+                    "json_sample": json_str[:200] if json_str else "None"
+                })
+                return "خطا در تبدیل JSON", 400
+                
+            # ثبت آپدیت تلگرام در لاگ با مدیریت خطا
+            try:
+                log_telegram_update(update)
+            except Exception as log_error:
+                debug_log(f"خطا در لاگ کردن آپدیت تلگرام", "ERROR", {
+                    "error_type": type(log_error).__name__,
+                    "error_message": str(log_error)
+                })
+                # ادامه می‌دهیم حتی اگر لاگینگ خطا داشته باشد
+                
+            # بررسی نوع پیام برای لاگ با مدیریت خطا
+            try:
+                if hasattr(update, 'message') and update.message is not None:
+                    user_id = None
+                    msg_text = None
+                    
+                    # استخراج اطلاعات کاربر با مدیریت خطا
+                    try:
+                        if hasattr(update.message, 'from_user') and update.message.from_user is not None:
+                            user_id = update.message.from_user.id
+                            username = update.message.from_user.username if hasattr(update.message.from_user, 'username') else None
+                    except Exception:
+                        debug_log("خطا در استخراج اطلاعات کاربر", "WARNING")
+                    
+                    # استخراج متن پیام با مدیریت خطا
+                    try:
+                        msg_text = update.message.text if hasattr(update.message, 'text') else "[NO_TEXT]"
+                    except Exception:
+                        debug_log("خطا در استخراج متن پیام", "WARNING")
+                        msg_text = "[ERROR_EXTRACTING_TEXT]"
+                        
+                    # لاگ کردن پیام
+                    log_data = {
+                        "user_id": user_id,
+                        "chat_id": update.message.chat.id if hasattr(update.message, 'chat') and hasattr(update.message.chat, 'id') else None,
+                        "message_id": update.message.message_id if hasattr(update.message, 'message_id') else None
+                    }
+                    
+                    # اضافه کردن یوزرنیم اگر موجود باشد
+                    if hasattr(update.message, 'from_user') and update.message.from_user and hasattr(update.message.from_user, 'username'):
+                        log_data["username"] = update.message.from_user.username
+                        
+                    debug_log(f"پیام جدید از کاربر {user_id}: {msg_text}", "INFO", log_data)
+                
+                elif hasattr(update, 'callback_query') and update.callback_query is not None:
+                    # استخراج اطلاعات کالبک کوئری با مدیریت خطا
+                    callback_info = {}
+                    
+                    try:
+                        if hasattr(update.callback_query, 'from_user') and update.callback_query.from_user:
+                            callback_info["user_id"] = update.callback_query.from_user.id
+                    except Exception:
+                        debug_log("خطا در استخراج شناسه کاربر از کالبک کوئری", "WARNING")
+                        callback_info["user_id"] = None
+                        
+                    try:
+                        callback_info["query_id"] = update.callback_query.id if hasattr(update.callback_query, 'id') else None
+                    except Exception:
+                        debug_log("خطا در استخراج شناسه کالبک کوئری", "WARNING")
+                        
+                    try:
+                        callback_info["data"] = update.callback_query.data if hasattr(update.callback_query, 'data') else None
+                    except Exception:
+                        debug_log("خطا در استخراج داده کالبک کوئری", "WARNING")
+                        
+                    # لاگ کردن کالبک کوئری
+                    user_id_str = str(callback_info.get("user_id", "نامشخص"))
+                    debug_log(f"کالبک کوئری جدید از کاربر {user_id_str}", "INFO", callback_info)
+            except Exception as msg_log_error:
+                debug_log(f"خطا در لاگ کردن جزئیات پیام", "ERROR", {
+                    "error_type": type(msg_log_error).__name__,
+                    "error_message": str(msg_log_error)
+                })
+                # ادامه می‌دهیم حتی اگر لاگینگ خطا داشته باشد
+                
+            # پردازش پیام با مدیریت خطا
+            try:
+                bot.process_new_updates([update])
+                debug_log("پیام با موفقیت پردازش شد", "INFO")
+                return "✅ Webhook دریافت شد!", 200
+            except Exception as process_error:
+                error_details = format_exception_with_context(process_error)
+                debug_log(f"خطا در پردازش پیام توسط ربات", "ERROR", {
+                    "error_type": type(process_error).__name__,
+                    "error_message": str(process_error),
+                    "traceback": error_details
+                })
+                
+                # اطلاع‌رسانی به ادمین با محدود کردن طول پیام
+                try:
+                    notify_admin(f"⚠️ خطا در پردازش پیام:\n{str(process_error)}\n\n{error_details[:2000]}...")
+                except Exception:
+                    debug_log("خطا در اطلاع‌رسانی به ادمین", "ERROR")
+                    
+                return f"خطا در پردازش پیام", 500
+                
+        except Exception as update_error:
+            error_details = format_exception_with_context(update_error)
+            debug_log(f"خطا در پردازش آپدیت تلگرام", "ERROR", {
+                "error_type": type(update_error).__name__,
+                "error_message": str(update_error),
+                "traceback": error_details
             })
-        
-        # پردازش پیام
-        bot.process_new_updates([update])
-        debug_log("پیام با موفقیت پردازش شد", "INFO")
-        return "✅ Webhook دریافت شد!", 200
-    except UnicodeDecodeError as ude:
-        debug_log(f"خطا در رمزگشایی داده‌ها", "ERROR", {
-            "error_type": "UnicodeDecodeError",
-            "error_message": str(ude)
-        })
-        return f"خطای رمزگشایی", 400
-    except ValueError as ve:
-        debug_log(f"خطا در تبدیل JSON", "ERROR", {
-            "error_type": "ValueError",
-            "error_message": str(ve)
-        })
-        return f"خطای JSON", 400
+            
+            # اطلاع‌رسانی به ادمین
+            try:
+                notify_admin(f"⚠️ خطا در پردازش آپدیت:\n{str(update_error)}\n\n{error_details[:2000]}...")
+            except Exception:
+                debug_log("خطا در اطلاع‌رسانی به ادمین", "ERROR")
+                
+            return f"خطا در پردازش آپدیت", 500
+            
     except Exception as e:
-        debug_log(f"خطا در دریافت پیام", "ERROR", {
-            "error_type": type(e).__name__,
-            "error_message": str(e),
-            "traceback": format_exception_with_context(e)
-        })
-        notify_admin(f"⚠️ خطا در پردازش وب‌هوک:\n{format_exception_with_context(e)}")
-        return f"❌ خطا: {e}", 500
+        # مدیریت هر گونه خطای غیرمنتظره
+        try:
+            error_details = format_exception_with_context(e)
+            debug_log(f"خطای غیرمنتظره در پردازش وب‌هوک", "ERROR", {
+                "error_type": type(e).__name__,
+                "error_message": str(e),
+                "traceback": error_details
+            })
+            
+            # اطلاع‌رسانی به ادمین
+            try:
+                notify_admin(f"⚠️ خطای غیرمنتظره در وب‌هوک:\n{str(e)}\n\n{error_details[:2000]}...")
+            except Exception:
+                debug_log("خطا در اطلاع‌رسانی به ادمین", "ERROR")
+                
+        except Exception as logging_error:
+            # اگر حتی لاگینگ هم خطا داشت، یک پیام ساده ثبت کن
+            print(f"Critical error in webhook handler: {str(e)} - Logging error: {str(logging_error)}")
+            
+        return f"خطای سرور", 500
 
 
 SERVER_CACHE = {"status": None, "timestamp": None}
