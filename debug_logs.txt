@@ -1,0 +1,616 @@
+2025-03-14 02:48:44,043 - telegram_bot_debug - DEBUG - {
+  "timestamp": "2025-03-14 02:48:44",
+  "level": "DEBUG",
+  "message": "شروع اجرای bot_check",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 383
+  },
+  "context": {
+    "args": "()",
+    "kwargs": "{}"
+  }
+}
+{
+  "timestamp": "2025-03-14 02:48:44",
+  "level": "DEBUG",
+  "message": "شروع اجرای bot_check",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 383
+  },
+  "context": {
+    "args": "()",
+    "kwargs": "{}"
+  }
+}
+==================================================
+2025-03-14 02:48:44,044 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 02:48:44",
+  "level": "INFO",
+  "message": "درخواست بررسی وضعیت ربات دریافت شد",
+  "location": {
+    "file": "main.py",
+    "function": "bot_check",
+    "line": 352
+  }
+}
+{
+  "timestamp": "2025-03-14 02:48:44",
+  "level": "INFO",
+  "message": "درخواست بررسی وضعیت ربات دریافت شد",
+  "location": {
+    "file": "main.py",
+    "function": "bot_check",
+    "line": 352
+  }
+}
+==================================================
+2025-03-14 02:48:44,044 - telegram_bot_debug - DEBUG - {
+  "timestamp": "2025-03-14 02:48:44",
+  "level": "DEBUG",
+  "message": "در حال دریافت اطلاعات ربات از API تلگرام",
+  "location": {
+    "file": "main.py",
+    "function": "bot_check",
+    "line": 356
+  }
+}
+{
+  "timestamp": "2025-03-14 02:48:44",
+  "level": "DEBUG",
+  "message": "در حال دریافت اطلاعات ربات از API تلگرام",
+  "location": {
+    "file": "main.py",
+    "function": "bot_check",
+    "line": 356
+  }
+}
+==================================================
+2025-03-14 02:48:44,600 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 02:48:44",
+  "level": "INFO",
+  "message": "اطلاعات ربات با موفقیت دریافت شد",
+  "location": {
+    "file": "main.py",
+    "function": "bot_check",
+    "line": 368
+  },
+  "context": {
+    "bot_username": "sarbaazzz_bot",
+    "bot_id": 7338644071
+  }
+}
+{
+  "timestamp": "2025-03-14 02:48:44",
+  "level": "INFO",
+  "message": "اطلاعات ربات با موفقیت دریافت شد",
+  "location": {
+    "file": "main.py",
+    "function": "bot_check",
+    "line": 368
+  },
+  "context": {
+    "bot_username": "sarbaazzz_bot",
+    "bot_id": 7338644071
+  }
+}
+==================================================
+2025-03-14 02:48:44,600 - telegram_bot_debug - DEBUG - {
+  "timestamp": "2025-03-14 02:48:44",
+  "level": "DEBUG",
+  "message": "اطلاعات محیط اجرا",
+  "location": {
+    "file": "main.py",
+    "function": "bot_check",
+    "line": 395
+  },
+  "context": {
+    "environment": {
+      "webhook_mode": "true",
+      "port": "5000",
+      "has_token": true
+    }
+  }
+}
+{
+  "timestamp": "2025-03-14 02:48:44",
+  "level": "DEBUG",
+  "message": "اطلاعات محیط اجرا",
+  "location": {
+    "file": "main.py",
+    "function": "bot_check",
+    "line": 395
+  },
+  "context": {
+    "environment": {
+      "webhook_mode": "true",
+      "port": "5000",
+      "has_token": true
+    }
+  }
+}
+==================================================
+2025-03-14 02:48:44,600 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 02:48:44",
+  "level": "INFO",
+  "message": "پاسخ بررسی وضعیت ربات ارسال شد",
+  "location": {
+    "file": "main.py",
+    "function": "bot_check",
+    "line": 407
+  },
+  "context": {
+    "status": "ok",
+    "timestamp": "2025-03-14 02:48:44"
+  }
+}
+{
+  "timestamp": "2025-03-14 02:48:44",
+  "level": "INFO",
+  "message": "پاسخ بررسی وضعیت ربات ارسال شد",
+  "location": {
+    "file": "main.py",
+    "function": "bot_check",
+    "line": 407
+  },
+  "context": {
+    "status": "ok",
+    "timestamp": "2025-03-14 02:48:44"
+  }
+}
+==================================================
+2025-03-14 02:48:44,601 - telegram_bot_debug - DEBUG - {
+  "timestamp": "2025-03-14 02:48:44",
+  "level": "DEBUG",
+  "message": "پایان اجرای bot_check",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 393
+  },
+  "context": {
+    "execution_time": "0.5570 seconds",
+    "result": "(<Response 258 bytes [200 OK]>, 200)"
+  }
+}
+{
+  "timestamp": "2025-03-14 02:48:44",
+  "level": "DEBUG",
+  "message": "پایان اجرای bot_check",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 393
+  },
+  "context": {
+    "execution_time": "0.5570 seconds",
+    "result": "(<Response 258 bytes [200 OK]>, 200)"
+  }
+}
+==================================================
+2025-03-14 02:48:50,209 - telegram_bot_debug - DEBUG - {
+  "timestamp": "2025-03-14 02:48:50",
+  "level": "DEBUG",
+  "message": "شروع اجرای send_test_message",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 383
+  },
+  "context": {
+    "args": "()",
+    "kwargs": "{}"
+  }
+}
+{
+  "timestamp": "2025-03-14 02:48:50",
+  "level": "DEBUG",
+  "message": "شروع اجرای send_test_message",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 383
+  },
+  "context": {
+    "args": "()",
+    "kwargs": "{}"
+  }
+}
+==================================================
+2025-03-14 02:48:50,209 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 02:48:50",
+  "level": "INFO",
+  "message": "درخواست ارسال پیام آزمایشی به ادمین دریافت شد",
+  "location": {
+    "file": "main.py",
+    "function": "send_test_message",
+    "line": 420
+  }
+}
+{
+  "timestamp": "2025-03-14 02:48:50",
+  "level": "INFO",
+  "message": "درخواست ارسال پیام آزمایشی به ادمین دریافت شد",
+  "location": {
+    "file": "main.py",
+    "function": "send_test_message",
+    "line": 420
+  }
+}
+==================================================
+2025-03-14 02:48:50,209 - telegram_bot_debug - DEBUG - {
+  "timestamp": "2025-03-14 02:48:50",
+  "level": "DEBUG",
+  "message": "در حال ارسال پیام آزمایشی",
+  "location": {
+    "file": "main.py",
+    "function": "send_test_message",
+    "line": 425
+  },
+  "context": {
+    "message": "🔄 پیام آزمایشی: 2025-03-14 02:48:50",
+    "admin_chat_id": 286420965
+  }
+}
+{
+  "timestamp": "2025-03-14 02:48:50",
+  "level": "DEBUG",
+  "message": "در حال ارسال پیام آزمایشی",
+  "location": {
+    "file": "main.py",
+    "function": "send_test_message",
+    "line": 425
+  },
+  "context": {
+    "message": "🔄 پیام آزمایشی: 2025-03-14 02:48:50",
+    "admin_chat_id": 286420965
+  }
+}
+==================================================
+2025-03-14 02:48:50,470 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 02:48:50",
+  "level": "INFO",
+  "message": "پیام با موفقیت ارسال شد",
+  "location": {
+    "file": "main.py",
+    "function": "send_test_message",
+    "line": 433
+  },
+  "context": {
+    "message_id": 1160
+  }
+}
+{
+  "timestamp": "2025-03-14 02:48:50",
+  "level": "INFO",
+  "message": "پیام با موفقیت ارسال شد",
+  "location": {
+    "file": "main.py",
+    "function": "send_test_message",
+    "line": 433
+  },
+  "context": {
+    "message_id": 1160
+  }
+}
+==================================================
+2025-03-14 02:48:50,678 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 02:48:50",
+  "level": "INFO",
+  "message": "پیام اطلاع‌رسانی با موفقیت ارسال شد",
+  "location": {
+    "file": "main.py",
+    "function": "send_test_message",
+    "line": 439
+  }
+}
+{
+  "timestamp": "2025-03-14 02:48:50",
+  "level": "INFO",
+  "message": "پیام اطلاع‌رسانی با موفقیت ارسال شد",
+  "location": {
+    "file": "main.py",
+    "function": "send_test_message",
+    "line": 439
+  }
+}
+==================================================
+2025-03-14 02:48:50,680 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 02:48:50",
+  "level": "INFO",
+  "message": "پاسخ ارسال پیام آزمایشی آماده شد",
+  "location": {
+    "file": "main.py",
+    "function": "send_test_message",
+    "line": 449
+  },
+  "context": {
+    "status": "ok",
+    "timestamp": "2025-03-14 02:48:50"
+  }
+}
+{
+  "timestamp": "2025-03-14 02:48:50",
+  "level": "INFO",
+  "message": "پاسخ ارسال پیام آزمایشی آماده شد",
+  "location": {
+    "file": "main.py",
+    "function": "send_test_message",
+    "line": 449
+  },
+  "context": {
+    "status": "ok",
+    "timestamp": "2025-03-14 02:48:50"
+  }
+}
+==================================================
+2025-03-14 02:48:50,680 - telegram_bot_debug - DEBUG - {
+  "timestamp": "2025-03-14 02:48:50",
+  "level": "DEBUG",
+  "message": "پایان اجرای send_test_message",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 393
+  },
+  "context": {
+    "execution_time": "0.4710 seconds",
+    "result": "<Response 268 bytes [200 OK]>"
+  }
+}
+{
+  "timestamp": "2025-03-14 02:48:50",
+  "level": "DEBUG",
+  "message": "پایان اجرای send_test_message",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 393
+  },
+  "context": {
+    "execution_time": "0.4710 seconds",
+    "result": "<Response 268 bytes [200 OK]>"
+  }
+}
+==================================================
+2025-03-14 02:48:55,797 - telegram_bot_debug - DEBUG - {
+  "timestamp": "2025-03-14 02:48:55",
+  "level": "DEBUG",
+  "message": "شروع اجرای simulate_webhook",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 383
+  },
+  "context": {
+    "args": "()",
+    "kwargs": "{}"
+  }
+}
+{
+  "timestamp": "2025-03-14 02:48:55",
+  "level": "DEBUG",
+  "message": "شروع اجرای simulate_webhook",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 383
+  },
+  "context": {
+    "args": "()",
+    "kwargs": "{}"
+  }
+}
+==================================================
+2025-03-14 02:48:55,798 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 02:48:55",
+  "level": "INFO",
+  "message": "شروع شبیه‌سازی وب‌هوک",
+  "location": {
+    "file": "main.py",
+    "function": "simulate_webhook",
+    "line": 265
+  }
+}
+{
+  "timestamp": "2025-03-14 02:48:55",
+  "level": "INFO",
+  "message": "شروع شبیه‌سازی وب‌هوک",
+  "location": {
+    "file": "main.py",
+    "function": "simulate_webhook",
+    "line": 265
+  }
+}
+==================================================
+2025-03-14 02:48:55,799 - telegram_bot_debug - DEBUG - {
+  "timestamp": "2025-03-14 02:48:55",
+  "level": "DEBUG",
+  "message": "پیام تست آماده شد",
+  "location": {
+    "file": "main.py",
+    "function": "simulate_webhook",
+    "line": 289
+  },
+  "context": {
+    "message": {
+      "update_id": 123456789,
+      "message": {
+        "message_id": 123,
+        "from": {
+          "id": 286420965,
+          "first_name": "ادمین",
+          "is_bot": false
+        },
+        "chat": {
+          "id": 286420965,
+          "first_name": "ادمین",
+          "type": "private"
+        },
+        "date": 1741920535,
+        "text": "/start"
+      }
+    }
+  }
+}
+{
+  "timestamp": "2025-03-14 02:48:55",
+  "level": "DEBUG",
+  "message": "پیام تست آماده شد",
+  "location": {
+    "file": "main.py",
+    "function": "simulate_webhook",
+    "line": 289
+  },
+  "context": {
+    "message": {
+      "update_id": 123456789,
+      "message": {
+        "message_id": 123,
+        "from": {
+          "id": 286420965,
+          "first_name": "ادمین",
+          "is_bot": false
+        },
+        "chat": {
+          "id": 286420965,
+          "first_name": "ادمین",
+          "type": "private"
+        },
+        "date": 1741920535,
+        "text": "/start"
+      }
+    }
+  }
+}
+==================================================
+2025-03-14 02:48:56,006 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 02:48:56",
+  "level": "INFO",
+  "message": "پیام اطلاع‌رسانی به ادمین ارسال شد",
+  "location": {
+    "file": "main.py",
+    "function": "simulate_webhook",
+    "line": 296
+  }
+}
+{
+  "timestamp": "2025-03-14 02:48:56",
+  "level": "INFO",
+  "message": "پیام اطلاع‌رسانی به ادمین ارسال شد",
+  "location": {
+    "file": "main.py",
+    "function": "simulate_webhook",
+    "line": 296
+  }
+}
+==================================================
+2025-03-14 02:48:56,007 - telegram_bot_debug - DEBUG - {
+  "timestamp": "2025-03-14 02:48:56",
+  "level": "DEBUG",
+  "message": "آدرس وب‌هوک",
+  "location": {
+    "file": "main.py",
+    "function": "simulate_webhook",
+    "line": 307
+  },
+  "context": {
+    "url": "https://telegram-production-cc29.up.railway.app/***TOKEN***/"
+  }
+}
+{
+  "timestamp": "2025-03-14 02:48:56",
+  "level": "DEBUG",
+  "message": "آدرس وب‌هوک",
+  "location": {
+    "file": "main.py",
+    "function": "simulate_webhook",
+    "line": 307
+  },
+  "context": {
+    "url": "https://telegram-production-cc29.up.railway.app/***TOKEN***/"
+  }
+}
+==================================================
+2025-03-14 02:48:56,007 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 02:48:56",
+  "level": "INFO",
+  "message": "ارسال درخواست POST به وب‌هوک",
+  "location": {
+    "file": "main.py",
+    "function": "simulate_webhook",
+    "line": 312
+  }
+}
+{
+  "timestamp": "2025-03-14 02:48:56",
+  "level": "INFO",
+  "message": "ارسال درخواست POST به وب‌هوک",
+  "location": {
+    "file": "main.py",
+    "function": "simulate_webhook",
+    "line": 312
+  }
+}
+==================================================
+2025-03-14 02:49:01,365 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 02:49:01",
+  "level": "INFO",
+  "message": "شبیه‌سازی وب‌هوک انجام شد",
+  "location": {
+    "file": "main.py",
+    "function": "simulate_webhook",
+    "line": 324
+  },
+  "context": {
+    "status": "error",
+    "response_code": 502
+  }
+}
+{
+  "timestamp": "2025-03-14 02:49:01",
+  "level": "INFO",
+  "message": "شبیه‌سازی وب‌هوک انجام شد",
+  "location": {
+    "file": "main.py",
+    "function": "simulate_webhook",
+    "line": 324
+  },
+  "context": {
+    "status": "error",
+    "response_code": 502
+  }
+}
+==================================================
+2025-03-14 02:49:01,366 - telegram_bot_debug - DEBUG - {
+  "timestamp": "2025-03-14 02:49:01",
+  "level": "DEBUG",
+  "message": "پایان اجرای simulate_webhook",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 393
+  },
+  "context": {
+    "execution_time": "5.5677 seconds",
+    "result": "<Response 293 bytes [200 OK]>"
+  }
+}
+{
+  "timestamp": "2025-03-14 02:49:01",
+  "level": "DEBUG",
+  "message": "پایان اجرای simulate_webhook",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 393
+  },
+  "context": {
+    "execution_time": "5.5677 seconds",
+    "result": "<Response 293 bytes [200 OK]>"
+  }
+}
+==================================================
