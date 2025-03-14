@@ -315,114 +315,18 @@ def server_status(message):
 
 # 📂 مدیریت پاسخ‌های متنی
 def load_responses():
-    """بارگذاری سوال و پاسخ‌ها از فایل JSON"""
     try:
         with open("responses.json", "r", encoding="utf-8") as file:
             return json.load(file)
     except FileNotFoundError:
-        # اگر فایل وجود نداشت، یک فایل خالی ایجاد کن
-        empty_data = {}
-        save_responses(empty_data)
-        return empty_data
-    except Exception as e:
-        print(f"⚠️ خطا در بارگذاری فایل پاسخ‌ها: {e}")
         return {}
 
 
-def save_responses(data=None):
-    """ذخیره سوال و پاسخ‌ها در فایل JSON"""
-    try:
-        with open("responses.json", "w", encoding="utf-8") as file:
-            json.dump(data if data is not None else responses, file, ensure_ascii=False, indent=4)
-        return True
-    except Exception as e:
-        print(f"⚠️ خطا در ذخیره فایل پاسخ‌ها: {e}")
-        return False
+def save_responses():
+    with open("responses.json", "w", encoding="utf-8") as file:
+        json.dump(responses, file, ensure_ascii=False, indent=4)
 
 
-def add_response(question, answer, user_id=None):
-    """افزودن یک سوال و پاسخ جدید"""
-    if not question or not answer:
-        return False, "سوال یا پاسخ نمی‌تواند خالی باشد!"
-    
-    # تمیز کردن سوال (حذف فاصله‌های اضافی، حروف بزرگ و...)
-    clean_question = question.strip().lower()
-    
-    # بررسی تکراری نبودن سوال
-    if clean_question in responses:
-        return False, f"این سوال قبلاً اضافه شده است! پاسخ فعلی: {responses[clean_question]}"
-    
-    # افزودن به دیکشنری
-    responses[clean_question] = answer
-    
-    # ذخیره تغییرات
-    if save_responses():
-        # ثبت اطلاعات کاربری که سوال را اضافه کرده (اختیاری)
-        if user_id:
-            print(f"✅ سوال و پاسخ جدید توسط کاربر {user_id} اضافه شد")
-        return True, f"✅ سوال و پاسخ با موفقیت اضافه شد:\nسوال: {question}\nپاسخ: {answer}"
-    else:
-        return False, "❌ خطا در ذخیره سوال و پاسخ"
-
-
-def delete_response(question):
-    """حذف یک سوال و پاسخ"""
-    clean_question = question.strip().lower()
-    
-    if clean_question in responses:
-        deleted_answer = responses[clean_question]
-        del responses[clean_question]
-        
-        if save_responses():
-            return True, f"✅ سوال و پاسخ با موفقیت حذف شد:\nسوال: {question}\nپاسخ: {deleted_answer}"
-        else:
-            # در صورت خطا در ذخیره، سوال را برگردان
-            responses[clean_question] = deleted_answer
-            return False, "❌ خطا در حذف سوال و پاسخ"
-    else:
-        return False, "❌ این سوال در پایگاه داده وجود ندارد!"
-
-
-def update_response(question, new_answer):
-    """به‌روزرسانی پاسخ یک سوال موجود"""
-    clean_question = question.strip().lower()
-    
-    if clean_question in responses:
-        old_answer = responses[clean_question]
-        responses[clean_question] = new_answer
-        
-        if save_responses():
-            return True, f"✅ پاسخ با موفقیت به‌روزرسانی شد:\nسوال: {question}\nپاسخ قبلی: {old_answer}\nپاسخ جدید: {new_answer}"
-        else:
-            # در صورت خطا در ذخیره، پاسخ را برگردان
-            responses[clean_question] = old_answer
-            return False, "❌ خطا در به‌روزرسانی پاسخ"
-    else:
-        return False, "❌ این سوال در پایگاه داده وجود ندارد!"
-
-
-def search_responses(query):
-    """جستجو در سوالات موجود"""
-    if not query or len(query) < 2:
-        return []
-    
-    clean_query = query.strip().lower()
-    results = []
-    
-    for question, answer in responses.items():
-        if clean_query in question:
-            results.append({"question": question, "answer": answer})
-    
-    return results
-
-
-def get_all_responses(max_count=20):
-    """دریافت لیست همه سوال و پاسخ‌ها"""
-    items = list(responses.items())
-    return items[:max_count]  # محدود کردن تعداد نتایج
-
-
-# بارگیری سوالات و پاسخ‌ها
 responses = load_responses()
 
 
@@ -1188,129 +1092,17 @@ def handle_message(message):
             
             return
 
-        # بررسی دستورات مدیریت سوال و پاسخ
-        elif text.startswith('/qa_add '):
-            # دستور افزودن سوال و پاسخ
-            try:
-                command_parts = text[8:].strip().split('|', 1)
-                if len(command_parts) != 2:
-                    bot.reply_to(message, "⚠️ فرمت صحیح: /qa_add سوال | پاسخ")
-                    return
-                
-                question, answer = map(str.strip, command_parts)
-                success, result_msg = add_response(question, answer, message.from_user.id)
-                bot.reply_to(message, result_msg)
-            except Exception as e:
-                bot.reply_to(message, f"⚠️ خطا در افزودن سوال و پاسخ: {str(e)}")
-            return
-            
-        elif text.startswith('/qa_del ') or text.startswith('/qa_delete '):
-            # دستور حذف سوال و پاسخ
-            try:
-                if text.startswith('/qa_del '):
-                    question = text[8:].strip()
-                else:
-                    question = text[11:].strip()
-                
-                if not question:
-                    bot.reply_to(message, "⚠️ لطفاً سوال مورد نظر برای حذف را وارد کنید.")
-                    return
-                
-                success, result_msg = delete_response(question)
-                bot.reply_to(message, result_msg)
-            except Exception as e:
-                bot.reply_to(message, f"⚠️ خطا در حذف سوال و پاسخ: {str(e)}")
-            return
-            
-        elif text.startswith('/qa_update '):
-            # دستور به‌روزرسانی پاسخ یک سوال
-            try:
-                command_parts = text[11:].strip().split('|', 1)
-                if len(command_parts) != 2:
-                    bot.reply_to(message, "⚠️ فرمت صحیح: /qa_update سوال | پاسخ جدید")
-                    return
-                
-                question, new_answer = map(str.strip, command_parts)
-                success, result_msg = update_response(question, new_answer)
-                bot.reply_to(message, result_msg)
-            except Exception as e:
-                bot.reply_to(message, f"⚠️ خطا در به‌روزرسانی پاسخ: {str(e)}")
-            return
-            
-        elif text.startswith('/qa_search '):
-            # دستور جستجو در سوالات
-            try:
-                query = text[11:].strip()
-                if not query or len(query) < 2:
-                    bot.reply_to(message, "⚠️ لطفاً عبارت جستجو را با حداقل ۲ کاراکتر وارد کنید.")
-                    return
-                
-                results = search_responses(query)
-                if not results:
-                    bot.reply_to(message, f"❌ هیچ سوالی با عبارت '{query}' یافت نشد.")
-                    return
-                
-                # تهیه پیام نتایج
-                result_message = f"🔍 نتایج جستجو برای '{query}':\n\n"
-                for i, item in enumerate(results, 1):
-                    result_message += f"{i}. سوال: {item['question']}\n   پاسخ: {item['answer']}\n\n"
-                
-                # ارسال نتایج
-                bot.reply_to(message, result_message)
-            except Exception as e:
-                bot.reply_to(message, f"⚠️ خطا در جستجوی سوالات: {str(e)}")
-            return
-            
-        elif text == '/qa_list' or text == '/qa_all':
-            # نمایش همه سوال و پاسخ‌ها
-            try:
-                items = get_all_responses()
-                if not items:
-                    bot.reply_to(message, "❌ هیچ سوال و پاسخی در پایگاه داده وجود ندارد.")
-                    return
-                
-                result_message = "📝 لیست همه سوال و پاسخ‌ها:\n\n"
-                for i, (question, answer) in enumerate(items, 1):
-                    result_message += f"{i}. سوال: {question}\n   پاسخ: {answer}\n\n"
-                
-                bot.reply_to(message, result_message)
-            except Exception as e:
-                bot.reply_to(message, f"⚠️ خطا در دریافت لیست سوالات: {str(e)}")
-            return
-            
-        elif text == '/qa_help':
-            # راهنمای استفاده از قابلیت سوال و پاسخ
-            help_text = """
-🔰 راهنمای قابلیت سوال و پاسخ:
-
-🟢 افزودن سوال و پاسخ:
-/qa_add سوال | پاسخ
-
-🔴 حذف سوال و پاسخ:
-/qa_del سوال
-
-🔄 به‌روزرسانی پاسخ:
-/qa_update سوال | پاسخ جدید
-
-🔍 جستجو در سوالات:
-/qa_search عبارت جستجو
-
-📋 نمایش همه سوالات:
-/qa_list
-
-💡 برای دریافت پاسخ، کافیست سوال را به تنهایی ارسال کنید.
-"""
-            bot.reply_to(message, help_text)
-            return
-            
         elif "،" in text:
-            # روش قدیمی افزودن سوال و پاسخ (با ویرگول فارسی)
             try:
                 question, answer = map(str.strip, text.split("،", 1))
-                success, result = add_response(question, answer, message.from_user.id)
-                bot.reply_to(message, result)
+                responses[question.lower()] = answer
+                save_responses()
+                bot.reply_to(
+                    message,
+                    f"✅ سوال '{question}' با پاسخ '{answer}' اضافه شد!")
             except ValueError:
-                bot.reply_to(message, "⚠️ لطفاً فرمت 'سوال، جواب' را رعایت کنید یا از دستور /qa_add استفاده کنید.")
+                bot.reply_to(message,
+                             "⚠️ لطفاً فرمت 'سوال، جواب' را رعایت کنید.")
             return
 
         else:
