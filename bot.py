@@ -1867,12 +1867,17 @@ def start_bot():
     if WEBHOOK_MODE:
         # تنظیمات وب‌هوک
         try:
-            # برای سرور ریل‌وی، آدرس دامنه را تنظیم می‌کنیم
-            # از آدرس واقعی سرور ریل‌وی استفاده می‌کنیم
-            webhook_host = os.environ.get('DOMAIN_URL')
+            # برای سرور Replit، آدرس دامنه را تنظیم می‌کنیم
+            # ابتدا از متغیر محیطی REPLIT_DOMAIN استفاده می‌کنیم
+            webhook_host = os.environ.get('REPLIT_DOMAIN')
             
+            # اگر متغیر محیطی REPLIT_DOMAIN تنظیم نشده باشد، از DOMAIN_URL استفاده می‌کنیم
             if not webhook_host:
-                webhook_host = "https://telegram-production-cc29.up.railway.app"
+                webhook_host = os.environ.get('DOMAIN_URL')
+            
+            # اگر هیچ یک از متغیرهای محیطی تنظیم نشده باشند، از آدرس پیش‌فرض استفاده می‌کنیم
+            if not webhook_host:
+                webhook_host = f"https://{os.environ.get('REPL_SLUG')}.{os.environ.get('REPL_OWNER')}.repl.co"
                 
             print(f"📌 آدرس وب‌هوک: {webhook_host}")
                 
