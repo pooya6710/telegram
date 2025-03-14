@@ -5,44 +5,86 @@ import threading
 import concurrent.futures
 import time
 import traceback
+import logging
 from requests.exceptions import ReadTimeout, ProxyError, ConnectionError
 
-# واردکردن ماژول‌ها با مدیریت خطا
+# تنظیم لاگر اصلی
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.DEBUG
+)
+logger = logging.getLogger(__name__)
+
+# واردکردن ماژول‌های داخلی
+try:
+    # سیستم لاگینگ پیشرفته
+    from debug_logger import debug_log, log_webhook_request, log_telegram_update, debug_decorator, format_exception_with_context
+    logger.info("✅ سیستم دیباگینگ پیشرفته با موفقیت بارگذاری شد")
+except ImportError as e:
+    logger.error(f"⚠️ خطا در بارگذاری ماژول debug_logger: {e}")
+    # تعریف توابع جایگزین در صورت عدم دسترسی به ماژول دیباگینگ
+    def debug_log(message, level="DEBUG", context=None):
+        logger.debug(f"{message} - Context: {context}")
+    
+    def log_webhook_request(data):
+        if isinstance(data, bytes):
+            data_str = data.decode('utf-8')
+        else:
+            data_str = str(data)
+        logger.debug(f"Webhook data: {data_str[:200]}...")
+    
+    def log_telegram_update(update):
+        logger.debug(f"Telegram update: {update}")
+    
+    def debug_decorator(func):
+        return func
+    
+    def format_exception_with_context(e):
+        return traceback.format_exc()
+
+# واردکردن ماژول‌های خارجی با مدیریت خطا
 try:
     import telebot
+    logger.info("✅ ماژول telebot با موفقیت بارگذاری شد")
 except ImportError:
-    print("⚠️ ماژول telebot نصب نشده است")
+    logger.error("⚠️ ماژول telebot نصب نشده است")
     exit(1)
 
 try:
     from flask import Flask, request
+    logger.info("✅ ماژول flask با موفقیت بارگذاری شد")
 except ImportError:
-    print("⚠️ ماژول flask نصب نشده است")
+    logger.error("⚠️ ماژول flask نصب نشده است")
 
 try:
     import shutil  # برای دریافت وضعیت دیسک
+    logger.info("✅ ماژول shutil با موفقیت بارگذاری شد")
 except ImportError:
-    print("⚠️ ماژول shutil در دسترس نیست")
+    logger.error("⚠️ ماژول shutil در دسترس نیست")
     
 try:
     import psutil  # برای دریافت اطلاعات CPU و RAM
+    logger.info("✅ ماژول psutil با موفقیت بارگذاری شد")
 except ImportError:
-    print("⚠️ ماژول psutil نصب نشده است")
+    logger.error("⚠️ ماژول psutil نصب نشده است")
     
 try:
     import platform  # برای دریافت اطلاعات سیستم‌عامل
+    logger.info("✅ ماژول platform با موفقیت بارگذاری شد")
 except ImportError:
-    print("⚠️ ماژول platform در دسترس نیست")
+    logger.error("⚠️ ماژول platform در دسترس نیست")
     
 try:
     import sqlite3
+    logger.info("✅ ماژول sqlite3 با موفقیت بارگذاری شد")
 except ImportError:
-    print("⚠️ ماژول sqlite3 در دسترس نیست")
+    logger.error("⚠️ ماژول sqlite3 در دسترس نیست")
     
 try:
     from yt_dlp import YoutubeDL
+    logger.info("✅ ماژول yt_dlp با موفقیت بارگذاری شد")
 except ImportError:
-    print("⚠️ ماژول yt_dlp نصب نشده است")
+    logger.error("⚠️ ماژول yt_dlp نصب نشده است")
 
 app = Flask(__name__)
 
@@ -51,32 +93,60 @@ thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=3)
 
 
 # برای دریافت وب‌هوک از فلسک استفاده می‌کنیم
+@debug_decorator
 def webhook():
     try:
         # دریافت داده‌های JSON از درخواست
         json_str = request.get_data().decode("UTF-8")
-        print(f"📥 داده دریافتی وب‌هوک: {json_str[:100]}...")  # نمایش 100 کاراکتر اول برای دیباگ
+        debug_log(f"داده دریافتی وب‌هوک: {json_str[:100]}...", "INFO")
+        
+        # ثبت داده‌های خام برای تحلیل بیشتر
+        log_webhook_request(json_str)
         
         # تبدیل به آبجکت Update تلگرام
         update = telebot.types.Update.de_json(json_str)
         
-        # بررسی برای دیباگ
+        # ثبت آپدیت تلگرام در لاگ
+        log_telegram_update(update)
+        
+        # بررسی نوع پیام برای لاگ
         if hasattr(update, 'message') and update.message is not None:
-            print(f"🔔 پیام جدید از کاربر {update.message.from_user.id}: {update.message.text}")
+            debug_log(f"پیام جدید از کاربر {update.message.from_user.id}: {update.message.text}", "INFO", {
+                "user_id": update.message.from_user.id,
+                "username": update.message.from_user.username if hasattr(update.message.from_user, 'username') else None,
+                "chat_id": update.message.chat.id,
+                "message_id": update.message.message_id
+            })
+        elif hasattr(update, 'callback_query') and update.callback_query is not None:
+            debug_log(f"کالبک کوئری جدید از کاربر {update.callback_query.from_user.id}", "INFO", {
+                "user_id": update.callback_query.from_user.id,
+                "data": update.callback_query.data,
+                "query_id": update.callback_query.id
+            })
         
         # پردازش پیام
         bot.process_new_updates([update])
-        print("✅ پیام با موفقیت پردازش شد.")
+        debug_log("پیام با موفقیت پردازش شد", "INFO")
         return "✅ Webhook دریافت شد!", 200
     except UnicodeDecodeError as ude:
-        print(f"❌ خطا در رمزگشایی داده‌ها: {ude}")
+        debug_log(f"خطا در رمزگشایی داده‌ها", "ERROR", {
+            "error_type": "UnicodeDecodeError",
+            "error_message": str(ude)
+        })
         return f"خطای رمزگشایی", 400
     except ValueError as ve:
-        print(f"❌ خطا در تبدیل JSON: {ve}")
+        debug_log(f"خطا در تبدیل JSON", "ERROR", {
+            "error_type": "ValueError",
+            "error_message": str(ve)
+        })
         return f"خطای JSON", 400
     except Exception as e:
-        print(f"❌ خطا در دریافت پیام: {e}")
-        print(f"❌ جزئیات خطا: {traceback.format_exc()}")
+        debug_log(f"خطا در دریافت پیام", "ERROR", {
+            "error_type": type(e).__name__,
+            "error_message": str(e),
+            "traceback": format_exception_with_context(e)
+        })
+        notify_admin(f"⚠️ خطا در پردازش وب‌هوک:\n{format_exception_with_context(e)}")
         return f"❌ خطا: {e}", 500
 
 
