@@ -598,6 +598,16 @@ responses = load_responses()
 # 📌 استخراج لینک مستقیم ویدیو بدون دانلود
 def get_direct_video_url(link):
     try:
+        # بررسی معتبر بودن لینک
+        if not link or not isinstance(link, str):
+            debug_log("لینک نامعتبر در get_direct_video_url", "WARNING", {"link": str(link)})
+            return None
+            
+        # بررسی YoutubeDL
+        if 'YoutubeDL' not in globals():
+            debug_log("YoutubeDL در دسترس نیست", "ERROR")
+            return None
+            
         ydl_opts = {
             'quiet': True,
             'skip_download': True,
@@ -605,19 +615,74 @@ def get_direct_video_url(link):
             'force_generic_extractor': False,
             'format': 'best[ext=mp4]/best',
         }
+        
+        debug_log(f"تلاش برای استخراج لینک مستقیم از {link}", "INFO")
+        
         with YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(link, download=False)
-            return info.get('url', None)
+            try:
+                info = ydl.extract_info(link, download=False)
+                
+                if not info:
+                    debug_log("اطلاعات استخراج شده خالی است", "WARNING")
+                    return None
+                    
+                direct_url = info.get('url', None)
+                
+                if direct_url:
+                    debug_log("لینک مستقیم با موفقیت استخراج شد", "INFO")
+                    return direct_url
+                else:
+                    debug_log("لینک مستقیم در اطلاعات استخراج شده یافت نشد", "WARNING")
+                    return None
+                    
+            except Exception as extract_error:
+                debug_log(f"خطا در استخراج اطلاعات از لینک", "ERROR", {
+                    "error": str(extract_error),
+                    "traceback": traceback.format_exc()
+                })
+                return None
+                
     except Exception as e:
-        notify_admin(
-            f"⚠️ خطا در دریافت لینک مستقیم ویدیو:\n{traceback.format_exc()}")
+        debug_log(f"خطا در دریافت لینک مستقیم ویدیو", "ERROR", {
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        })
+        
+        try:
+            # تلاش برای اطلاع به ادمین
+            notify_admin(f"⚠️ خطا در دریافت لینک مستقیم ویدیو:\n{traceback.format_exc()}")
+        except Exception as notify_error:
+            debug_log(f"خطا در اطلاع به ادمین", "ERROR", {"error": str(notify_error)})
+            
         return None
 
 
 # 📌 دانلود ویدیو از اینستاگرام
 def download_instagram(link):
     try:
-        clear_folder(INSTAGRAM_FOLDER)  # حذف فایل‌های قدیمی
+        # بررسی معتبر بودن لینک
+        if not link or not isinstance(link, str):
+            debug_log("لینک نامعتبر در download_instagram", "WARNING", {"link": str(link)})
+            return None
+            
+        # بررسی اینستاگرام در لینک
+        if "instagram.com" not in link:
+            debug_log("لینک اینستاگرام نیست", "WARNING", {"link": link})
+            return None
+            
+        # بررسی YoutubeDL
+        if 'YoutubeDL' not in globals():
+            debug_log("YoutubeDL در دسترس نیست", "ERROR")
+            return None
+
+        # پاکسازی فایل‌های قدیمی
+        try:
+            clear_folder(INSTAGRAM_FOLDER)
+        except Exception as clear_error:
+            debug_log("خطا در پاکسازی پوشه اینستاگرام", "WARNING", {"error": str(clear_error)})
+            # ادامه می‌دهیم حتی اگر پاکسازی با خطا مواجه شود
+            
+        debug_log(f"شروع دانلود از اینستاگرام: {link}", "INFO")
 
         ydl_opts = {
             'outtmpl': f'{INSTAGRAM_FOLDER}/%(id)s.%(ext)s',
@@ -627,45 +692,173 @@ def download_instagram(link):
         }
 
         with YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(link, download=True)
-            video_path = f"{INSTAGRAM_FOLDER}/{info['id']}.mp4"
-            return video_path if os.path.exists(video_path) else None
+            try:
+                info = ydl.extract_info(link, download=True)
+                
+                if not info:
+                    debug_log("اطلاعات دانلود خالی است", "WARNING")
+                    return None
+                    
+                if not info.get('id'):
+                    debug_log("شناسه ویدیو در اطلاعات دانلود یافت نشد", "WARNING", {"info": str(info)[:500]})
+                    return None
+                    
+                # چک کردن چندین فرمت فایل
+                possible_extensions = ['mp4', 'webm', 'mkv', 'mov', 'avi']
+                for ext in possible_extensions:
+                    video_path = f"{INSTAGRAM_FOLDER}/{info['id']}.{ext}"
+                    if os.path.exists(video_path):
+                        debug_log(f"ویدیو با موفقیت دانلود شد: {video_path}", "INFO", {
+                            "file_size": os.path.getsize(video_path) / (1024 * 1024),
+                            "format": ext
+                        })
+                        return video_path
+                
+                # اگر هیچ فایلی یافت نشد
+                debug_log("فایل ویدیو پس از دانلود یافت نشد", "WARNING", {"id": info['id']})
+                return None
+                
+            except Exception as extract_error:
+                debug_log("خطا در استخراج اطلاعات ویدیو", "ERROR", {
+                    "error": str(extract_error),
+                    "traceback": traceback.format_exc()
+                })
+                return None
 
     except Exception as e:
-        notify_admin(
-            f"⚠️ خطا در دانلود ویدیو از اینستاگرام:\n{traceback.format_exc()}")
+        debug_log(f"خطا در دانلود ویدیو از اینستاگرام", "ERROR", {
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        })
+        
+        try:
+            # اطلاع به ادمین
+            notify_admin(f"⚠️ خطا در دانلود ویدیو از اینستاگرام:\n{traceback.format_exc()}")
+        except Exception as notify_error:
+            debug_log("خطا در اطلاع به ادمین", "ERROR", {"error": str(notify_error)})
+            
         return None
 
 
 # 📌 دانلود ویدیو از یوتیوب
 def download_youtube(link):
     try:
-        clear_folder(VIDEO_FOLDER)  # حذف فایل‌های قدیمی
+        # بررسی معتبر بودن لینک
+        if not link or not isinstance(link, str):
+            debug_log("لینک نامعتبر در download_youtube", "WARNING", {"link": str(link)})
+            return None
+            
+        # بررسی YoutubeDL
+        if 'YoutubeDL' not in globals():
+            debug_log("YoutubeDL در دسترس نیست", "ERROR")
+            return None
+
+        # پاکسازی فایل‌های قدیمی
+        try:
+            clear_folder(VIDEO_FOLDER)
+        except Exception as clear_error:
+            debug_log("خطا در پاکسازی پوشه ویدیو", "WARNING", {"error": str(clear_error)})
+            # ادامه می‌دهیم حتی اگر پاکسازی با خطا مواجه شود
+            
+        debug_log(f"شروع دانلود از یوتیوب: {link}", "INFO")
 
         ydl_opts = {
             'outtmpl': f'{VIDEO_FOLDER}/%(id)s.%(ext)s',
             'format': 'mp4/best',
             'quiet': False,
             'noplaylist': True,
+            'ignoreerrors': True,  # نادیده گرفتن برخی خطاهای جزئی
         }
 
         with YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(link, download=True)
-            video_path = f"{VIDEO_FOLDER}/{info['id']}.mp4"
-            return video_path if os.path.exists(video_path) else None
+            try:
+                info = ydl.extract_info(link, download=True)
+                
+                if not info:
+                    debug_log("اطلاعات دانلود خالی است", "WARNING")
+                    return None
+                    
+                if not info.get('id'):
+                    debug_log("شناسه ویدیو در اطلاعات دانلود یافت نشد", "WARNING", {"info": str(info)[:500]})
+                    return None
+                    
+                # چک کردن چندین فرمت فایل
+                possible_extensions = ['mp4', 'webm', 'mkv', 'mov', 'avi']
+                for ext in possible_extensions:
+                    video_path = f"{VIDEO_FOLDER}/{info['id']}.{ext}"
+                    if os.path.exists(video_path):
+                        debug_log(f"ویدیو با موفقیت دانلود شد: {video_path}", "INFO", {
+                            "file_size": os.path.getsize(video_path) / (1024 * 1024),
+                            "format": ext
+                        })
+                        return video_path
+                
+                # اگر هیچ فایلی با پسوندهای معمول یافت نشد، به دنبال فایل با پسوند موجود در اطلاعات می‌گردیم
+                if info.get('ext'):
+                    video_path = f"{VIDEO_FOLDER}/{info['id']}.{info['ext']}"
+                    if os.path.exists(video_path):
+                        debug_log(f"ویدیو با فرمت {info['ext']} دانلود شد: {video_path}", "INFO")
+                        return video_path
+                
+                # جستجوی فایل در پوشه VIDEO_FOLDER با ID ویدیو
+                try:
+                    video_files = [f for f in os.listdir(VIDEO_FOLDER) if info['id'] in f]
+                    if video_files:
+                        video_path = os.path.join(VIDEO_FOLDER, video_files[0])
+                        debug_log(f"ویدیو با نام {video_files[0]} یافت شد", "INFO")
+                        return video_path
+                except Exception as search_error:
+                    debug_log("خطا در جستجوی فایل ویدیو", "WARNING", {"error": str(search_error)})
+                
+                # اگر هیچ فایلی یافت نشد
+                debug_log("فایل ویدیو پس از دانلود یافت نشد", "WARNING", {"id": info['id']})
+                return None
+                
+            except Exception as extract_error:
+                debug_log("خطا در استخراج اطلاعات ویدیو", "ERROR", {
+                    "error": str(extract_error),
+                    "traceback": traceback.format_exc()
+                })
+                return None
 
     except Exception as e:
-        notify_admin(
-            f"⚠️ خطا در دانلود ویدیو از یوتیوب:\n{traceback.format_exc()}")
+        debug_log(f"خطا در دانلود ویدیو از یوتیوب", "ERROR", {
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        })
+        
+        try:
+            # اطلاع به ادمین
+            notify_admin(f"⚠️ خطا در دانلود ویدیو از یوتیوب:\n{traceback.format_exc()}")
+        except Exception as notify_error:
+            debug_log("خطا در اطلاع به ادمین", "ERROR", {"error": str(notify_error)})
+            
         return None
 
 
 # 📢 ارسال پیام به ادمین در صورت وقوع خطا
 def notify_admin(message):
     try:
-        bot.send_message(ADMIN_CHAT_ID, message[:4000])
+        if bot is None:
+            print("⚠️ ربات تلگرام در دسترس نیست، پیام به ادمین ارسال نشد")
+            return
+            
+        # محدود کردن طول پیام به 4000 کاراکتر برای رعایت محدودیت‌های تلگرام
+        message_text = str(message)[:4000]
+        
+        # بررسی معتبر بودن ADMIN_CHAT_ID
+        if not ADMIN_CHAT_ID:
+            print("⚠️ آیدی چت ادمین تعریف نشده است")
+            return
+            
+        bot.send_message(ADMIN_CHAT_ID, message_text)
     except Exception as e:
         print(f"⚠️ خطا در ارسال پیام به ادمین: {e}")
+        debug_log(f"خطا در ارسال پیام به ادمین", "ERROR", {
+            "error": str(e),
+            "admin_id": ADMIN_CHAT_ID,
+            "message_length": len(str(message))
+        })
 
 
 # 🎬 پردازش لینک‌های ویدیو برای دانلود
@@ -771,6 +964,48 @@ def process_video_link(message, link, processing_msg):
                         notify_admin(f"خطا در ارسال ویدیو به کاربر {message.from_user.id}: {str(e)}")
                         return
                     
+            # جستجوی فایل در پوشه با ID ویدیو
+            try:
+                if info and info.get('id'):
+                    video_files = [f for f in os.listdir(folder) if info['id'] in f]
+                    if video_files:
+                        video_path = os.path.join(folder, video_files[0])
+                        debug_log(f"ویدیو با نام {video_files[0]} یافت شد", "INFO")
+                        
+                        # اطلاع‌رسانی به کاربر
+                        bot.edit_message_text(
+                            f"✅ دانلود کامل شد! در حال ارسال ویدیو با کیفیت <b>{quality}</b>...",
+                            message.chat.id,
+                            processing_msg.message_id,
+                            parse_mode="HTML"
+                        )
+                        
+                        # بررسی سایز فایل
+                        file_size_mb = os.path.getsize(video_path) / (1024 * 1024)
+                        
+                        # تلاش برای ارسال ویدیو به کاربر
+                        if file_size_mb < 50:
+                            with open(video_path, 'rb') as video_file:
+                                bot.send_video(
+                                    message.chat.id,
+                                    video_file,
+                                    caption=f"🎬 <b>{info.get('title', 'ویدیوی دانلود شده')}</b>\n\n📊 کیفیت: <b>{quality}</b>\n📏 حجم: <b>{file_size_mb:.1f} MB</b>",
+                                    parse_mode="HTML",
+                                    timeout=60
+                                )
+                            bot.delete_message(message.chat.id, processing_msg.message_id)
+                            return
+                        else:
+                            bot.edit_message_text(
+                                f"⚠️ سایز فایل ({file_size_mb:.1f} MB) بیشتر از محدودیت تلگرام است. لطفاً با کیفیت پایین‌تر امتحان کنید.",
+                                message.chat.id,
+                                processing_msg.message_id,
+                                parse_mode="HTML"
+                            )
+                            return
+            except Exception as search_error:
+                debug_log("خطا در جستجوی فایل ویدیو", "WARNING", {"error": str(search_error)})
+                
             # در صورت خطا در دانلود
             bot.edit_message_text(
                 "⚠️ خطا در دانلود ویدیو. لطفاً با کیفیت پایین‌تر امتحان کنید یا لینک دیگری را ارسال کنید.",
