@@ -111,6 +111,69 @@ def clear_folder(folder_path, max_files=MAX_VIDEOS_TO_KEEP):
         print(f"❌ خطا در پاکسازی پوشه {folder_path}: {e}")
 
 
+# 📌 دستور شروع - Start command
+@bot.message_handler(commands=["start"])
+def start_command(message):
+    try:
+        # ایجاد کیبورد اینلاین با دکمه‌های مختلف
+        markup = telebot.types.InlineKeyboardMarkup(row_width=2)
+        help_btn = telebot.types.InlineKeyboardButton("📚 راهنما", callback_data="download_help")
+        quality_btn = telebot.types.InlineKeyboardButton("📊 کیفیت ویدیو", callback_data="select_quality")
+        status_btn = telebot.types.InlineKeyboardButton("📈 وضعیت سرور", callback_data="server_status")
+        
+        markup.add(help_btn, quality_btn)
+        markup.add(status_btn)
+        
+        # ارسال پیام خوشامدگویی
+        bot.send_message(
+            message.chat.id,
+            f"👋 سلام {message.from_user.first_name}!\n\n"
+            "🎬 به ربات دانلود ویدیو خوش آمدید.\n\n"
+            "🔸 <b>قابلیت‌های ربات:</b>\n"
+            "• دانلود ویدیو از یوتیوب و اینستاگرام\n"
+            "• امکان انتخاب کیفیت ویدیو\n"
+            "• پاسخ‌گویی به سوالات متداول\n\n"
+            "🔹 <b>روش استفاده:</b>\n"
+            "کافیست لینک ویدیوی مورد نظر خود را از یوتیوب یا اینستاگرام ارسال کنید.",
+            parse_mode="HTML",
+            reply_markup=markup
+        )
+    except Exception as e:
+        notify_admin(f"⚠️ خطا در دستور start:\n{traceback.format_exc()}")
+        bot.send_message(message.chat.id, "⚠ خطایی رخ داد. لطفاً بعداً دوباره تلاش کنید.")
+
+# 📚 دستور راهنما - Help command
+@bot.message_handler(commands=["help"])
+def help_command(message):
+    try:
+        # ایجاد کیبورد اینلاین با دکمه‌های مختلف
+        markup = telebot.types.InlineKeyboardMarkup(row_width=2)
+        quality_btn = telebot.types.InlineKeyboardButton("📊 انتخاب کیفیت ویدیو", callback_data="select_quality")
+        
+        markup.add(quality_btn)
+        
+        # ارسال پیام راهنما
+        bot.send_message(
+            message.chat.id,
+            "🔰 <b>راهنمای استفاده از ربات</b>\n\n"
+            "📌 <b>دستورات اصلی:</b>\n"
+            "/start - شروع کار با ربات\n"
+            "/help - نمایش این راهنما\n"
+            "/server_status - مشاهده وضعیت سرور\n\n"
+            "📥 <b>دانلود ویدیو:</b>\n"
+            "• کافیست لینک ویدیوی مورد نظر را از یوتیوب یا اینستاگرام ارسال کنید\n"
+            "• می‌توانید کیفیت مورد نظر را از منوی زیر انتخاب کنید\n\n"
+            "⚠️ <b>نکات مهم:</b>\n"
+            "• برای صرفه‌جویی در حجم اینترنت و سرعت بالاتر، از کیفیت‌های پایین‌تر استفاده کنید\n"
+            "• کیفیت پیش‌فرض 240p است\n"
+            "• ویدیوهای بالای 50MB قابل ارسال نیستند و باید با کیفیت پایین‌تر دانلود شوند",
+            parse_mode="HTML",
+            reply_markup=markup
+        )
+    except Exception as e:
+        notify_admin(f"⚠️ خطا در دستور help:\n{traceback.format_exc()}")
+        bot.send_message(message.chat.id, "⚠ خطایی رخ داد. لطفاً بعداً دوباره تلاش کنید.")
+
 # 📌 بررسی وضعیت سرور
 @bot.message_handler(commands=["server_status"])
 def server_status(message):
@@ -402,6 +465,133 @@ def handle_callback_query(call):
                 bot.user_video_quality = {}
             bot.user_video_quality[user_id] = quality
             
+            return
+            
+        # 🌐 نمایش وضعیت سرور
+        elif call.data == "server_status":
+            try:
+                # ارسال پیام "در حال بررسی..."
+                bot.edit_message_text(
+                    "⏳ در حال بررسی وضعیت سرور...",
+                    call.message.chat.id,
+                    call.message.message_id
+                )
+                
+                # بررسی وضعیت سرور
+                cached_status = get_cached_server_status()
+                if cached_status:
+                    bot.edit_message_text(
+                        cached_status,
+                        call.message.chat.id,
+                        call.message.message_id,
+                        parse_mode="Markdown"
+                    )
+                    return
+                
+                # اطلاعات دیسک
+                total, used, free = shutil.disk_usage("/")
+                total_gb = total / (1024**3)
+                used_gb = used / (1024**3)
+                free_gb = free / (1024**3)
+                
+                # مصرف CPU و RAM
+                cpu_usage = psutil.cpu_percent(interval=1)
+                ram = psutil.virtual_memory()
+                ram_used = ram.used / (1024**3)
+                ram_total = ram.total / (1024**3)
+                
+                # مدت زمان روشن بودن سرور
+                uptime_seconds = time.time() - psutil.boot_time()
+                uptime_hours = uptime_seconds // 3600
+                uptime_minutes = (uptime_seconds % 3600) // 60
+                
+                status_msg = (f"📊 **وضعیت سرور:**\n"
+                             f"🔹 **CPU:** `{cpu_usage}%`\n"
+                             f"🔹 **RAM:** `{ram_used:.2f}GB / {ram_total:.2f}GB`\n"
+                             f"🔹 **فضای باقی‌مانده:** `{free_gb:.2f}GB`\n"
+                             f"🔹 **مدت روشن بودن:** `{int(uptime_hours)} ساعت`\n")
+                
+                # ذخیره وضعیت سرور در یک فایل JSON برای کش کردن
+                with open("server_status.json", "w", encoding="utf-8") as file:
+                    json.dump(
+                        {
+                            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            "status": status_msg
+                        }, file)
+                
+                # ایجاد دکمه بازگشت به منوی اصلی
+                markup = telebot.types.InlineKeyboardMarkup()
+                markup.add(telebot.types.InlineKeyboardButton("🏠 بازگشت به منوی اصلی", callback_data="back_to_main"))
+                
+                bot.edit_message_text(
+                    status_msg,
+                    call.message.chat.id,
+                    call.message.message_id,
+                    parse_mode="Markdown",
+                    reply_markup=markup
+                )
+            except Exception as e:
+                bot.send_message(call.message.chat.id, f"⚠ خطا در دریافت وضعیت سرور: {str(e)}")
+            return
+            
+        # 🔙 بازگشت به منوی اصلی
+        elif call.data == "back_to_main":
+            # ایجاد کیبورد اینلاین با دکمه‌های مختلف
+            markup = telebot.types.InlineKeyboardMarkup(row_width=2)
+            help_btn = telebot.types.InlineKeyboardButton("📚 راهنما", callback_data="download_help")
+            quality_btn = telebot.types.InlineKeyboardButton("📊 کیفیت ویدیو", callback_data="select_quality")
+            status_btn = telebot.types.InlineKeyboardButton("📈 وضعیت سرور", callback_data="server_status")
+            
+            markup.add(help_btn, quality_btn)
+            markup.add(status_btn)
+            
+            bot.edit_message_text(
+                f"👋 سلام {call.from_user.first_name}!\n\n"
+                "🎬 به ربات دانلود ویدیو خوش آمدید.\n\n"
+                "🔸 <b>قابلیت‌های ربات:</b>\n"
+                "• دانلود ویدیو از یوتیوب و اینستاگرام\n"
+                "• امکان انتخاب کیفیت ویدیو\n"
+                "• پاسخ‌گویی به سوالات متداول\n\n"
+                "🔹 <b>روش استفاده:</b>\n"
+                "کافیست لینک ویدیوی مورد نظر خود را از یوتیوب یا اینستاگرام ارسال کنید.",
+                call.message.chat.id,
+                call.message.message_id,
+                parse_mode="HTML",
+                reply_markup=markup
+            )
+            return
+            
+        # 📊 انتخاب کیفیت ویدیو
+        elif call.data == "select_quality":
+            # ایجاد دکمه‌های کیفیت
+            markup = telebot.types.InlineKeyboardMarkup(row_width=3)
+            quality_buttons = []
+            for quality in ["144p", "240p", "360p", "480p", "720p", "1080p"]:
+                quality_buttons.append(
+                    telebot.types.InlineKeyboardButton(f"📺 {quality}", callback_data=f"quality_{quality}")
+                )
+            
+            # افزودن دکمه‌ها در گروه‌های 3تایی
+            for i in range(0, len(quality_buttons), 3):
+                group = quality_buttons[i:i+3]
+                markup.add(*group)
+                
+            # دکمه بازگشت
+            markup.add(telebot.types.InlineKeyboardButton("🔙 بازگشت", callback_data="back_to_main"))
+            
+            bot.edit_message_text(
+                "📊 <b>انتخاب کیفیت ویدیو</b>\n\n"
+                "لطفاً کیفیت مورد نظر برای دانلود ویدیوها را انتخاب کنید:\n\n"
+                "⚠️ <b>نکات مهم:</b>\n"
+                "• کیفیت بالاتر = حجم بیشتر و زمان دانلود طولانی‌تر\n"
+                "• کیفیت پایین‌تر = حجم کمتر و دانلود سریع‌تر\n"
+                "• ویدیوهای با حجم بیش از 50MB قابل ارسال در تلگرام نیستند\n"
+                "• کیفیت فعلی: <b>" + (bot.user_video_quality.get(str(call.from_user.id), DEFAULT_VIDEO_QUALITY) if hasattr(bot, "user_video_quality") else DEFAULT_VIDEO_QUALITY) + "</b>",
+                call.message.chat.id,
+                call.message.message_id,
+                parse_mode="HTML",
+                reply_markup=markup
+            )
             return
             
         # 📝 نمایش راهنمای دانلود
