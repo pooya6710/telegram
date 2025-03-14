@@ -199,47 +199,70 @@ except Exception as context_error:
 @debug_decorator
 def webhook_handler(token):
     from bot import webhook
-    # مقایسه با توکن واقعی
-    real_token = os.environ.get('TELEGRAM_BOT_TOKEN', '')
-    if token == real_token:
-        debug_log("درخواست وب‌هوک معتبر دریافت شد", "INFO")
+    debug_log(f"درخواست وب‌هوک دریافت شد با توکن مخفی {token[:3]}...", "INFO")
+    
+    # مقایسه با توکن واقعی با مدیریت خطای پیشرفته
+    try:
+        real_token = os.environ.get('TELEGRAM_BOT_TOKEN')
         
-        # ثبت درخواست وب‌هوک برای تحلیل و دیباگ
-        try:
-            req_data = request.get_data()
-            log_webhook_request(req_data)
-        except Exception as req_error:
-            debug_log("خطا در ثبت داده‌های وب‌هوک", "ERROR", {
-                "error": str(req_error)
-            })
+        # بررسی وجود توکن
+        if not real_token:
+            debug_log("⚠️ متغیر محیطی TELEGRAM_BOT_TOKEN در دسترس نیست", "ERROR")
+            return "خطای پیکربندی سرور (توکن یافت نشد)", 500
+        
+        # توکن معتبر است
+        if token == real_token:
+            debug_log("درخواست وب‌هوک معتبر تأیید شد", "INFO")
             
-        # پردازش وب‌هوک
-        try:
-            result = webhook()
-            debug_log("وب‌هوک با موفقیت پردازش شد", "INFO", {
-                "result": str(result)
+            # ثبت درخواست وب‌هوک برای تحلیل و دیباگ
+            try:
+                req_data = request.get_data()
+                log_webhook_request(req_data)
+            except Exception as req_error:
+                debug_log("خطا در ثبت داده‌های وب‌هوک", "ERROR", {
+                    "error": str(req_error)
+                })
+                
+            # پردازش وب‌هوک
+            try:
+                result = webhook()
+                debug_log("وب‌هوک با موفقیت پردازش شد", "INFO", {
+                    "result": str(result)
+                })
+                return result
+            except Exception as e:
+                error_details = format_exception_with_context(e)
+                debug_log("خطا در پردازش وب‌هوک", "ERROR", {
+                    "error_type": type(e).__name__,
+                    "error_message": str(e),
+                    "traceback": error_details
+                })
+                
+                # ارسال پیام خطا به ادمین برای بررسی
+                from bot import notify_admin
+                notify_admin(f"⚠️ خطا در پردازش وب‌هوک:\n{error_details[:3000]}") # محدود کردن طول پیام
+                
+                return f"خطای سرور: {str(e)}", 500
+        # توکن نامعتبر است
+        else:
+            # برای امنیت بیشتر، تمام توکن را نمایش نمی‌دهیم
+            masked_token = token[:5] + "..." if len(token) > 5 else token
+            debug_log("درخواست وب‌هوک با توکن نامعتبر رد شد", "WARNING", {
+                "masked_token": masked_token
             })
-            return result
-        except Exception as e:
-            error_details = format_exception_with_context(e)
-            debug_log("خطا در پردازش وب‌هوک", "ERROR", {
-                "error_type": type(e).__name__,
-                "error_message": str(e),
-                "traceback": error_details
-            })
+            return 'Forbidden', 403
             
-            # ارسال پیام خطا به ادمین برای بررسی
-            from bot import notify_admin
-            notify_admin(f"⚠️ خطا در پردازش وب‌هوک:\n{error_details[:3000]}") # محدود کردن طول پیام
-            
-            return f"خطای سرور: {str(e)}", 500
-    else:
-        # برای امنیت بیشتر، تمام توکن را نمایش نمی‌دهیم
-        masked_token = token[:5] + "..." if len(token) > 5 else token
-        debug_log("درخواست وب‌هوک با توکن نامعتبر", "WARNING", {
-            "masked_token": masked_token
+    except Exception as outer_error:
+        # خطای کلی در پردازش درخواست
+        error_details = format_exception_with_context(outer_error)
+        debug_log("خطای کلی در پردازش درخواست وب‌هوک", "ERROR", {
+            "error_type": type(outer_error).__name__,
+            "error_message": str(outer_error),
+            "traceback": error_details
         })
-        return '', 403
+        
+        # در صورت خطای کلی، کد 500 برمی‌گردانیم
+        return f"Internal Server Error: {str(outer_error)}", 500
 
 # مسیر ساده برای تست وب‌هوک
 @app.route('/webhook-test', methods=['GET'])

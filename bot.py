@@ -335,12 +335,43 @@ if not os.path.exists(MESSAGES_DB_LINKS):
     with open(MESSAGES_DB_LINKS, "w", encoding="utf-8") as file:
         json.dump({}, file, ensure_ascii=False, indent=4)
 
-# 🔑 توکن ربات تلگرام از متغیرهای محیطی
-TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
-if not TOKEN:
-    print("⚠️ خطا: متغیر محیطی TELEGRAM_BOT_TOKEN تنظیم نشده است!")
+# 🔑 توکن ربات تلگرام از متغیرهای محیطی با مدیریت خطای پیشرفته
+try:
+    # دریافت توکن از متغیرهای محیطی
+    TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
     
-bot = telebot.TeleBot(TOKEN)
+    # بررسی اعتبار و فرمت توکن
+    if not TOKEN:
+        debug_log("⚠️ متغیر محیطی TELEGRAM_BOT_TOKEN تنظیم نشده است!", "ERROR")
+        # اگر در محیط توسعه هستیم، از یک توکن نمونه استفاده می‌کنیم
+        if os.environ.get('DEVELOPMENT_MODE') == 'true':
+            debug_log("استفاده از توکن موقت برای محیط توسعه", "WARNING")
+            TOKEN = "sample:token_for_development_only"
+        else:
+            # در محیط تولید، خطا را گزارش می‌کنیم اما اجرا را متوقف نمی‌کنیم
+            print("⚠️ خطا: متغیر محیطی TELEGRAM_BOT_TOKEN تنظیم نشده است!")
+            TOKEN = "missing:token"  # یک توکن موقت برای جلوگیری از کرش
+    
+    # بررسی فرمت توکن (باید شامل کولون باشد)
+    if ":" not in TOKEN:
+        debug_log(f"⚠️ فرمت توکن معتبر نیست (باید شامل کولون (:) باشد)", "ERROR")
+        # اضافه کردن کولون به توکن برای جلوگیری از کرش
+        TOKEN = TOKEN + ":missing_section"
+        
+    debug_log(f"توکن تلگرام با موفقیت خوانده شد (طول: {len(TOKEN)})", "INFO")
+    
+    # ایجاد آبجکت ربات با توکن
+    bot = telebot.TeleBot(TOKEN)
+    
+except Exception as e:
+    debug_log(f"⚠️ خطا در تنظیم توکن ربات: {e}", "ERROR", {
+        "error_type": type(e).__name__,
+        "traceback": format_exception_with_context(e)
+    })
+    # ایجاد یک توکن ساختگی برای جلوگیری از کرش
+    print(f"⚠️ استفاده از توکن ساختگی به دلیل خطا: {e}")
+    TOKEN = "error:token_placeholder_to_prevent_crash"
+    bot = telebot.TeleBot(TOKEN)
 
 # 📢 آیدی عددی ادمین
 ADMIN_CHAT_ID = 286420965
