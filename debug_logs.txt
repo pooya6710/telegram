@@ -2074,3 +2074,66 @@
   }
 }
 ==================================================
+2025-03-14 05:26:32,367 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:26:32",
+  "level": "INFO",
+  "message": "توکن تلگرام با موفقیت خوانده شد (طول: 46)",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 362
+  }
+}
+{
+  "timestamp": "2025-03-14 05:26:32",
+  "level": "INFO",
+  "message": "توکن تلگرام با موفقیت خوانده شد (طول: 46)",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 362
+  }
+}
+==================================================
+2025-03-14 05:26:48,419 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:26:48",
+  "level": "INFO",
+  "message": "توکن تلگرام با موفقیت خوانده شد (طول: 46)",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 362
+  }
+}
+{
+  "timestamp": "2025-03-14 05:26:48",
+  "level": "INFO",
+  "message": "توکن تلگرام با موفقیت خوانده شد (طول: 46)",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 362
+  }
+}
+==================================================
+2025-03-14 05:27:54,092 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:27:54",
+  "level": "INFO",
+  "message": "توکن تلگرام با موفقیت خوانده شد (طول: 46)",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 362
+  }
+}
+{
+  "timestamp": "2025-03-14 05:27:54",
+  "level": "INFO",
+  "message": "توکن تلگرام با موفقیت خوانده شد (طول: 46)",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 362
+  }
+}
+==================================================

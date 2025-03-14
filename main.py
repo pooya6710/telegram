@@ -190,13 +190,10 @@ def run_bot():
             
         # اجرای ربات در یک ترد جداگانه
         def bot_runner():
-            # تلاش برای اجرا با وب‌هوک
-            webhook_success = start_bot()
-            if not webhook_success:
-                # اگر وب‌هوک موفق نبود، به حالت polling تغییر وضعیت می‌دهیم
-                logger.info("⚠️ وب‌هوک با خطا مواجه شد. تغییر به حالت polling...")
-                os.environ['WEBHOOK_MODE'] = 'false'
-                start_bot()  # اجرای مجدد در حالت polling
+            # مستقیماً از حالت polling استفاده می‌کنیم برای پایداری بیشتر
+            logger.info("🔄 راه‌اندازی ربات در حالت polling برای پایداری بیشتر...")
+            os.environ['WEBHOOK_MODE'] = 'false'
+            start_bot()  # اجرای ربات در حالت polling
         
         bot_thread = threading.Thread(target=bot_runner)
         bot_thread.daemon = True
