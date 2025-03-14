@@ -7,21 +7,50 @@ import traceback
 import platform
 from datetime import datetime
 from flask import Flask, jsonify, render_template, redirect, url_for
+
+# تنظیم لاگر اصلی
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
+
+# واردکردن ماژول‌های داخلی
+try:
+    # سیستم لاگینگ پیشرفته
+    from debug_logger import debug_log, log_webhook_request, log_telegram_update, debug_decorator, format_exception_with_context
+    logger.info("✅ سیستم دیباگینگ پیشرفته در main.py با موفقیت بارگذاری شد")
+except ImportError as e:
+    logger.error(f"⚠️ خطا در بارگذاری ماژول debug_logger: {e}")
+    # تعریف توابع جایگزین در صورت عدم دسترسی به ماژول دیباگینگ
+    def debug_log(message, level="DEBUG", context=None):
+        logger.debug(f"{message} - Context: {context}")
+    
+    def log_webhook_request(data):
+        logger.debug(f"Webhook data: {data[:200] if isinstance(data, str) else str(data)[:200]}...")
+    
+    def log_telegram_update(update):
+        logger.debug(f"Telegram update: {update}")
+    
+    def debug_decorator(func):
+        return func
+    
+    def format_exception_with_context(e):
+        return traceback.format_exc()
+
+# وارد کردن ماژول‌های بات 
 from bot import start_bot, get_cached_server_status
 
 # وارد کردن ماژول‌ها با مدیریت خطا
 try:
     import psutil
+    logger.info("✅ ماژول psutil با موفقیت بارگذاری شد")
 except ImportError:
-    logging.warning("⚠️ ماژول psutil در دسترس نیست. برخی از قابلیت‌های نمایش وضعیت سیستم غیرفعال خواهند بود.")
+    logger.warning("⚠️ ماژول psutil در دسترس نیست. برخی از قابلیت‌های نمایش وضعیت سیستم غیرفعال خواهند بود.")
 
 # ایجاد اپلیکیشن Flask
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'default-secret-key-for-development')
-
-# تنظیم لاگ‌ها
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # وضعیت ربات
 bot_status = {
@@ -167,23 +196,49 @@ except Exception as context_error:
 
 # مسیر برای دریافت وب‌هوک تلگرام
 @app.route('/<path:token>/', methods=['POST'])
+@debug_decorator
 def webhook_handler(token):
     from bot import webhook
-    if token == os.environ.get('TELEGRAM_BOT_TOKEN', ''):
-        print(f"✅ درخواست وب‌هوک دریافت شد!")
+    # مقایسه با توکن واقعی
+    real_token = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+    if token == real_token:
+        debug_log("درخواست وب‌هوک معتبر دریافت شد", "INFO")
+        
+        # ثبت درخواست وب‌هوک برای تحلیل و دیباگ
+        try:
+            req_data = request.get_data()
+            log_webhook_request(req_data)
+        except Exception as req_error:
+            debug_log("خطا در ثبت داده‌های وب‌هوک", "ERROR", {
+                "error": str(req_error)
+            })
+            
+        # پردازش وب‌هوک
         try:
             result = webhook()
-            print(f"✅ وب‌هوک با موفقیت پردازش شد. نتیجه: {result}")
+            debug_log("وب‌هوک با موفقیت پردازش شد", "INFO", {
+                "result": str(result)
+            })
             return result
         except Exception as e:
-            print(f"❌ خطا در پردازش وب‌هوک: {e}")
-            import traceback
-            print(traceback.format_exc())
+            error_details = format_exception_with_context(e)
+            debug_log("خطا در پردازش وب‌هوک", "ERROR", {
+                "error_type": type(e).__name__,
+                "error_message": str(e),
+                "traceback": error_details
+            })
+            
+            # ارسال پیام خطا به ادمین برای بررسی
+            from bot import notify_admin
+            notify_admin(f"⚠️ خطا در پردازش وب‌هوک:\n{error_details[:3000]}") # محدود کردن طول پیام
+            
             return f"خطای سرور: {str(e)}", 500
     else:
         # برای امنیت بیشتر، تمام توکن را نمایش نمی‌دهیم
         masked_token = token[:5] + "..." if len(token) > 5 else token
-        print(f"⚠️ درخواست وب‌هوک با توکن نامعتبر: {masked_token}")
+        debug_log("درخواست وب‌هوک با توکن نامعتبر", "WARNING", {
+            "masked_token": masked_token
+        })
         return '', 403
 
 # مسیر ساده برای تست وب‌هوک
