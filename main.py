@@ -130,8 +130,20 @@ with app.app_context():
 def webhook_handler(token):
     from bot import webhook
     if token == os.environ.get('TELEGRAM_BOT_TOKEN', ''):
+        print(f"✅ درخواست وب‌هوک دریافت شد!")
         return webhook()
+    else:
+        print(f"⚠️ درخواست وب‌هوک با توکن نامعتبر: {token[:5]}...")
     return '', 403
+
+# مسیر ساده برای تست وب‌هوک
+@app.route('/webhook-test', methods=['GET'])
+def webhook_test():
+    return jsonify({
+        "status": "ok",
+        "message": "سرور وب‌هوک فعال است",
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    })
 
 # اجرای سرور Flask
 if __name__ == "__main__":

@@ -858,11 +858,11 @@ def start_bot():
         # تنظیمات وب‌هوک
         try:
             # برای سرور ریل‌وی، آدرس دامنه را تنظیم می‌کنیم
-            # اگر متغیر محیطی RAILWAY_PUBLIC_DOMAIN تنظیم شده باشد، از آن استفاده می‌کنیم
+            # از آدرس واقعی سرور ریل‌وی استفاده می‌کنیم
             webhook_host = os.environ.get('DOMAIN_URL')
             
             if not webhook_host:
-                webhook_host = "https://workshop.railway.app"
+                webhook_host = "https://telegram-production-cc29.up.railway.app"
                 
             print(f"📌 آدرس وب‌هوک: {webhook_host}")
                 
