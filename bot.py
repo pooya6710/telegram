@@ -406,6 +406,49 @@ VIDEO_QUALITIES = {
 
 DEFAULT_VIDEO_QUALITY = "240p"  # کیفیت پیش‌فرض برای صرفه‌جویی در فضا
 
+# 🔖 فایل ذخیره اطلاعات هشتگ‌ها
+HASHTAGS_FILE = "hashtags.json"
+
+# پیام‌های بازیابی شده برای هر هشتگ
+hashtag_cache = {}
+
+# تعداد حداکثر پیام برای جستجو در هر کانال
+MAX_SEARCH_MESSAGES = 1000
+
+# تعداد حداکثر پیام برای ارسال در هر هشتگ
+MAX_SEND_MESSAGES = 20
+
+# تابع بارگیری هشتگ‌ها و کانال‌ها از فایل
+def load_hashtags():
+    """بارگیری اطلاعات هشتگ‌ها و کانال‌ها از فایل"""
+    try:
+        if os.path.exists(HASHTAGS_FILE):
+            with open(HASHTAGS_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                debug_log("اطلاعات هشتگ‌ها با موفقیت بارگیری شد", "INFO")
+                return data
+        else:
+            data = {"hashtags": {}, "channels": []}
+            with open(HASHTAGS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            debug_log("فایل هشتگ‌ها ایجاد شد", "INFO")
+            return data
+    except Exception as e:
+        debug_log(f"خطا در بارگیری اطلاعات هشتگ‌ها: {e}", "ERROR")
+        return {"hashtags": {}, "channels": []}
+
+# تابع ذخیره هشتگ‌ها و کانال‌ها در فایل
+def save_hashtags(data):
+    """ذخیره اطلاعات هشتگ‌ها و کانال‌ها در فایل"""
+    try:
+        with open(HASHTAGS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        debug_log("اطلاعات هشتگ‌ها با موفقیت ذخیره شد", "INFO")
+        return True
+    except Exception as e:
+        debug_log(f"خطا در ذخیره اطلاعات هشتگ‌ها: {e}", "ERROR")
+        return False
+
 # 🧹 پاکسازی فایل‌های قدیمی و نگهداری حداکثر تعداد مشخصی فایل
 def clear_folder(folder_path, max_files=MAX_VIDEOS_TO_KEEP):
     """حذف فایل‌های قدیمی و نگهداری حداکثر تعداد مشخصی فایل"""
@@ -533,6 +576,390 @@ def help_command(message):
     except Exception as e:
         notify_admin(f"⚠️ خطا در دستور help:\n{traceback.format_exc()}")
         bot.send_message(message.chat.id, "⚠ خطایی رخ داد. لطفاً بعداً دوباره تلاش کنید.")
+
+# 📌 مدیریت هشتگ‌ها - اضافه کردن هشتگ جدید
+@bot.message_handler(commands=["add_hashtag"])
+def add_hashtag_command(message):
+    try:
+        # جداسازی آرگومان‌ها
+        args = message.text.split(maxsplit=2)
+        
+        # بررسی آرگومان‌های لازم
+        if len(args) < 3:
+            bot.reply_to(message, "⚠️ فرمت دستور نادرست است.\n"
+                        "📝 نحوه استفاده: `/add_hashtag نام_هشتگ توضیحات`\n"
+                        "مثال: `/add_hashtag آموزش این هشتگ برای ویدیوهای آموزشی است`", parse_mode="Markdown")
+            return
+        
+        # دریافت نام هشتگ و توضیحات
+        hashtag = args[1]
+        description = args[2]
+        
+        # اضافه کردن # به ابتدای هشتگ اگر وجود نداشته باشد
+        if not hashtag.startswith("#"):
+            hashtag = "#" + hashtag
+        
+        # بارگیری اطلاعات هشتگ‌ها
+        data = load_hashtags()
+        
+        # اضافه کردن هشتگ جدید
+        data["hashtags"][hashtag] = {
+            "description": description,
+            "created_by": message.from_user.id,
+            "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "messages": []
+        }
+        
+        # ذخیره اطلاعات هشتگ‌ها
+        if save_hashtags(data):
+            bot.reply_to(message, f"✅ هشتگ {hashtag} با موفقیت اضافه شد.")
+        else:
+            bot.reply_to(message, "⚠️ خطا در ذخیره اطلاعات هشتگ‌ها.")
+    
+    except Exception as e:
+        debug_log(f"خطا در اضافه کردن هشتگ", "ERROR", {"error": str(e)})
+        bot.reply_to(message, "⚠️ خطایی رخ داد. لطفاً بعداً دوباره تلاش کنید.")
+
+# 📌 مدیریت هشتگ‌ها - حذف هشتگ
+@bot.message_handler(commands=["remove_hashtag"])
+def remove_hashtag_command(message):
+    try:
+        # جداسازی آرگومان‌ها
+        args = message.text.split(maxsplit=1)
+        
+        # بررسی آرگومان‌های لازم
+        if len(args) < 2:
+            bot.reply_to(message, "⚠️ فرمت دستور نادرست است.\n"
+                        "📝 نحوه استفاده: `/remove_hashtag نام_هشتگ`\n"
+                        "مثال: `/remove_hashtag آموزش`", parse_mode="Markdown")
+            return
+        
+        # دریافت نام هشتگ
+        hashtag = args[1]
+        
+        # اضافه کردن # به ابتدای هشتگ اگر وجود نداشته باشد
+        if not hashtag.startswith("#"):
+            hashtag = "#" + hashtag
+        
+        # بارگیری اطلاعات هشتگ‌ها
+        data = load_hashtags()
+        
+        # بررسی وجود هشتگ
+        if hashtag not in data["hashtags"]:
+            bot.reply_to(message, f"⚠️ هشتگ {hashtag} یافت نشد.")
+            return
+        
+        # حذف هشتگ
+        del data["hashtags"][hashtag]
+        
+        # ذخیره اطلاعات هشتگ‌ها
+        if save_hashtags(data):
+            bot.reply_to(message, f"✅ هشتگ {hashtag} با موفقیت حذف شد.")
+        else:
+            bot.reply_to(message, "⚠️ خطا در ذخیره اطلاعات هشتگ‌ها.")
+    
+    except Exception as e:
+        debug_log(f"خطا در حذف هشتگ", "ERROR", {"error": str(e)})
+        bot.reply_to(message, "⚠️ خطایی رخ داد. لطفاً بعداً دوباره تلاش کنید.")
+
+# 📌 مدیریت هشتگ‌ها - لیست هشتگ‌ها
+@bot.message_handler(commands=["hashtags"])
+def list_hashtags_command(message):
+    try:
+        # بارگیری اطلاعات هشتگ‌ها
+        data = load_hashtags()
+        
+        # بررسی وجود هشتگ
+        if not data["hashtags"]:
+            bot.reply_to(message, "⚠️ هنوز هیچ هشتگی تعریف نشده است.")
+            return
+        
+        # ساخت پیام لیست هشتگ‌ها
+        hashtags_list = ["🔖 <b>لیست هشتگ‌های تعریف شده:</b>\n"]
+        
+        for idx, (hashtag, info) in enumerate(data["hashtags"].items(), 1):
+            hashtags_list.append(f"{idx}. <code>{hashtag}</code> - {info['description']}")
+        
+        # ارسال لیست هشتگ‌ها
+        bot.reply_to(message, "\n".join(hashtags_list), parse_mode="HTML")
+    
+    except Exception as e:
+        debug_log(f"خطا در نمایش لیست هشتگ‌ها", "ERROR", {"error": str(e)})
+        bot.reply_to(message, "⚠️ خطایی رخ داد. لطفاً بعداً دوباره تلاش کنید.")
+
+# 📌 مدیریت کانال‌ها - اضافه کردن کانال
+@bot.message_handler(commands=["add_channel"])
+def add_channel_command(message):
+    try:
+        # جداسازی آرگومان‌ها
+        args = message.text.split(maxsplit=1)
+        
+        # بررسی آرگومان‌های لازم
+        if len(args) < 2:
+            bot.reply_to(message, "⚠️ فرمت دستور نادرست است.\n"
+                        "📝 نحوه استفاده: `/add_channel آیدی_کانال`\n"
+                        "مثال: `/add_channel @mychannel` یا `/add_channel -1001234567890`", parse_mode="Markdown")
+            return
+        
+        # دریافت آیدی کانال
+        channel_id = args[1]
+        
+        # بارگیری اطلاعات هشتگ‌ها
+        data = load_hashtags()
+        
+        # بررسی تکراری نبودن کانال
+        if channel_id in data["channels"]:
+            bot.reply_to(message, f"⚠️ کانال {channel_id} قبلاً اضافه شده است.")
+            return
+        
+        # اضافه کردن کانال جدید
+        data["channels"].append(channel_id)
+        
+        # ذخیره اطلاعات هشتگ‌ها
+        if save_hashtags(data):
+            bot.reply_to(message, f"✅ کانال {channel_id} با موفقیت اضافه شد.")
+        else:
+            bot.reply_to(message, "⚠️ خطا در ذخیره اطلاعات کانال‌ها.")
+    
+    except Exception as e:
+        debug_log(f"خطا در اضافه کردن کانال", "ERROR", {"error": str(e)})
+        bot.reply_to(message, "⚠️ خطایی رخ داد. لطفاً بعداً دوباره تلاش کنید.")
+
+# 📌 مدیریت کانال‌ها - حذف کانال
+@bot.message_handler(commands=["remove_channel"])
+def remove_channel_command(message):
+    try:
+        # جداسازی آرگومان‌ها
+        args = message.text.split(maxsplit=1)
+        
+        # بررسی آرگومان‌های لازم
+        if len(args) < 2:
+            bot.reply_to(message, "⚠️ فرمت دستور نادرست است.\n"
+                        "📝 نحوه استفاده: `/remove_channel آیدی_کانال`\n"
+                        "مثال: `/remove_channel @mychannel` یا `/remove_channel -1001234567890`", parse_mode="Markdown")
+            return
+        
+        # دریافت آیدی کانال
+        channel_id = args[1]
+        
+        # بارگیری اطلاعات هشتگ‌ها
+        data = load_hashtags()
+        
+        # بررسی وجود کانال
+        if channel_id not in data["channels"]:
+            bot.reply_to(message, f"⚠️ کانال {channel_id} یافت نشد.")
+            return
+        
+        # حذف کانال
+        data["channels"].remove(channel_id)
+        
+        # ذخیره اطلاعات هشتگ‌ها
+        if save_hashtags(data):
+            bot.reply_to(message, f"✅ کانال {channel_id} با موفقیت حذف شد.")
+        else:
+            bot.reply_to(message, "⚠️ خطا در ذخیره اطلاعات کانال‌ها.")
+    
+    except Exception as e:
+        debug_log(f"خطا در حذف کانال", "ERROR", {"error": str(e)})
+        bot.reply_to(message, "⚠️ خطایی رخ داد. لطفاً بعداً دوباره تلاش کنید.")
+
+# 📌 مدیریت کانال‌ها - لیست کانال‌ها
+@bot.message_handler(commands=["channels"])
+def list_channels_command(message):
+    try:
+        # بارگیری اطلاعات هشتگ‌ها
+        data = load_hashtags()
+        
+        # بررسی وجود کانال
+        if not data["channels"]:
+            bot.reply_to(message, "⚠️ هنوز هیچ کانالی تعریف نشده است.")
+            return
+        
+        # ساخت پیام لیست کانال‌ها
+        channels_list = ["📢 <b>لیست کانال‌های تعریف شده:</b>\n"]
+        
+        for idx, channel_id in enumerate(data["channels"], 1):
+            channels_list.append(f"{idx}. <code>{channel_id}</code>")
+        
+        # ارسال لیست کانال‌ها
+        bot.reply_to(message, "\n".join(channels_list), parse_mode="HTML")
+    
+    except Exception as e:
+        debug_log(f"خطا در نمایش لیست کانال‌ها", "ERROR", {"error": str(e)})
+        bot.reply_to(message, "⚠️ خطایی رخ داد. لطفاً بعداً دوباره تلاش کنید.")
+
+# 📌 جستجوی هشتگ - دستور جستجوی هشتگ
+@bot.message_handler(commands=["search"])
+def search_hashtag_command(message):
+    try:
+        # جداسازی آرگومان‌ها
+        args = message.text.split(maxsplit=1)
+        
+        # بررسی آرگومان‌های لازم
+        if len(args) < 2:
+            bot.reply_to(message, "⚠️ فرمت دستور نادرست است.\n"
+                        "📝 نحوه استفاده: `/search نام_هشتگ`\n"
+                        "مثال: `/search آموزش`", parse_mode="Markdown")
+            return
+        
+        # دریافت نام هشتگ
+        hashtag = args[1]
+        
+        # اضافه کردن # به ابتدای هشتگ اگر وجود نداشته باشد
+        if not hashtag.startswith("#"):
+            hashtag = "#" + hashtag
+        
+        # بارگیری اطلاعات هشتگ‌ها
+        data = load_hashtags()
+        
+        # بررسی وجود هشتگ
+        if hashtag not in data["hashtags"]:
+            bot.reply_to(message, f"⚠️ هشتگ {hashtag} یافت نشد.")
+            return
+        
+        # بررسی وجود پیام‌های ذخیره شده برای هشتگ
+        hashtag_data = data["hashtags"][hashtag]
+        if not hashtag_data["messages"]:
+            processing_msg = bot.reply_to(message, f"🔍 در حال جستجوی کانال‌ها برای هشتگ {hashtag}...")
+            
+            # ایجاد ترد برای جستجوی هشتگ در کانال‌ها
+            search_thread = threading.Thread(
+                target=search_hashtag_in_channels,
+                args=(message, hashtag, processing_msg.message_id)
+            )
+            search_thread.daemon = True
+            search_thread.start()
+        else:
+            # نمایش پیام‌های ذخیره شده برای هشتگ
+            show_hashtag_messages(message, hashtag, data["hashtags"][hashtag]["messages"])
+    
+    except Exception as e:
+        debug_log(f"خطا در جستجوی هشتگ", "ERROR", {"error": str(e)})
+        bot.reply_to(message, "⚠️ خطایی رخ داد. لطفاً بعداً دوباره تلاش کنید.")
+
+# 📌 جستجوی هشتگ در کانال‌ها
+def search_hashtag_in_channels(message, hashtag, processing_msg_id):
+    try:
+        # بارگیری اطلاعات هشتگ‌ها
+        data = load_hashtags()
+        
+        # بررسی وجود کانال
+        if not data["channels"]:
+            bot.edit_message_text(
+                "⚠️ هنوز هیچ کانالی تعریف نشده است.",
+                chat_id=message.chat.id,
+                message_id=processing_msg_id
+            )
+            return
+        
+        found_messages = []
+        total_channels = len(data["channels"])
+        processed_channels = 0
+        
+        # به‌روزرسانی پیام پردازش
+        bot.edit_message_text(
+            f"🔍 در حال جستجوی {total_channels} کانال برای هشتگ {hashtag}...\n"
+            f"پیشرفت: 0/{total_channels} کانال",
+            chat_id=message.chat.id,
+            message_id=processing_msg_id
+        )
+        
+        # جستجو در هر کانال
+        for channel_id in data["channels"]:
+            try:
+                # به‌روزرسانی پیام پردازش
+                processed_channels += 1
+                bot.edit_message_text(
+                    f"🔍 در حال جستجوی {total_channels} کانال برای هشتگ {hashtag}...\n"
+                    f"پیشرفت: {processed_channels}/{total_channels} کانال",
+                    chat_id=message.chat.id,
+                    message_id=processing_msg_id
+                )
+                
+                # دریافت پیام‌های کانال
+                messages = []
+                
+                # اینجا کد دریافت پیام‌های کانال پیاده‌سازی شود
+                # این بخش به تابع اختصاصی bot.get_channel_history نیاز دارد
+                # که باید به صورت جداگانه پیاده‌سازی شود
+                
+                # بررسی هشتگ در پیام‌ها
+                for msg in messages:
+                    if hashtag.lower() in msg.text.lower():
+                        found_messages.append({
+                            "chat_id": channel_id,
+                            "message_id": msg.message_id,
+                            "text": msg.text[:100] + "..." if len(msg.text) > 100 else msg.text,
+                            "date": msg.date.strftime("%Y-%m-%d %H:%M:%S") if hasattr(msg, "date") else "نامشخص"
+                        })
+                
+                # محدود کردن تعداد پیام‌های یافت شده
+                if len(found_messages) >= MAX_SEND_MESSAGES:
+                    break
+                    
+            except Exception as channel_error:
+                debug_log(f"خطا در جستجوی کانال {channel_id}", "WARNING", {"error": str(channel_error)})
+                continue
+        
+        # ذخیره پیام‌های یافت شده در هشتگ
+        data["hashtags"][hashtag]["messages"] = found_messages
+        save_hashtags(data)
+        
+        # نمایش پیام‌های یافت شده
+        if found_messages:
+            bot.edit_message_text(
+                f"✅ جستجو تکمیل شد. {len(found_messages)} پیام یافت شد.",
+                chat_id=message.chat.id,
+                message_id=processing_msg_id
+            )
+            time.sleep(1)  # تأخیر کوتاه
+            show_hashtag_messages(message, hashtag, found_messages)
+        else:
+            bot.edit_message_text(
+                f"⚠️ هیچ پیامی با هشتگ {hashtag} یافت نشد.",
+                chat_id=message.chat.id,
+                message_id=processing_msg_id
+            )
+    
+    except Exception as e:
+        debug_log(f"خطا در جستجوی هشتگ در کانال‌ها", "ERROR", {"error": str(e)})
+        try:
+            bot.edit_message_text(
+                "⚠️ خطایی در جستجو رخ داد. لطفاً بعداً دوباره تلاش کنید.",
+                chat_id=message.chat.id,
+                message_id=processing_msg_id
+            )
+        except:
+            pass
+
+# 📌 نمایش پیام‌های هشتگ
+def show_hashtag_messages(message, hashtag, messages):
+    try:
+        if not messages:
+            bot.reply_to(message, f"⚠️ هیچ پیامی برای هشتگ {hashtag} یافت نشد.")
+            return
+        
+        # محدود کردن تعداد پیام‌ها
+        if len(messages) > MAX_SEND_MESSAGES:
+            messages = messages[:MAX_SEND_MESSAGES]
+        
+        # ساخت پیام نتایج
+        results = [f"🔖 <b>نتایج جستجو برای هشتگ {hashtag}:</b>\n"]
+        
+        for idx, msg in enumerate(messages, 1):
+            chat_id = msg.get("chat_id", "نامشخص")
+            message_id = msg.get("message_id", "نامشخص")
+            text = msg.get("text", "")
+            date = msg.get("date", "نامشخص")
+            
+            results.append(f"{idx}. <b>{date}</b>\n{text}\n")
+        
+        # ارسال نتایج
+        bot.reply_to(message, "\n".join(results), parse_mode="HTML")
+    
+    except Exception as e:
+        debug_log(f"خطا در نمایش پیام‌های هشتگ", "ERROR", {"error": str(e)})
+        bot.reply_to(message, "⚠️ خطایی در نمایش نتایج رخ داد. لطفاً بعداً دوباره تلاش کنید.")
 
 # 📌 بررسی وضعیت سرور
 @bot.message_handler(commands=["server_status"])

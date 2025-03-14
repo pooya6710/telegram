@@ -2137,3 +2137,200 @@
   }
 }
 ==================================================
+2025-03-14 05:28:05,605 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:28:05",
+  "level": "INFO",
+  "message": "پیام جدید دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1615
+  },
+  "context": {
+    "chat_id": 286420965,
+    "user_id": 286420965,
+    "text_length": 4,
+    "has_link": false
+  }
+}
+2025-03-14 05:28:05,605 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:28:05",
+  "level": "INFO",
+  "message": "پیام جدید دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1615
+  },
+  "context": {
+    "chat_id": 286420965,
+    "user_id": 286420965,
+    "text_length": 4,
+    "has_link": false
+  }
+}
+{
+  "timestamp": "2025-03-14 05:28:05",
+  "level": "INFO",
+  "message": "پیام جدید دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1615
+  },
+  "context": {
+    "chat_id": 286420965,
+    "user_id": 286420965,
+    "text_length": 4,
+    "has_link": false
+  }
+}
+==================================================
+2025-03-14 05:28:05,606 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:28:05",
+  "level": "INFO",
+  "message": "پاسخ به سلام کاربر",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1754
+  }
+}
+{
+  "timestamp": "2025-03-14 05:28:05",
+  "level": "INFO",
+  "message": "پاسخ به سلام کاربر",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1754
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-14 05:28:05",
+  "level": "INFO",
+  "message": "پیام جدید دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1615
+  },
+  "context": {
+    "chat_id": 286420965,
+    "user_id": 286420965,
+    "text_length": 4,
+    "has_link": false
+  }
+}
+==================================================
+2025-03-14 05:28:05,608 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:28:05",
+  "level": "INFO",
+  "message": "پاسخ خودکار ارسال شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1748
+  },
+  "context": {
+    "question": "حسین"
+  }
+}
+{
+  "timestamp": "2025-03-14 05:28:05",
+  "level": "INFO",
+  "message": "پاسخ خودکار ارسال شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1748
+  },
+  "context": {
+    "question": "حسین"
+  }
+}
+==================================================
+2025-03-14 05:28:06,185 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:28:06",
+  "level": "INFO",
+  "message": "پیام جدید دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1615
+  },
+  "context": {
+    "chat_id": 286420965,
+    "user_id": 286420965,
+    "text_length": 18,
+    "has_link": false
+  }
+}
+{
+  "timestamp": "2025-03-14 05:28:06",
+  "level": "INFO",
+  "message": "پیام جدید دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1615
+  },
+  "context": {
+    "chat_id": 286420965,
+    "user_id": 286420965,
+    "text_length": 18,
+    "has_link": false
+  }
+}
+==================================================
+2025-03-14 05:28:06,185 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:28:06",
+  "level": "INFO",
+  "message": "پاسخ جدید اضافه شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1715
+  },
+  "context": {
+    "question": "حسین",
+    "answer": "بیوخ پر زور"
+  }
+}
+{
+  "timestamp": "2025-03-14 05:28:06",
+  "level": "INFO",
+  "message": "پاسخ جدید اضافه شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1715
+  },
+  "context": {
+    "question": "حسین",
+    "answer": "بیوخ پر زور"
+  }
+}
+==================================================
+2025-03-14 05:31:02,940 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:31:02",
+  "level": "INFO",
+  "message": "توکن تلگرام با موفقیت خوانده شد (طول: 46)",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 362
+  }
+}
+{
+  "timestamp": "2025-03-14 05:31:02",
+  "level": "INFO",
+  "message": "توکن تلگرام با موفقیت خوانده شد (طول: 46)",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 362
+  }
+}
+==================================================
