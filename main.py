@@ -353,19 +353,8 @@ def simulate_webhook():
         # شبیه‌سازی درخواست POST به وب‌هوک
         import requests
         
-        # آدرس وب‌هوک با استفاده از متغیرهای محیطی replit
-        # ابتدا از متغیر محیطی REPLIT_DOMAIN استفاده می‌کنیم
-        webhook_host = os.environ.get('REPLIT_DOMAIN')
-        
-        # اگر متغیر محیطی REPLIT_DOMAIN تنظیم نشده باشد، از DOMAIN_URL استفاده می‌کنیم
-        if not webhook_host:
-            webhook_host = os.environ.get('DOMAIN_URL')
-        
-        # اگر هیچ یک از متغیرهای محیطی تنظیم نشده باشند، از آدرس پیش‌فرض استفاده می‌کنیم
-        if not webhook_host:
-            webhook_host = f"https://{os.environ.get('REPL_SLUG')}.{os.environ.get('REPL_OWNER')}.repl.co"
-            
-        webhook_url = f"{webhook_host}/{token}/"
+        # آدرس وب‌هوک
+        webhook_url = f"https://telegram-production-cc29.up.railway.app/{token}/"
         debug_log("آدرس وب‌هوک", "DEBUG", {
             "url": webhook_url.replace(token, "***TOKEN***"),
         })

@@ -1294,3 +1294,783 @@
   }
 }
 ==================================================
+2025-03-14 05:09:46,198 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:09:46",
+  "level": "INFO",
+  "message": "پیام جدید دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1615
+  },
+  "context": {
+    "chat_id": 286420965,
+    "user_id": 286420965,
+    "text_length": 8,
+    "has_link": false
+  }
+}
+{
+  "timestamp": "2025-03-14 05:09:46",
+  "level": "INFO",
+  "message": "پیام جدید دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1615
+  },
+  "context": {
+    "chat_id": 286420965,
+    "user_id": 286420965,
+    "text_length": 8,
+    "has_link": false
+  }
+}
+==================================================
+2025-03-14 05:09:46,204 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:09:46",
+  "level": "INFO",
+  "message": "ارسال راهنما برای پیام ناشناخته",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1759
+  }
+}
+{
+  "timestamp": "2025-03-14 05:09:46",
+  "level": "INFO",
+  "message": "ارسال راهنما برای پیام ناشناخته",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1759
+  }
+}
+==================================================
+2025-03-14 05:09:47,070 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:09:47",
+  "level": "INFO",
+  "message": "پیام جدید دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1615
+  },
+  "context": {
+    "chat_id": 286420965,
+    "user_id": 286420965,
+    "text_length": 4,
+    "has_link": false
+  }
+}
+{
+  "timestamp": "2025-03-14 05:09:47",
+  "level": "INFO",
+  "message": "پیام جدید دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1615
+  },
+  "context": {
+    "chat_id": 286420965,
+    "user_id": 286420965,
+    "text_length": 4,
+    "has_link": false
+  }
+}
+==================================================
+2025-03-14 05:09:47,070 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:09:47",
+  "level": "INFO",
+  "message": "پاسخ خودکار ارسال شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1748
+  },
+  "context": {
+    "question": "حسین"
+  }
+}
+{
+  "timestamp": "2025-03-14 05:09:47",
+  "level": "INFO",
+  "message": "پاسخ خودکار ارسال شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1748
+  },
+  "context": {
+    "question": "حسین"
+  }
+}
+==================================================
+2025-03-14 05:09:47,408 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:09:47",
+  "level": "INFO",
+  "message": "پیام جدید دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1615
+  },
+  "context": {
+    "chat_id": 286420965,
+    "user_id": 286420965,
+    "text_length": 4,
+    "has_link": false
+  }
+}
+{
+  "timestamp": "2025-03-14 05:09:47",
+  "level": "INFO",
+  "message": "پیام جدید دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1615
+  },
+  "context": {
+    "chat_id": 286420965,
+    "user_id": 286420965,
+    "text_length": 4,
+    "has_link": false
+  }
+}
+==================================================
+2025-03-14 05:09:47,408 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:09:47",
+  "level": "INFO",
+  "message": "پاسخ خودکار ارسال شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1748
+  },
+  "context": {
+    "question": "حسین"
+  }
+}
+{
+  "timestamp": "2025-03-14 05:09:47",
+  "level": "INFO",
+  "message": "پاسخ خودکار ارسال شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1748
+  },
+  "context": {
+    "question": "حسین"
+  }
+}
+==================================================
+2025-03-14 05:09:47,797 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:09:47",
+  "level": "INFO",
+  "message": "پیام جدید دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1615
+  },
+  "context": {
+    "chat_id": 286420965,
+    "user_id": 286420965,
+    "text_length": 69,
+    "has_link": true
+  }
+}
+{
+  "timestamp": "2025-03-14 05:09:47",
+  "level": "INFO",
+  "message": "پیام جدید دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1615
+  },
+  "context": {
+    "chat_id": 286420965,
+    "user_id": 286420965,
+    "text_length": 69,
+    "has_link": true
+  }
+}
+==================================================
+2025-03-14 05:09:48,090 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:09:48",
+  "level": "INFO",
+  "message": "پردازش لینک ویدیو آغاز شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1643
+  },
+  "context": {
+    "user_id": "286420965",
+    "quality": "240p",
+    "link": "https://www.instagram.com/reel/DDRxiSitMbc/?igsh=MWI2YWFvMHJ1YXJtZQ=="
+  }
+}
+{
+  "timestamp": "2025-03-14 05:09:48",
+  "level": "INFO",
+  "message": "پردازش لینک ویدیو آغاز شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1643
+  },
+  "context": {
+    "user_id": "286420965",
+    "quality": "240p",
+    "link": "https://www.instagram.com/reel/DDRxiSitMbc/?igsh=MWI2YWFvMHJ1YXJtZQ=="
+  }
+}
+==================================================
+2025-03-14 05:09:48,091 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:09:48",
+  "level": "INFO",
+  "message": "تلاش برای استخراج لینک مستقیم از https://www.instagram.com/reel/DDRxiSitMbc/?igsh=MWI2YWFvMHJ1YXJtZQ==",
+  "location": {
+    "file": "bot.py",
+    "function": "get_direct_video_url",
+    "line": 667
+  }
+}
+{
+  "timestamp": "2025-03-14 05:09:48",
+  "level": "INFO",
+  "message": "تلاش برای استخراج لینک مستقیم از https://www.instagram.com/reel/DDRxiSitMbc/?igsh=MWI2YWFvMHJ1YXJtZQ==",
+  "location": {
+    "file": "bot.py",
+    "function": "get_direct_video_url",
+    "line": 667
+  }
+}
+==================================================
+2025-03-14 05:09:48,115 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:09:48",
+  "level": "INFO",
+  "message": "پیام جدید دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1615
+  },
+  "context": {
+    "chat_id": 286420965,
+    "user_id": 286420965,
+    "text_length": 4,
+    "has_link": false
+  }
+}
+{
+  "timestamp": "2025-03-14 05:09:48",
+  "level": "INFO",
+  "message": "پیام جدید دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1615
+  },
+  "context": {
+    "chat_id": 286420965,
+    "user_id": 286420965,
+    "text_length": 4,
+    "has_link": false
+  }
+}
+==================================================
+2025-03-14 05:09:48,124 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:09:48",
+  "level": "INFO",
+  "message": "پاسخ خودکار ارسال شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1748
+  },
+  "context": {
+    "question": "حسین"
+  }
+}
+{
+  "timestamp": "2025-03-14 05:09:48",
+  "level": "INFO",
+  "message": "پاسخ خودکار ارسال شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1748
+  },
+  "context": {
+    "question": "حسین"
+  }
+}
+==================================================
+2025-03-14 05:09:48,835 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:09:48",
+  "level": "INFO",
+  "message": "پیام جدید دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1615
+  },
+  "context": {
+    "chat_id": 286420965,
+    "user_id": 286420965,
+    "text_length": 4,
+    "has_link": false
+  }
+}
+{
+  "timestamp": "2025-03-14 05:09:48",
+  "level": "INFO",
+  "message": "پیام جدید دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1615
+  },
+  "context": {
+    "chat_id": 286420965,
+    "user_id": 286420965,
+    "text_length": 4,
+    "has_link": false
+  }
+}
+==================================================
+2025-03-14 05:09:48,836 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:09:48",
+  "level": "INFO",
+  "message": "پاسخ خودکار ارسال شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1748
+  },
+  "context": {
+    "question": "حسین"
+  }
+}
+{
+  "timestamp": "2025-03-14 05:09:48",
+  "level": "INFO",
+  "message": "پاسخ خودکار ارسال شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1748
+  },
+  "context": {
+    "question": "حسین"
+  }
+}
+==================================================
+2025-03-14 05:09:49,217 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:09:49",
+  "level": "INFO",
+  "message": "لینک مستقیم با موفقیت استخراج شد",
+  "location": {
+    "file": "bot.py",
+    "function": "get_direct_video_url",
+    "line": 680
+  }
+}
+{
+  "timestamp": "2025-03-14 05:09:49",
+  "level": "INFO",
+  "message": "لینک مستقیم با موفقیت استخراج شد",
+  "location": {
+    "file": "bot.py",
+    "function": "get_direct_video_url",
+    "line": 680
+  }
+}
+==================================================
+2025-03-14 05:09:49,223 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:09:49",
+  "level": "INFO",
+  "message": "لینک مستقیم ویدیو با موفقیت دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1664
+  }
+}
+{
+  "timestamp": "2025-03-14 05:09:49",
+  "level": "INFO",
+  "message": "لینک مستقیم ویدیو با موفقیت دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1664
+  }
+}
+==================================================
+2025-03-14 05:09:54,143 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:09:54",
+  "level": "INFO",
+  "message": "ارسال ویدیو با روش مستقیم موفقیت‌آمیز بود",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1670
+  }
+}
+{
+  "timestamp": "2025-03-14 05:09:54",
+  "level": "INFO",
+  "message": "ارسال ویدیو با روش مستقیم موفقیت‌آمیز بود",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1670
+  }
+}
+==================================================
+2025-03-14 05:15:47,469 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:15:47",
+  "level": "INFO",
+  "message": "پیام جدید دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1615
+  },
+  "context": {
+    "chat_id": 286420965,
+    "user_id": 286420965,
+    "text_length": 69,
+    "has_link": true
+  }
+}
+{
+  "timestamp": "2025-03-14 05:15:47",
+  "level": "INFO",
+  "message": "پیام جدید دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1615
+  },
+  "context": {
+    "chat_id": 286420965,
+    "user_id": 286420965,
+    "text_length": 69,
+    "has_link": true
+  }
+}
+==================================================
+2025-03-14 05:15:47,682 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:15:47",
+  "level": "INFO",
+  "message": "پردازش لینک ویدیو آغاز شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1643
+  },
+  "context": {
+    "user_id": "286420965",
+    "quality": "1080p",
+    "link": "https://www.instagram.com/reel/DDRxiSitMbc/?igsh=MWI2YWFvMHJ1YXJtZQ=="
+  }
+}
+{
+  "timestamp": "2025-03-14 05:15:47",
+  "level": "INFO",
+  "message": "پردازش لینک ویدیو آغاز شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1643
+  },
+  "context": {
+    "user_id": "286420965",
+    "quality": "1080p",
+    "link": "https://www.instagram.com/reel/DDRxiSitMbc/?igsh=MWI2YWFvMHJ1YXJtZQ=="
+  }
+}
+==================================================
+2025-03-14 05:15:47,682 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:15:47",
+  "level": "INFO",
+  "message": "تلاش برای استخراج لینک مستقیم از https://www.instagram.com/reel/DDRxiSitMbc/?igsh=MWI2YWFvMHJ1YXJtZQ==",
+  "location": {
+    "file": "bot.py",
+    "function": "get_direct_video_url",
+    "line": 667
+  }
+}
+{
+  "timestamp": "2025-03-14 05:15:47",
+  "level": "INFO",
+  "message": "تلاش برای استخراج لینک مستقیم از https://www.instagram.com/reel/DDRxiSitMbc/?igsh=MWI2YWFvMHJ1YXJtZQ==",
+  "location": {
+    "file": "bot.py",
+    "function": "get_direct_video_url",
+    "line": 667
+  }
+}
+==================================================
+2025-03-14 05:15:48,774 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:15:48",
+  "level": "INFO",
+  "message": "لینک مستقیم با موفقیت استخراج شد",
+  "location": {
+    "file": "bot.py",
+    "function": "get_direct_video_url",
+    "line": 680
+  }
+}
+{
+  "timestamp": "2025-03-14 05:15:48",
+  "level": "INFO",
+  "message": "لینک مستقیم با موفقیت استخراج شد",
+  "location": {
+    "file": "bot.py",
+    "function": "get_direct_video_url",
+    "line": 680
+  }
+}
+==================================================
+2025-03-14 05:15:48,783 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:15:48",
+  "level": "INFO",
+  "message": "لینک مستقیم ویدیو با موفقیت دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1664
+  }
+}
+{
+  "timestamp": "2025-03-14 05:15:48",
+  "level": "INFO",
+  "message": "لینک مستقیم ویدیو با موفقیت دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1664
+  }
+}
+==================================================
+2025-03-14 05:15:52,396 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:15:52",
+  "level": "INFO",
+  "message": "ارسال ویدیو با روش مستقیم موفقیت‌آمیز بود",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1670
+  }
+}
+{
+  "timestamp": "2025-03-14 05:15:52",
+  "level": "INFO",
+  "message": "ارسال ویدیو با روش مستقیم موفقیت‌آمیز بود",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1670
+  }
+}
+==================================================
+2025-03-14 05:16:39,873 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:16:39",
+  "level": "INFO",
+  "message": "پیام جدید دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1615
+  },
+  "context": {
+    "chat_id": 286420965,
+    "user_id": 286420965,
+    "text_length": 69,
+    "has_link": true
+  }
+}
+{
+  "timestamp": "2025-03-14 05:16:39",
+  "level": "INFO",
+  "message": "پیام جدید دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1615
+  },
+  "context": {
+    "chat_id": 286420965,
+    "user_id": 286420965,
+    "text_length": 69,
+    "has_link": true
+  }
+}
+==================================================
+2025-03-14 05:16:40,088 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:16:40",
+  "level": "INFO",
+  "message": "پردازش لینک ویدیو آغاز شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1643
+  },
+  "context": {
+    "user_id": "286420965",
+    "quality": "144p",
+    "link": "https://www.instagram.com/reel/DDRxiSitMbc/?igsh=MWI2YWFvMHJ1YXJtZQ=="
+  }
+}
+{
+  "timestamp": "2025-03-14 05:16:40",
+  "level": "INFO",
+  "message": "پردازش لینک ویدیو آغاز شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1643
+  },
+  "context": {
+    "user_id": "286420965",
+    "quality": "144p",
+    "link": "https://www.instagram.com/reel/DDRxiSitMbc/?igsh=MWI2YWFvMHJ1YXJtZQ=="
+  }
+}
+==================================================
+2025-03-14 05:16:40,088 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:16:40",
+  "level": "INFO",
+  "message": "تلاش برای استخراج لینک مستقیم از https://www.instagram.com/reel/DDRxiSitMbc/?igsh=MWI2YWFvMHJ1YXJtZQ==",
+  "location": {
+    "file": "bot.py",
+    "function": "get_direct_video_url",
+    "line": 667
+  }
+}
+{
+  "timestamp": "2025-03-14 05:16:40",
+  "level": "INFO",
+  "message": "تلاش برای استخراج لینک مستقیم از https://www.instagram.com/reel/DDRxiSitMbc/?igsh=MWI2YWFvMHJ1YXJtZQ==",
+  "location": {
+    "file": "bot.py",
+    "function": "get_direct_video_url",
+    "line": 667
+  }
+}
+==================================================
+2025-03-14 05:16:41,134 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:16:41",
+  "level": "INFO",
+  "message": "لینک مستقیم با موفقیت استخراج شد",
+  "location": {
+    "file": "bot.py",
+    "function": "get_direct_video_url",
+    "line": 680
+  }
+}
+{
+  "timestamp": "2025-03-14 05:16:41",
+  "level": "INFO",
+  "message": "لینک مستقیم با موفقیت استخراج شد",
+  "location": {
+    "file": "bot.py",
+    "function": "get_direct_video_url",
+    "line": 680
+  }
+}
+==================================================
+2025-03-14 05:16:41,136 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:16:41",
+  "level": "INFO",
+  "message": "لینک مستقیم ویدیو با موفقیت دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1664
+  }
+}
+{
+  "timestamp": "2025-03-14 05:16:41",
+  "level": "INFO",
+  "message": "لینک مستقیم ویدیو با موفقیت دریافت شد",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1664
+  }
+}
+==================================================
+2025-03-14 05:16:45,341 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:16:45",
+  "level": "INFO",
+  "message": "ارسال ویدیو با روش مستقیم موفقیت‌آمیز بود",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1670
+  }
+}
+{
+  "timestamp": "2025-03-14 05:16:45",
+  "level": "INFO",
+  "message": "ارسال ویدیو با روش مستقیم موفقیت‌آمیز بود",
+  "location": {
+    "file": "bot.py",
+    "function": "handle_message",
+    "line": 1670
+  }
+}
+==================================================
+2025-03-14 05:22:31,116 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:22:31",
+  "level": "INFO",
+  "message": "توکن تلگرام با موفقیت خوانده شد (طول: 46)",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 362
+  }
+}
+{
+  "timestamp": "2025-03-14 05:22:31",
+  "level": "INFO",
+  "message": "توکن تلگرام با موفقیت خوانده شد (طول: 46)",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 362
+  }
+}
+==================================================
+2025-03-14 05:25:28,320 - telegram_bot_debug - INFO - {
+  "timestamp": "2025-03-14 05:25:28",
+  "level": "INFO",
+  "message": "توکن تلگرام با موفقیت خوانده شد (طول: 46)",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 362
+  }
+}
+{
+  "timestamp": "2025-03-14 05:25:28",
+  "level": "INFO",
+  "message": "توکن تلگرام با موفقیت خوانده شد (طول: 46)",
+  "location": {
+    "file": "bot.py",
+    "function": "<module>",
+    "line": 362
+  }
+}
+==================================================
