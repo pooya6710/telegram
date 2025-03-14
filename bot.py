@@ -20,15 +20,16 @@ app = Flask(__name__)
 thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=3)
 
 
-@app.route('/webhook', methods=['POST'])
+# برای دریافت وب‌هوک از فلسک استفاده می‌کنیم
 def webhook():
     try:
         json_str = request.get_data().decode("UTF-8")
         update = telebot.types.Update.de_json(json_str)
         bot.process_new_updates([update])
+        return "✅ Webhook دریافت شد!", 200
     except Exception as e:
         print(f"❌ خطا در دریافت پیام: {e}")
-    return "✅ Webhook دریافت شد!", 200
+        return f"❌ خطا: {e}", 500
 
 
 SERVER_CACHE = {"status": None, "timestamp": None}
@@ -62,8 +63,11 @@ if not os.path.exists(MESSAGES_DB_LINKS):
     with open(MESSAGES_DB_LINKS, "w", encoding="utf-8") as file:
         json.dump({}, file, ensure_ascii=False, indent=4)
 
-# 🔑 توکن ربات تلگرام
-TOKEN = '7338644071:AAEex9j0nMualdoywHSGFiBoMAzRpkFypPk'
+# 🔑 توکن ربات تلگرام از متغیرهای محیطی
+TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+if not TOKEN:
+    print("⚠️ خطا: متغیر محیطی TELEGRAM_BOT_TOKEN تنظیم نشده است!")
+    
 bot = telebot.TeleBot(TOKEN)
 
 # 📢 آیدی عددی ادمین
@@ -847,12 +851,42 @@ def safe_polling():
 
 # 📌 تابع شروع ربات برای اجرا از main.py
 def start_bot():
-    while True:
+    # متغیر محیطی برای تعیین حالت ربات: وب‌هوک یا polling
+    WEBHOOK_MODE = os.environ.get('WEBHOOK_MODE', 'true').lower() == 'true'
+    
+    if WEBHOOK_MODE:
+        # تنظیمات وب‌هوک
         try:
-            bot.polling(none_stop=True, interval=10, timeout=30)
+            webhook_host = os.environ.get('WEBHOOK_HOST', 'https://yourbotdomain.repl.co')
+            webhook_path = f"/{TOKEN}/"
+            webhook_url = f"{webhook_host}{webhook_path}"
+            
+            # حذف وب‌هوک قبلی (اگر وجود داشته باشد)
+            bot.remove_webhook()
+            time.sleep(0.2)
+            
+            # تنظیم وب‌هوک جدید
+            bot.set_webhook(url=webhook_url)
+            print(f"🔌 وب‌هوک با موفقیت در {webhook_url} تنظیم شد")
+            return True  # وب‌هوک با موفقیت تنظیم شد
         except Exception as e:
-            print(f"⚠ خطای بحرانی در اجرای ربات:\n{e}")
-            time.sleep(15)
+            print(f"⚠ خطا در تنظیم وب‌هوک: {e}")
+            time.sleep(5)
+            return False
+    else:
+        # حالت polling - برای زمانی که وب‌هوک در دسترس نیست
+        while True:
+            try:
+                # حذف وب‌هوک قبلی (اگر وجود داشته باشد)
+                bot.remove_webhook()
+                time.sleep(0.2)
+                
+                # شروع polling
+                print("🔄 ربات در حالت polling شروع به کار کرد")
+                bot.polling(none_stop=True, interval=10, timeout=30)
+            except Exception as e:
+                print(f"⚠ خطای بحرانی در اجرای ربات:\n{e}")
+                time.sleep(15)
 
 
 if __name__ == "__main__":

@@ -115,6 +115,14 @@ with app.app_context():
     run_bot()
     logger.info("🔄 ربات تلگرام در پس‌زمینه اجرا می‌شود...")
 
+# مسیر برای دریافت وب‌هوک تلگرام
+@app.route('/<path:token>/', methods=['POST'])
+def webhook_handler(token):
+    from bot import webhook
+    if token == os.environ.get('TELEGRAM_BOT_TOKEN', ''):
+        return webhook()
+    return '', 403
+
 # اجرای سرور Flask
 if __name__ == "__main__":
     logger.info("🚀 راه‌اندازی سرور وب داشبورد...")
