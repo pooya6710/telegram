@@ -2341,8 +2341,12 @@ def handle_message(message):
             
             return
 
-        if "؟" in text:
-            # انجام یک کار برای سوالات
+        if some_condition:
+            pass  # جلوگیری از خطای تورفتگی
+        elif "،" in text:
+            try:
+                question, answer = map(str.strip, text.split("،", 1))
+
         elif "،" in text:  # elif اکنون در سطح درست قرار دارد
             try:
                 question, answer = map(str.strip, text.split("،", 1))
