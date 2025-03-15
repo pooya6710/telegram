@@ -2341,7 +2341,9 @@ def handle_message(message):
             
             return
 
-            elif "،" in text:
+        if "؟" in text:
+            # انجام یک کار برای سوالات
+        elif "،" in text:  # elif اکنون در سطح درست قرار دارد
             try:
                 question, answer = map(str.strip, text.split("،", 1))
 
@@ -2351,14 +2353,12 @@ def handle_message(message):
                     return
 
                 # محدود کردن طول سوال و جواب
-                if len(question) > 100:
-                    question = question[:100]
-                if len(answer) > 500:
-                    answer = answer[:500]
+                question = question[:100] if len(question) > 100 else question
+                answer = answer[:500] if len(answer) > 500 else answer
 
                 # ذخیره در پاسخ‌ها
                 responses[question.lower()] = answer
-                debug_log(f"پاسخ جدید اضافه شد", "INFO", {"question": question, "answer": answer})
+                debug_log("پاسخ جدید اضافه شد", "INFO", {"question": question, "answer": answer})
 
                 # ذخیره پاسخ‌ها در فایل
                 try:
@@ -2368,21 +2368,17 @@ def handle_message(message):
                     bot.reply_to(message, "⚠️ خطا در ذخیره پاسخ‌ها. دوباره تلاش کنید.")
                     return
 
-                bot.reply_to(
-                    message,
-                    f"✅ سوال '{question}' با پاسخ '{answer}' اضافه شد!")
+                bot.reply_to(message, f"✅ سوال '{question}' با پاسخ '{answer}' اضافه شد!")
+
             except ValueError:
-                bot.reply_to(message,
-                             "⚠️ لطفاً فرمت 'سوال، جواب' را رعایت کنید.")
+                bot.reply_to(message, "⚠️ لطفاً فرمت 'سوال، جواب' را رعایت کنید.")
             except Exception as reply_error:
                 debug_log("خطا در افزودن پاسخ جدید", "ERROR", {"error": str(reply_error)})
-                try:
-                    bot.reply_to(message, "⚠️ خطا در پردازش درخواست. لطفاً دوباره تلاش کنید.")
-                except:
-                    pass
-            return
+                bot.reply_to(message, "⚠️ خطا در پردازش درخواست. لطفاً دوباره تلاش کنید.")
 
         else:
+            bot.reply_to(message, "⚠️ پیام نامعتبر است. لطفاً فرمت مناسب را رعایت کنید.")
+
             # چک کردن اگر پیام مطابق با یکی از سوالات موجود است
             try:
                 key = text.lower().strip()
