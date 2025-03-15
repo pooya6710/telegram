@@ -1793,43 +1793,58 @@ def handle_callback_query(call):
                 status_sections.append(f"🔹 **وضعیت ربات:** `فعال ✅`\n")
                 
                 # اگر psutil موجود باشد، از آن استفاده کن
-                if 'psutil' in globals():
-                    # اطلاعات CPU
                     try:
-                        cpu_usage = psutil.cpu_percent(interval=0.5)
-                        status_sections.append(f"🔹 **CPU:** `{cpu_usage}%`\n")
-                    except Exception as cpu_error:
-                        status_sections.append("🔹 **CPU:** `اطلاعات در دسترس نیست`\n")
-                        print(f"خطا در دریافت اطلاعات CPU: {cpu_error}")
-                    
-                    # اطلاعات حافظه
-                    try:
-                        ram = psutil.virtual_memory()
-                        ram_used = ram.used / (1024**3)
-                        ram_total = ram.total / (1024**3)
-                        status_sections.append(f"🔹 **RAM:** `{ram_used:.2f}GB / {ram_total:.2f}GB`\n")
-                    except Exception as ram_error:
-                        status_sections.append("🔹 **RAM:** `اطلاعات در دسترس نیست`\n")
-                        print(f"خطا در دریافت اطلاعات RAM: {ram_error}")
-                else:
-                    status_sections.append("🔹 **CPU/RAM:** `اطلاعات در دسترس نیست`\n")
-                
-                # اطلاعات دیسک با shutil
-                if 'shutil' in globals():
-                    try:
-                        total, used, free = shutil.disk_usage("/")
-                        free_gb = free / (1024**3)
-                        status_sections.append(f"🔹 **فضای باقی‌مانده:** `{free_gb:.2f}GB`\n")
-                    except Exception as disk_error:
-                        status_sections.append("🔹 **فضای باقی‌مانده:** `اطلاعات در دسترس نیست`\n")
-                        print(f"خطا در دریافت اطلاعات دیسک: {disk_error}")
-                else:
-                    status_sections.append("🔹 **فضای دیسک:** `اطلاعات در دسترس نیست`\n")
-                
-                # اطلاعات زمان
-                try:
-                    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    status_sections.append(f"🔹 **زمان سرور:** `{current_time}`\n")
+                        import psutil
+                        import platform
+                        import datetime
+                    except ImportError:
+                        print("⚠️ برخی ماژول‌های موردنیاز نصب نیستند!")
+
+                    def server_status(message):
+                        try:
+                            status_sections = ["📊 **وضعیت سرور:**\n"]
+
+                            # سیستم‌عامل و پایتون
+                            try:
+                                status_sections.append(f"🔹 **سیستم عامل:** `{platform.platform()}`\n")
+                                status_sections.append(f"🔹 **پایتون:** `{platform.python_version()}`\n")
+                            except:
+                                status_sections.append("🔹 **سیستم عامل:** `اطلاعات در دسترس نیست`\n")
+
+                            # CPU
+                            try:
+                                cpu_usage = psutil.cpu_percent(interval=1)
+                                status_sections.append(f"🔹 **CPU:** `{cpu_usage}%`\n")
+                            except:
+                                status_sections.append("🔹 **CPU:** `اطلاعات در دسترس نیست`\n")
+
+                            # RAM
+                            try:
+                                ram = psutil.virtual_memory()
+                                status_sections.append(f"🔹 **RAM:** `{ram.used / (1024**3):.2f}GB / {ram.total / (1024**3):.2f}GB`\n")
+                            except:
+                                status_sections.append("🔹 **RAM:** `اطلاعات در دسترس نیست`\n")
+
+                            # فضای دیسک
+                            try:
+                                import shutil
+                                free_gb = shutil.disk_usage("/").free / (1024**3)
+                                status_sections.append(f"🔹 **فضای باقی‌مانده:** `{free_gb:.2f}GB`\n")
+                            except:
+                                status_sections.append("🔹 **فضای دیسک:** `اطلاعات در دسترس نیست`\n")
+
+                            # زمان سرور
+                            try:
+                                current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                status_sections.append(f"🔹 **زمان سرور:** `{current_time}`\n")
+                            except:
+                                status_sections.append("🔹 **زمان سرور:** `اطلاعات در دسترس نیست`\n")
+
+                            bot.send_message(message.chat.id, "".join(status_sections), parse_mode="Markdown")
+
+                        except Exception as e:
+                            bot.send_message(message.chat.id, f"⚠ خطا در دریافت وضعیت سرور: {str(e)}")
+
                     
                     # مدت زمان روشن بودن سرور با psutil
                     if 'psutil' in globals():
