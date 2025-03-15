@@ -2341,13 +2341,12 @@ def handle_message(message):
             
             return
 
-        if some_condition:
-            pass  # جلوگیری از خطای تورفتگی
-        elif "،" in text:
-            try:
-                question, answer = map(str.strip, text.split("،", 1))
+        if "؟" in text:
+            # اگر پیام شامل "؟" باشد، پردازش مربوطه انجام شود
+            response = "این یک سوال است."
+            bot.reply_to(message, response)
 
-        elif "،" in text:  # elif اکنون در سطح درست قرار دارد
+        elif "،" in text:
             try:
                 question, answer = map(str.strip, text.split("،", 1))
 
@@ -2382,6 +2381,7 @@ def handle_message(message):
 
         else:
             bot.reply_to(message, "⚠️ پیام نامعتبر است. لطفاً فرمت مناسب را رعایت کنید.")
+
 
             # چک کردن اگر پیام مطابق با یکی از سوالات موجود است
             try:
