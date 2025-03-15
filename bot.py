@@ -1793,7 +1793,7 @@ def handle_callback_query(call):
                 status_sections.append(f"🔹 **وضعیت ربات:** `فعال ✅`\n")
                 
                 # اگر psutil موجود باشد، از آن استفاده کن
-                    try:
+                try:
                         import psutil
                         import platform
                         import datetime
@@ -1855,10 +1855,10 @@ def handle_callback_query(call):
                         except Exception as uptime_error:
                             status_sections.append("🔹 **مدت روشن بودن:** `اطلاعات در دسترس نیست`\n")
                             print(f"خطا در دریافت اطلاعات uptime: {uptime_error}")
-                except Exception as time_error:
-                    status_sections.append("🔹 **زمان سرور:** `اطلاعات در دسترس نیست`\n")
-                    print(f"خطا در دریافت اطلاعات زمان: {time_error}")
-                
+            except Exception as time_error:
+                status_sections.append("🔹 **زمان سرور:** `اطلاعات در دسترس نیست`\n")
+                print(f"خطا در دریافت اطلاعات زمان: {time_error}")
+
                 # ترکیب بخش‌های پیام
                 status_msg = "".join(status_sections)
                 
@@ -1897,7 +1897,7 @@ def handle_callback_query(call):
                     # اگر ویرایش پیام با خطا مواجه شد، پیام جدید ارسال کن
                     bot.send_message(call.message.chat.id, error_message)
             return
-            
+
         # 🔙 بازگشت به منوی اصلی
         elif call.data == "back_to_main":
             # ایجاد کیبورد اینلاین با دکمه‌های مختلف
