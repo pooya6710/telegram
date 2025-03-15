@@ -1013,76 +1013,92 @@ def show_hashtag_messages(message, hashtag, messages):
     except Exception as e:
         debug_log(f"خطا در نمایش پیام‌های هشتگ", "ERROR", {"error": str(e)})
         bot.reply_to(message, "⚠️ خطایی در نمایش نتایج رخ داد. لطفاً بعداً دوباره تلاش کنید.")
-
-# 📌 بررسی وضعیت سرور
+        #بررسی وضعیت سرور
 @bot.message_handler(commands=["server_status"])
 def server_status(message):
     try:
-        # ابتدا بررسی شود که آیا وضعیت در کش موجود است
+        # بررسی کش وضعیت سرور
         cached_status = get_cached_server_status()
         if cached_status:
-            bot.send_message(message.chat.id,
-                             cached_status,
-                             parse_mode="Markdown")
+            bot.send_message(message.chat.id, cached_status, parse_mode="Markdown")
             return
 
-        # ساخت پیام وضعیت سیستم با مدیریت خطا برای هر بخش
+        # شروع ساخت پیام وضعیت سیستم
         status_sections = []
         status_sections.append("📊 **وضعیت سرور:**\n")
-        
-        # سیستم عامل و پایتون
+
+        # دریافت اطلاعات سیستم‌عامل و نسخه پایتون
         try:
-            status_sections.append(f"🔹 **سیستم عامل:** `{platform.platform()}`\n")
-            status_sections.append(f"🔹 **پایتون:** `{platform.python_version()}`\n")
+            os_info = platform.platform()
+            python_version = platform.python_version()
+            status_sections.append(f"🔹 **سیستم عامل:** `{os_info}`\n")
+            status_sections.append(f"🔹 **پایتون:** `{python_version}`\n")
         except Exception as sys_error:
-            status_sections.append("🔹 **سیستم عامل:** `اطلاعات در دسترس نیست`\n")
+            status_sections.append("🔹 **سیستم عامل:** `نامشخص`\n")
+            status_sections.append("🔹 **پایتون:** `نامشخص`\n")
             print(f"خطا در دریافت اطلاعات سیستم: {sys_error}")
-            
-        # وضعیت ربات
-        status_sections.append(f"🔹 **وضعیت ربات:** `فعال ✅`\n")
-        
-        # اگر psutil موجود باشد، از آن استفاده کن
+
+        # بررسی و نمایش وضعیت CPU با جزئیات
         if 'psutil' in globals():
-            # اطلاعات CPU
             try:
-                cpu_usage = psutil.cpu_percent(interval=0.5)
-                status_sections.append(f"🔹 **CPU:** `{cpu_usage}%`\n")
+                cpu_percentages = psutil.cpu_percent(interval=1, percpu=True)
+                cpu_avg = sum(cpu_percentages) / len(cpu_percentages)
+                core_count = psutil.cpu_count(logical=True)
+                status_sections.append(f"🔹 **CPU:** {cpu_avg:.2f}% (تعداد هسته‌ها: {core_count})\n")
             except Exception as cpu_error:
-                status_sections.append("🔹 **CPU:** `اطلاعات در دسترس نیست`\n")
+                status_sections.append("🔹 **CPU:** `نامشخص`\n")
                 print(f"خطا در دریافت اطلاعات CPU: {cpu_error}")
-            
-            # اطلاعات حافظه
-            try:
-                ram = psutil.virtual_memory()
-                ram_used = ram.used / (1024**3)
-                ram_total = ram.total / (1024**3)
-                status_sections.append(f"🔹 **RAM:** `{ram_used:.2f}GB / {ram_total:.2f}GB`\n")
-            except Exception as ram_error:
-                status_sections.append("🔹 **RAM:** `اطلاعات در دسترس نیست`\n")
-                print(f"خطا در دریافت اطلاعات RAM: {ram_error}")
-        else:
-            status_sections.append("🔹 **CPU/RAM:** `اطلاعات در دسترس نیست`\n")
-        
-        # اطلاعات دیسک با shutil
+
+        # بررسی و نمایش میزان مصرف رم
+        try:
+            ram = psutil.virtual_memory()
+            ram_used = ram.used / (1024**3)
+            ram_total = ram.total / (1024**3)
+            ram_percent = (ram.used / ram.total) * 100
+            status_sections.append(f"🔹 **RAM:** {ram_used:.2f}GB / {ram_total:.2f}GB ({ram_percent:.1f}%)\n")
+        except Exception as ram_error:
+            status_sections.append("🔹 **RAM:** `نامشخص`\n")
+            print(f"خطا در دریافت اطلاعات RAM: {ram_error}")
+
+        # بررسی و نمایش فضای دیسک
         if 'shutil' in globals():
             try:
                 total, used, free = shutil.disk_usage("/")
+                used_gb = used / (1024**3)
+                total_gb = total / (1024**3)
                 free_gb = free / (1024**3)
-                status_sections.append(f"🔹 **فضای باقی‌مانده:** `{free_gb:.2f}GB`\n")
+                disk_percent = (used / total) * 100
+                status_sections.append(f"🔹 **فضای دیسک:** {used_gb:.2f}GB / {total_gb:.2f}GB ({disk_percent:.1f}%)\n")
             except Exception as disk_error:
-                status_sections.append("🔹 **فضای باقی‌مانده:** `اطلاعات در دسترس نیست`\n")
+                status_sections.append("🔹 **فضای دیسک:** `نامشخص`\n")
                 print(f"خطا در دریافت اطلاعات دیسک: {disk_error}")
-        else:
-            status_sections.append("🔹 **فضای دیسک:** `اطلاعات در دسترس نیست`\n")
-        
-        # اطلاعات زمان
+
+        # نمایش زمان سرور
         try:
             current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             status_sections.append(f"🔹 **زمان سرور:** `{current_time}`\n")
         except Exception as time_error:
-            status_sections.append("🔹 **زمان سرور:** `اطلاعات در دسترس نیست`\n")
+            status_sections.append("🔹 **زمان سرور:** `نامشخص`\n")
             print(f"خطا در دریافت اطلاعات زمان: {time_error}")
-        
+
+        # ترکیب بخش‌های پیام
+        status_msg = "".join(status_sections)
+
+        # ذخیره کش وضعیت سرور برای کاهش درخواست‌ها
+        try:
+            with open("server_status.json", "w", encoding="utf-8") as file:
+                json.dump({"timestamp": current_time, "status": status_msg}, file)
+        except Exception as cache_write_error:
+            print(f"خطا در ذخیره کش وضعیت سرور: {cache_write_error}")
+
+        # ارسال پیام به کاربر
+        bot.send_message(message.chat.id, status_msg, parse_mode="Markdown")
+
+    except Exception as e:
+        error_message = f"⚠ خطا در دریافت وضعیت سرور: {str(e)}"
+        bot.send_message(message.chat.id, error_message)
+        notify_admin(f"خطا در اجرای دستور server_status: {str(e)}\n{traceback.format_exc()}")
+
         # ترکیب بخش‌های پیام
         status_msg = "".join(status_sections)
         
