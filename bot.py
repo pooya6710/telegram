@@ -418,10 +418,10 @@ hashtag_cache = {}
 last_cleanup_time = 0
 
 # تعداد حداکثر پیام برای جستجو در هر کانال
-MAX_SEARCH_MESSAGES = 1000
+MAX_SEARCH_MESSAGES = 100000
 
 # تعداد حداکثر پیام برای ارسال در هر هشتگ
-MAX_SEND_MESSAGES = 20
+MAX_SEND_MESSAGES = 100
 
 # تابع بارگیری هشتگ‌ها و کانال‌ها از فایل
 def load_hashtags():
@@ -2325,46 +2325,39 @@ def handle_message(message):
             
             return
 
-        elif "،" in text:
+            elif "،" in text:
             try:
-                # فقط ادمین می‌تواند پاسخ‌های جدید اضافه کند
-                if message.from_user.id == ADMIN_CHAT_ID:
-                    try:
-                        question, answer = map(str.strip, text.split("،", 1))
-                        
-                        # بررسی معتبر بودن سوال و جواب
-                        if not question or not answer:
-                            bot.reply_to(message, "⚠️ سوال یا جواب نمی‌تواند خالی باشد!")
-                            return
-                            
-                        # محدود کردن طول سوال و جواب
-                        if len(question) > 100:
-                            question = question[:100]
-                        if len(answer) > 500:
-                            answer = answer[:500]
-                            
-                        # ذخیره در پاسخ‌ها
-                        responses[question.lower()] = answer
-                        debug_log(f"پاسخ جدید اضافه شد", "INFO", {"question": question, "answer": answer})
-                        
-                        # ذخیره پاسخ‌ها در فایل
-                        try:
-                            save_responses()
-                        except Exception as save_error:
-                            debug_log("خطا در ذخیره پاسخ‌ها", "ERROR", {"error": str(save_error)})
-                            bot.reply_to(message, "⚠️ خطا در ذخیره پاسخ‌ها. دوباره تلاش کنید.")
-                            return
-                            
-                        bot.reply_to(
-                            message,
-                            f"✅ سوال '{question}' با پاسخ '{answer}' اضافه شد!")
-                    except ValueError:
-                        bot.reply_to(message,
-                                     "⚠️ لطفاً فرمت 'سوال، جواب' را رعایت کنید.")
-                else:
-                    # اگر کاربر ادمین نیست
-                    debug_log("کاربر غیر ادمین تلاش کرد پاسخ جدید اضافه کند", "WARNING", {"user_id": message.from_user.id})
-                    bot.reply_to(message, "⚠️ فقط ادمین می‌تواند پاسخ‌های جدید اضافه کند!")
+                question, answer = map(str.strip, text.split("،", 1))
+
+                # بررسی معتبر بودن سوال و جواب
+                if not question or not answer:
+                    bot.reply_to(message, "⚠️ سوال یا جواب نمی‌تواند خالی باشد!")
+                    return
+
+                # محدود کردن طول سوال و جواب
+                if len(question) > 100:
+                    question = question[:100]
+                if len(answer) > 500:
+                    answer = answer[:500]
+
+                # ذخیره در پاسخ‌ها
+                responses[question.lower()] = answer
+                debug_log(f"پاسخ جدید اضافه شد", "INFO", {"question": question, "answer": answer})
+
+                # ذخیره پاسخ‌ها در فایل
+                try:
+                    save_responses()
+                except Exception as save_error:
+                    debug_log("خطا در ذخیره پاسخ‌ها", "ERROR", {"error": str(save_error)})
+                    bot.reply_to(message, "⚠️ خطا در ذخیره پاسخ‌ها. دوباره تلاش کنید.")
+                    return
+
+                bot.reply_to(
+                    message,
+                    f"✅ سوال '{question}' با پاسخ '{answer}' اضافه شد!")
+            except ValueError:
+                bot.reply_to(message,
+                             "⚠️ لطفاً فرمت 'سوال، جواب' را رعایت کنید.")
             except Exception as reply_error:
                 debug_log("خطا در افزودن پاسخ جدید", "ERROR", {"error": str(reply_error)})
                 try:
@@ -2385,7 +2378,9 @@ def handle_message(message):
                     greetings = ['سلام', 'درود', 'خوبی', 'چطوری', 'خوبین', 'چطوری', 'سلام', 'hi', 'hello']
                     if any(greeting in key for greeting in greetings):
                         debug_log("پاسخ به سلام کاربر", "INFO")
-                        bot.reply_to(message, f"سلام {message.from_user.first_name} عزیز!\n\nلینک‌های یوتیوب یا اینستاگرام خود را بفرستید تا برایتان ویدیو را دانلود کنم 🎬")
+                        bot.reply_to(message, f"👋 سلام {message.from_user.first_name}!\n\n"
+                              "🎬 لینک‌های یوتیوب یا اینستاگرام خود را ارسال کنید تا ویدیو برای شما دانلود شود.\n\n"
+                              "✅ همه کاربران می‌توانند پاسخ‌های جدید اضافه کنند!")  
                     
                     # در غیر این صورت، لینک راهنما را نمایش دهیم (فقط برای پیام‌های خصوصی)
                     elif message.chat.type == 'private' and len(key) > 3:
