@@ -1797,17 +1797,17 @@ def handle_callback_query(call):
                         import psutil
                         import platform
                         import datetime
-                    except ImportError:
+                except ImportError:
                         print("⚠️ برخی ماژول‌های موردنیاز نصب نیستند!")
 
-                    def server_status(message):
+                def server_status(message):
                         try:
                             status_sections = ["📊 **وضعیت سرور:**\n"]
 
                             # سیستم‌عامل و پایتون
                             try:
-                                status_sections.append(f"🔹 **سیستم عامل:** `{platform.platform()}`\n")
-                                status_sections.append(f"🔹 **پایتون:** `{platform.python_version()}`\n")
+                                status_sections.append(f"🔹 **سیستم عامل:**         `{platform.platform()}`\n")
+                                status_sections.append(f"🔹 **پایتون:**    `{platform.python_version()}`\n")
                             except:
                                 status_sections.append("🔹 **سیستم عامل:** `اطلاعات در دسترس نیست`\n")
 
