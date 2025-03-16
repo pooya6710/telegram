@@ -624,4 +624,4 @@ def send_test_message():
 if __name__ == "__main__":
     logger.info("🚀 راه‌اندازی سرور وب داشبورد...")
     port = int(os.environ.get("PORT", 5000))  # استفاده از پورت متغیر محیطی
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)

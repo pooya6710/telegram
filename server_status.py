@@ -27,10 +27,11 @@ def get_cached_server_status():
 
     # اگر وضعیت در کش موجود باشد و کمتر از 10 دقیقه (600 ثانیه) از آخرین بروزرسانی گذشته باشد
     try:
-        if SERVER_CACHE["status"] is not None and SERVER_CACHE["timestamp"] is not None:
-            time_diff = (datetime.datetime.now() - SERVER_CACHE["timestamp"]).total_seconds()
-            if time_diff < 600:
-                return SERVER_CACHE["status"]
+        if "status" in SERVER_CACHE and "timestamp" in SERVER_CACHE:
+            if SERVER_CACHE["status"] is not None and SERVER_CACHE["timestamp"] is not None:
+                time_diff = (datetime.datetime.now() - SERVER_CACHE["timestamp"]).total_seconds()
+                if time_diff < 600:
+                    return SERVER_CACHE["status"]
     except Exception as e:
         debug_log(f"خطا در بررسی کش وضعیت سرور: {e}", "ERROR")
     
