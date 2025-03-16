@@ -1,5 +1,6 @@
 import os
 import sys
+<<<<<<< HEAD
 import time
 import json
 import logging
@@ -9,11 +10,23 @@ from datetime import datetime
 from functools import wraps
 
 # تنظیم لاگر با فرمت کامل و سطح DEBUG
+=======
+import logging
+import traceback
+import datetime
+import json
+import inspect
+import functools
+from typing import Any, Dict, Optional, Union, Callable
+
+# تنظیم سطح لاگینگ
+>>>>>>> 89853c1 (Checkpoint before assistant change: Initial commit: Setup Python Telegram bot with database, logging, and environment configuration.  Includes dependencies and project structure.)
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.DEBUG
 )
 
+<<<<<<< HEAD
 # لاگر اصلی برنامه
 logger = logging.getLogger("telegram_bot_debug")
 logger.setLevel(logging.DEBUG)
@@ -393,10 +406,192 @@ def debug_decorator(func):
             debug_log(f"پایان اجرای {func.__name__}", "DEBUG", {
                 "execution_time": f"{execution_time:.4f} seconds",
                 "result": str(result)[:100] + ("..." if str(result) and len(str(result)) > 100 else "")
+=======
+# ایجاد لاگر اصلی
+logger = logging.getLogger(__name__)
+
+# تنظیم فایل لاگ
+file_handler = logging.FileHandler('bot_debug.log', encoding='utf-8')
+file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+logger.addHandler(file_handler)
+
+# تعیین حداکثر تعداد لاگ‌های ذخیره شده
+MAX_LOGS_COUNT = 1000
+logs_buffer = []
+
+def debug_log(message: str, level: str = "DEBUG", context: Optional[Dict[str, Any]] = None) -> None:
+    """
+    ثبت لاگ با اطلاعات اضافی
+
+    Args:
+        message: پیام لاگ
+        level: سطح لاگ (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+        context: اطلاعات زمینه اضافی به صورت دیکشنری
+    """
+    # ایجاد کپی از context برای جلوگیری از تغییر دادن آن
+    if context is None:
+        context = {}
+    else:
+        context = context.copy()
+
+    # اضافه کردن اطلاعات caller
+    frame = inspect.currentframe().f_back
+    context['caller'] = {
+        'file': os.path.basename(frame.f_code.co_filename),
+        'function': frame.f_code.co_name,
+        'line': frame.f_lineno
+    }
+
+    # اضافه کردن timestamp
+    context['timestamp'] = datetime.datetime.now().isoformat()
+
+    # تعیین سطح لاگ
+    log_level = getattr(logging, level.upper(), logging.DEBUG)
+    
+    # ساخت پیام نهایی با کانتکست
+    full_message = f"{message}"
+    if context:
+        try:
+            context_str = json.dumps(context, ensure_ascii=False, default=str)
+            full_message = f"{message} - Context: {context_str}"
+        except Exception as e:
+            full_message = f"{message} - Context Error: {str(e)}"
+
+    # افزودن به بافر و بررسی اندازه آن
+    log_entry = {
+        'message': message,
+        'level': level,
+        'context': context,
+        'timestamp': context['timestamp']
+    }
+    logs_buffer.append(log_entry)
+    
+    if len(logs_buffer) > MAX_LOGS_COUNT:
+        logs_buffer.pop(0)  # حذف قدیمی‌ترین لاگ
+    
+    # ارسال به لاگر
+    logger.log(log_level, full_message)
+
+def log_webhook_request(data: Union[str, bytes, Dict]) -> None:
+    """
+    ثبت لاگ درخواست وب‌هوک تلگرام
+
+    Args:
+        data: داده‌های درخواست (string، bytes یا dict)
+    """
+    try:
+        # تبدیل داده‌ها به string با مدیریت انواع مختلف
+        if isinstance(data, bytes):
+            data_str = data.decode('utf-8', errors='replace')
+        elif isinstance(data, dict):
+            data_str = json.dumps(data, ensure_ascii=False)
+        else:
+            data_str = str(data)
+        
+        # کوتاه کردن داده‌ها اگر خیلی طولانی باشند
+        if len(data_str) > 1000:
+            data_preview = data_str[:1000] + '... [truncated]'
+        else:
+            data_preview = data_str
+        
+        debug_log("درخواست وب‌هوک دریافت شد", "INFO", {
+            "data_length": len(data_str),
+            "data_preview": data_preview
+        })
+    except Exception as e:
+        debug_log(f"خطا در لاگ کردن درخواست وب‌هوک: {str(e)}", "ERROR")
+
+def log_telegram_update(update) -> None:
+    """
+    ثبت لاگ آپدیت تلگرام
+
+    Args:
+        update: آبجکت Update تلگرام
+    """
+    try:
+        update_dict = {}
+        
+        # استخراج نوع آپدیت
+        if hasattr(update, 'message') and update.message:
+            update_type = 'message'
+            update_dict['chat_id'] = update.message.chat.id if hasattr(update.message, 'chat') else None
+            update_dict['user_id'] = update.message.from_user.id if hasattr(update.message, 'from_user') else None
+            update_dict['text'] = update.message.text if hasattr(update.message, 'text') else None
+            update_dict['message_id'] = update.message.message_id if hasattr(update.message, 'message_id') else None
+        elif hasattr(update, 'callback_query') and update.callback_query:
+            update_type = 'callback_query'
+            update_dict['query_id'] = update.callback_query.id if hasattr(update.callback_query, 'id') else None
+            update_dict['user_id'] = update.callback_query.from_user.id if hasattr(update.callback_query, 'from_user') else None
+            update_dict['data'] = update.callback_query.data if hasattr(update.callback_query, 'data') else None
+        else:
+            update_type = 'unknown'
+        
+        debug_log(f"آپدیت تلگرام از نوع {update_type} دریافت شد", "INFO", update_dict)
+    except Exception as e:
+        debug_log(f"خطا در لاگ کردن آپدیت تلگرام: {str(e)}", "ERROR")
+
+def format_exception_with_context(e: Exception) -> str:
+    """
+    فرمت‌بندی خطا با اطلاعات اضافی
+
+    Args:
+        e: خطای رخ داده
+
+    Returns:
+        متن فرمت‌بندی شده خطا
+    """
+    # دریافت traceback
+    tb = traceback.format_exc()
+    
+    # اطلاعات زمان و نوع خطا
+    error_time = datetime.datetime.now().isoformat()
+    error_type = type(e).__name__
+    error_msg = str(e)
+    
+    # فرمت‌بندی نهایی
+    result = f"[{error_time}] {error_type}: {error_msg}\n\nTraceback:\n{tb}"
+    return result
+
+def debug_decorator(func: Callable) -> Callable:
+    """
+    دکوراتور برای اضافه کردن لاگینگ به توابع
+
+    Args:
+        func: تابعی که باید لاگ شود
+
+    Returns:
+        تابع بسته‌بندی شده با قابلیت لاگینگ
+    """
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        func_name = func.__name__
+        module_name = func.__module__
+        
+        # لاگ ورود به تابع
+        debug_log(f"شروع اجرای {func_name}", "DEBUG", {
+            "module": module_name,
+            "args_count": len(args),
+            "kwargs_names": list(kwargs.keys())
+        })
+        
+        start_time = datetime.datetime.now()
+        
+        try:
+            # اجرای تابع اصلی
+            result = func(*args, **kwargs)
+            
+            # محاسبه زمان اجرا
+            execution_time = (datetime.datetime.now() - start_time).total_seconds()
+            
+            # لاگ پایان اجرای موفق
+            debug_log(f"پایان موفق اجرای {func_name}", "DEBUG", {
+                "execution_time_seconds": execution_time
+>>>>>>> 89853c1 (Checkpoint before assistant change: Initial commit: Setup Python Telegram bot with database, logging, and environment configuration.  Includes dependencies and project structure.)
             })
             
             return result
         except Exception as e:
+<<<<<<< HEAD
             execution_time = time.time() - start_time
             
             debug_log(f"خطا در اجرای {func.__name__}", "ERROR", {
@@ -406,10 +601,25 @@ def debug_decorator(func):
                 "traceback": traceback.format_exc()
             })
             
+=======
+            # محاسبه زمان اجرا
+            execution_time = (datetime.datetime.now() - start_time).total_seconds()
+            
+            # لاگ خطای رخ داده
+            error_details = format_exception_with_context(e)
+            debug_log(f"خطا در اجرای {func_name}: {str(e)}", "ERROR", {
+                "execution_time_seconds": execution_time,
+                "error_type": type(e).__name__,
+                "error_details": error_details
+            })
+            
+            # انتشار مجدد خطا
+>>>>>>> 89853c1 (Checkpoint before assistant change: Initial commit: Setup Python Telegram bot with database, logging, and environment configuration.  Includes dependencies and project structure.)
             raise
     
     return wrapper
 
+<<<<<<< HEAD
 
 def format_exception_with_context(e):
     """
@@ -469,3 +679,28 @@ def format_exception_with_context(e):
     except Exception:
         # در صورت هر گونه خطای غیرمنتظره، یک پیام ساده برگردان
         return f"Error occurred: {str(e)}"
+=======
+def get_recent_logs(count: int = 50, level: Optional[str] = None) -> list:
+    """
+    دریافت لاگ‌های اخیر
+
+    Args:
+        count: تعداد لاگ‌ها
+        level: سطح لاگ (اختیاری)
+
+    Returns:
+        لیست لاگ‌های اخیر
+    """
+    if level:
+        filtered_logs = [log for log in logs_buffer if log['level'].upper() == level.upper()]
+    else:
+        filtered_logs = logs_buffer.copy()
+    
+    # مرتب‌سازی بر اساس timestamp و محدود کردن تعداد
+    sorted_logs = sorted(filtered_logs, key=lambda x: x['timestamp'], reverse=True)
+    return sorted_logs[:count]
+
+def clear_logs() -> None:
+    """پاک کردن بافر لاگ‌ها"""
+    logs_buffer.clear()
+>>>>>>> 89853c1 (Checkpoint before assistant change: Initial commit: Setup Python Telegram bot with database, logging, and environment configuration.  Includes dependencies and project structure.)

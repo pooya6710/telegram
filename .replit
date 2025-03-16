@@ -6,6 +6,7 @@ channel = "stable-24_05"
 [deployment]
 deploymentTarget = "autoscale"
 run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
+<<<<<<< HEAD
 
 [workflows]
 
@@ -72,3 +73,5 @@ externalPort = 80
 [[ports]]
 localPort = 8080
 externalPort = 8080
+=======
+>>>>>>> 89853c1 (Checkpoint before assistant change: Initial commit: Setup Python Telegram bot with database, logging, and environment configuration.  Includes dependencies and project structure.)
