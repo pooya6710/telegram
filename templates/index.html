@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ربات دانلود ویدیو یوتیوب</title>
+    <title>ربات هوشمند چندمنظوره تلگرام</title>
     <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.css">
@@ -11,8 +11,8 @@
 <body>
     <div class="container py-5">
         <header class="text-center mb-5">
-            <h1 class="display-4 fw-bold">🎬 ربات دانلود ویدیو یوتیوب</h1>
-            <p class="lead">دانلود ویدیو از یوتیوب با کیفیت‌های مختلف</p>
+            <h1 class="display-4 fw-bold">🤖 ربات هوشمند چندمنظوره تلگرام</h1>
+            <p class="lead">دانلود از یوتیوب و اینستاگرام، مدیریت کاربران، جستجوی هشتگ و پایش سیستم</p>
         </header>
 
         <div class="row g-4">
@@ -20,14 +20,19 @@
                 <div class="card h-100 border-0 bg-dark shadow-sm">
                     <div class="card-body">
                         <h2 class="card-title h4 mb-4">📱 درباره ربات</h2>
-                        <p>این ربات به شما امکان دانلود ویدیوهای یوتیوب را می‌دهد. کافیست لینک ویدیو را برای ربات ارسال کنید.</p>
+                        <p>این ربات هوشمند چندمنظوره دارای قابلیت‌های متنوعی است که به شما امکان دانلود از منابع مختلف، جستجوی هشتگ، مدیریت کاربران و پایش سیستم را می‌دهد.</p>
                         
                         <h5 class="mt-4">امکانات:</h5>
                         <ul class="feature-list">
-                            <li><i data-feather="download"></i> دانلود ویدیو با کیفیت‌های مختلف</li>
+                            <li><i data-feather="youtube"></i> دانلود ویدیو از یوتیوب با کیفیت‌های مختلف</li>
+                            <li><i data-feather="instagram"></i> دانلود ویدیو از اینستاگرام</li>
+                            <li><i data-feather="hash"></i> جستجو و ردیابی هشتگ‌ها در کانال‌های تلگرام</li>
+                            <li><i data-feather="users"></i> مدیریت کاربران (عادی، ویژه و ادمین)</li>
                             <li><i data-feather="music"></i> دانلود فقط صدای ویدیو</li>
-                            <li><i data-feather="list"></i> مدیریت دانلودها</li>
-                            <li><i data-feather="activity"></i> مشاهده وضعیت سیستم</li>
+                            <li><i data-feather="list"></i> مدیریت و پیگیری دانلودها</li>
+                            <li><i data-feather="activity"></i> پایش و نمایش وضعیت سیستم</li>
+                            <li><i data-feather="database"></i> ذخیره‌سازی و مدیریت داده‌ها</li>
+                            <li><i data-feather="message-square"></i> پشتیبانی از دستورات متنوع</li>
                         </ul>
                         
                         <div class="mt-4">
@@ -74,6 +79,34 @@
                                 <code>/mydownloads</code>
                                 <span>مشاهده دانلودهای من</span>
                             </div>
+                            <div class="command-item">
+                                <code>/add_hashtag [هشتگ]</code>
+                                <span>افزودن هشتگ</span>
+                            </div>
+                            <div class="command-item">
+                                <code>/remove_hashtag [هشتگ]</code>
+                                <span>حذف هشتگ</span>
+                            </div>
+                            <div class="command-item">
+                                <code>/list_hashtags</code>
+                                <span>لیست هشتگ‌ها</span>
+                            </div>
+                            <div class="command-item">
+                                <code>/search_hashtag [هشتگ]</code>
+                                <span>جستجوی هشتگ</span>
+                            </div>
+                            <div class="command-item">
+                                <code>/add_channel [کانال]</code>
+                                <span>افزودن کانال</span>
+                            </div>
+                            <div class="command-item">
+                                <code>/list_channels</code>
+                                <span>لیست کانال‌ها</span>
+                            </div>
+                            <div class="command-item">
+                                <code>/sysinfo</code>
+                                <span>اطلاعات سیستم</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -103,7 +136,7 @@
         </div>
         
         <footer class="mt-5 text-center text-muted">
-            <p>ربات دانلود ویدیو یوتیوب &copy; {{ current_year }}</p>
+            <p>ربات هوشمند چندمنظوره تلگرام &copy; {{ current_year }}</p>
             <p class="small">ساخته شده با <i data-feather="heart" class="text-danger" style="width: 16px; height: 16px;"></i> و Python</p>
         </footer>
     </div>
