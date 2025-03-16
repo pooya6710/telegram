@@ -50,6 +50,14 @@ mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
+args = "pkill gunicorn || true"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pkill python || true"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
 args = "gunicorn --workers 4 --threads 2 --timeout 120 --bind 0.0.0.0:5000 --access-logfile - --error-logfile - main:app"
 
 [[ports]]

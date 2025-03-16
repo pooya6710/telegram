@@ -1,1 +1,12 @@
-{"is_bot_running": true}
+
+{
+    "status": {
+        "is_bot_running": true,
+        "last_update": "2024-03-16T02:49:27",
+        "system_info": {
+            "cpu_usage": 0,
+            "memory_usage": 0,
+            "disk_usage": 0
+        }
+    }
+}
