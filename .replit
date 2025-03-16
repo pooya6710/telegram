@@ -6,9 +6,9 @@ channel = "stable-24_05"
 [deployment]
 deploymentTarget = "autoscale"
 run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
-<<<<<<< HEAD
 
 [workflows]
+runButton = "Project"
 
 [[workflows.workflow]]
 name = "Project"
@@ -31,47 +31,9 @@ task = "packager.installForAll"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "gunicorn --bind 0.0.0.0:5000 --reuse-port --timeout 120 main:app"
+args = "gunicorn --bind 0.0.0.0:5000 --reuse-port --reload main:app"
 waitForPort = 5000
-
-[[workflows.workflow]]
-name = "Start bot"
-author = 40429062
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python main.py"
-
-[[workflows.workflow]]
-name = "اجرای ربات"
-author = 40429062
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python main.py"
-
-[[workflows.workflow]]
-name = "اجرای ربات ساده"
-author = 40429062
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python simple_bot.py"
-
-[[workflows.workflow]]
-name = "راه‌اندازی ربات اصلی"
-author = 40429062
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python main.py"
 
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 8080
-externalPort = 8080
-=======
->>>>>>> 89853c1 (Checkpoint before assistant change: Initial commit: Setup Python Telegram bot with database, logging, and environment configuration.  Includes dependencies and project structure.)

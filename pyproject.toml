@@ -9,14 +9,7 @@ dependencies = [
     "flask-sqlalchemy>=3.1.1",
     "gunicorn>=23.0.0",
     "psycopg2-binary>=2.9.10",
-<<<<<<< HEAD
     "pytelegrambotapi>=4.26.0",
-    "python-telegram-bot[all]>=21.11.1",
     "requests>=2.32.3",
     "telebot>=0.0.5",
-    "telegram>=0.0.1",
-    "tlgbotfwk>=0.4.61",
-    "yt-dlp>=2025.2.19",
-=======
->>>>>>> 89853c1 (Checkpoint before assistant change: Initial commit: Setup Python Telegram bot with database, logging, and environment configuration.  Includes dependencies and project structure.)
 ]

@@ -3,183 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>داشبورد ربات تلگرام دانلود ویدیو</title>
+    <title>ربات دانلود ویدیو یوتیوب</title>
     <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <!-- فونت Vazir برای پشتیبانی از زبان فارسی -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.css">
 </head>
 <body>
-    <div class="container py-4">
-        <header class="pb-3 mb-4 border-bottom text-center">
-            <h1 class="display-5 fw-bold">🤖 داشبورد ربات تلگرام دانلود ویدیو</h1>
-            <p class="lead">مانیتورینگ و مدیریت ربات دانلود ویدیوهای یوتیوب و اینستاگرام</p>
+    <div class="container py-5">
+        <header class="text-center mb-5">
+            <h1 class="display-4 fw-bold">🎬 ربات دانلود ویدیو یوتیوب</h1>
+            <p class="lead">دانلود ویدیو از یوتیوب با کیفیت‌های مختلف</p>
         </header>
 
-        <!-- وضعیت ربات -->
-        <div class="row mb-4">
-            <div class="col-md-6 mb-3">
-                <div class="card h-100 border-primary">
-                    <div class="card-header bg-primary text-white">
-                        <h4 class="mb-0">📊 وضعیت ربات</h4>
-                    </div>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card h-100 border-0 bg-dark shadow-sm">
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-12 mb-3">
-                                <div class="p-3 rounded 
-                                {{ 'bg-success bg-opacity-25 border border-success' if bot_status.running else 'bg-danger bg-opacity-25 border border-danger' }}">
-                                    <h5>وضعیت فعلی:</h5>
-                                    <p class="fs-4 mb-0 
-                                    {{ 'text-success' if bot_status.running else 'text-danger' }}">
-                                        {{ "✅ ربات فعال است" if bot_status.running else "❌ ربات غیرفعال است" }}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="p-3 bg-dark-subtle rounded">
-                                    <h5>⏱️ مدت زمان فعالیت:</h5>
-                                    <p class="fs-5 mb-0 text-info">{{ bot_status.uptime }}</p>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="p-3 bg-dark-subtle rounded">
-                                    <h5>👥 تعداد کاربران:</h5>
-                                    <p class="fs-5 mb-0 text-info">{{ bot_status.users_count }} نفر</p>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="p-3 bg-dark-subtle rounded">
-                                    <h5>🎬 ویدیوهای دانلود شده:</h5>
-                                    <p class="fs-5 mb-0 text-info">{{ bot_status.downloads_count }} ویدیو</p>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="p-3 bg-dark-subtle rounded">
-                                    <h5>🕒 آخرین فعالیت:</h5>
-                                    <p class="fs-5 mb-0 text-info">{{ bot_status.last_activity }}</p>
-                                </div>
-                            </div>
+                        <h2 class="card-title h4 mb-4">📱 درباره ربات</h2>
+                        <p>این ربات به شما امکان دانلود ویدیوهای یوتیوب را می‌دهد. کافیست لینک ویدیو را برای ربات ارسال کنید.</p>
+                        
+                        <h5 class="mt-4">امکانات:</h5>
+                        <ul class="feature-list">
+                            <li><i data-feather="download"></i> دانلود ویدیو با کیفیت‌های مختلف</li>
+                            <li><i data-feather="music"></i> دانلود فقط صدای ویدیو</li>
+                            <li><i data-feather="list"></i> مدیریت دانلودها</li>
+                            <li><i data-feather="activity"></i> مشاهده وضعیت سیستم</li>
+                        </ul>
+                        
+                        <div class="mt-4">
+                            <a href="https://t.me/{{ bot_username }}" target="_blank" class="btn btn-primary">
+                                <i data-feather="send"></i> مشاهده ربات در تلگرام
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- اطلاعات سیستم -->
-            <div class="col-md-6 mb-3">
-                <div class="card h-100 border-info">
-                    <div class="card-header bg-info text-white">
-                        <h4 class="mb-0">💻 وضعیت سیستم</h4>
-                    </div>
+            
+            <div class="col-md-6">
+                <div class="card h-100 border-0 bg-dark shadow-sm">
                     <div class="card-body">
-                        <div class="mb-3">
-                            <h5>🔄 CPU:</h5>
-                            <div class="progress mb-2" style="height: 25px;">
-                                <div class="progress-bar bg-warning" role="progressbar" 
-                                    style="width: {{ system_info.cpu_percent }}%;" 
-                                    aria-valuenow="{{ system_info.cpu_percent }}" aria-valuemin="0" aria-valuemax="100">
-                                    {{ system_info.cpu_percent }}%
-                                </div>
+                        <h2 class="card-title h4 mb-4">📋 راهنمای استفاده</h2>
+                        <ol class="guide-list">
+                            <li>ربات را در تلگرام جستجو کنید</li>
+                            <li>دستور <code>/start</code> را ارسال کنید</li>
+                            <li>لینک ویدیو یوتیوب را برای ربات ارسال کنید</li>
+                            <li>کیفیت مورد نظر را انتخاب کنید</li>
+                            <li>منتظر دانلود بمانید</li>
+                            <li>ویدیو دانلود شده را دریافت کنید</li>
+                        </ol>
+                        
+                        <h5 class="mt-4">دستورات اصلی:</h5>
+                        <div class="commands-list">
+                            <div class="command-item">
+                                <code>/start</code>
+                                <span>شروع ربات</span>
+                            </div>
+                            <div class="command-item">
+                                <code>/help</code>
+                                <span>راهنمای استفاده</span>
+                            </div>
+                            <div class="command-item">
+                                <code>/download [URL]</code>
+                                <span>دانلود ویدیو</span>
+                            </div>
+                            <div class="command-item">
+                                <code>/status</code>
+                                <span>وضعیت سیستم</span>
+                            </div>
+                            <div class="command-item">
+                                <code>/mydownloads</code>
+                                <span>مشاهده دانلودهای من</span>
                             </div>
                         </div>
-
-                        <div class="mb-3">
-                            <h5>💾 حافظه:</h5>
-                            <p class="small text-muted mb-1">{{ system_info.memory.total }} گیگابایت کل</p>
-                            <div class="progress mb-2" style="height: 25px;">
-                                <div class="progress-bar bg-primary" role="progressbar" 
-                                    style="width: {{ system_info.memory.used_percent }}%;" 
-                                    aria-valuenow="{{ system_info.memory.used_percent }}" aria-valuemin="0" aria-valuemax="100">
-                                    {{ system_info.memory.used_percent }}%
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <h5>💿 فضای دیسک:</h5>
-                            <p class="small text-muted mb-1">{{ system_info.disk.total }} گیگابایت کل</p>
-                            <div class="progress mb-2" style="height: 25px;">
-                                <div class="progress-bar bg-success" role="progressbar" 
-                                    style="width: {{ system_info.disk.used_percent }}%;" 
-                                    aria-valuenow="{{ system_info.disk.used_percent }}" aria-valuemin="0" aria-valuemax="100">
-                                    {{ system_info.disk.used_percent }}%
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="d-flex justify-content-between mt-3">
-                            <div>
-                                <h6>🖥️ سیستم عامل:</h6>
-                                <p class="text-muted mb-0">{{ system_info.os }}</p>
-                            </div>
-                            <div>
-                                <h6>🐍 نسخه پایتون:</h6>
-                                <p class="text-muted mb-0">{{ system_info.python }}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-footer text-end text-muted">
-                        <small>به‌روزرسانی: {{ system_info.current_time }}</small>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- راهنمای استفاده از ربات -->
-        <div class="row mb-4">
+        
+        <div class="row mt-4">
             <div class="col-12">
-                <div class="card border-secondary">
-                    <div class="card-header bg-secondary text-white">
-                        <h4 class="mb-0">📝 راهنمای استفاده از ربات</h4>
-                    </div>
+                <div class="card border-0 bg-dark shadow-sm">
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <h5>🎬 دانلود ویدیو</h5>
-                                <ol class="list-group list-group-numbered mb-3">
-                                    <li class="list-group-item">ربات را در تلگرام استارت کنید: <code>@your_bot_username</code></li>
-                                    <li class="list-group-item">دستور <code>/quality</code> را برای انتخاب کیفیت ویدیو بزنید</li>
-                                    <li class="list-group-item">لینک ویدیوی یوتیوب یا اینستاگرام را ارسال کنید</li>
-                                    <li class="list-group-item">منتظر دانلود و ارسال ویدیو باشید</li>
-                                </ol>
-                                
-                                <h5>⚙️ تنظیمات</h5>
-                                <div class="list-group mb-3">
-                                    <div class="list-group-item">
-                                        <code>/quality</code> - انتخاب کیفیت ویدیو (۱۴۴p تا ۱۰۸۰p)
-                                    </div>
-                                    <div class="list-group-item">
-                                        <code>/help</code> - نمایش راهنما
-                                    </div>
-                                    <div class="list-group-item">
-                                        <code>/status</code> - نمایش وضعیت ربات و سرور
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <h5>🔍 سایت‌های پشتیبانی شده</h5>
-                                <div class="list-group mb-3">
-                                    <div class="list-group-item">
-                                        <strong>یوتیوب</strong> - تمام لینک‌های یوتیوب و شورت‌لینک‌ها
-                                    </div>
-                                    <div class="list-group-item">
-                                        <strong>اینستاگرام</strong> - پست‌ها، IGTV، ریلز
-                                    </div>
-                                </div>
-                                
-                                <h5>⚠️ نکات مهم</h5>
-                                <div class="list-group">
-                                    <div class="list-group-item">
-                                        <strong>محدودیت حجم:</strong> حداکثر حجم ویدیو ۵۰ مگابایت است
-                                    </div>
-                                    <div class="list-group-item">
-                                        <strong>کیفیت پیش‌فرض:</strong> ۲۴۰p برای صرفه‌جویی در مصرف اینترنت و فضای سرور
-                                    </div>
-                                    <div class="list-group-item">
-                                        <strong>مدیریت فضا:</strong> حداکثر ۳ ویدیو برای هر کاربر نگهداری می‌شود
-                                    </div>
+                        <h2 class="card-title h4 mb-4">📊 وضعیت سیستم</h2>
+                        <div class="text-center mb-3">
+                            <a href="{{ url_for('status') }}" class="btn btn-outline-info">
+                                <i data-feather="eye"></i> مشاهده وضعیت کامل سیستم
+                            </a>
+                        </div>
+                        <div id="status-container" class="system-status">
+                            <div class="d-flex justify-content-center">
+                                <div class="spinner-border text-info" role="status">
+                                    <span class="visually-hidden">در حال بارگذاری...</span>
                                 </div>
                             </div>
                         </div>
@@ -187,24 +101,39 @@
                 </div>
             </div>
         </div>
-
-        <footer class="pt-3 mt-4 text-muted border-top text-center">
-            <p>&copy; ۱۴۰۴ - داشبورد ربات تلگرام دانلود ویدیو</p>
-            <p>
-                <span class="badge bg-primary rounded-pill">Flask</span>
-                <span class="badge bg-info rounded-pill">Python</span>
-                <span class="badge bg-success rounded-pill">Telegram Bot</span>
-                <span class="badge bg-warning rounded-pill text-dark">Bootstrap 5</span>
-            </p>
+        
+        <footer class="mt-5 text-center text-muted">
+            <p>ربات دانلود ویدیو یوتیوب &copy; {{ current_year }}</p>
+            <p class="small">ساخته شده با <i data-feather="heart" class="text-danger" style="width: 16px; height: 16px;"></i> و Python</p>
         </footer>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <script>
-        // به‌روزرسانی خودکار صفحه هر ۳۰ ثانیه
-        setTimeout(function() {
-            location.reload();
-        }, 30000);
+        // فعال کردن آیکون‌ها
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+            
+            // دریافت وضعیت سیستم
+            fetch('/status')
+                .then(response => response.text())
+                .then(data => {
+                    // استخراج بخش وضعیت از HTML کامل
+                    const parser = new DOMParser();
+                    const htmlDoc = parser.parseFromString(data, 'text/html');
+                    const statusContent = htmlDoc.querySelector('.status-summary');
+                    
+                    if (statusContent) {
+                        document.getElementById('status-container').innerHTML = statusContent.outerHTML;
+                    } else {
+                        document.getElementById('status-container').innerHTML = '<div class="alert alert-info">اطلاعات وضعیت در دسترس نیست.</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching status:', error);
+                    document.getElementById('status-container').innerHTML = '<div class="alert alert-danger">خطا در دریافت وضعیت سیستم</div>';
+                });
+        });
     </script>
 </body>
 </html>

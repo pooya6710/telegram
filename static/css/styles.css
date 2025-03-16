@@ -1,0 +1,259 @@
+/* تنظیمات عمومی */
+html, body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--bs-dark);
+    color: var(--bs-light);
+}
+
+.container {
+    max-width: 1200px;
+}
+
+/* کارت‌ها و سایه‌ها */
+.card {
+    transition: all 0.3s ease;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2) !important;
+}
+
+.shadow-sm {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* هدر */
+header h1 {
+    color: var(--bs-info);
+}
+
+/* لیست‌های صفحه اصلی */
+.feature-list {
+    list-style: none;
+    padding-left: 10px;
+}
+
+.feature-list li {
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+}
+
+.feature-list li svg {
+    width: 18px;
+    height: 18px;
+    margin-left: 10px;
+    stroke: var(--bs-info);
+}
+
+.guide-list {
+    padding-left: 25px;
+}
+
+.guide-list li {
+    margin-bottom: 12px;
+    position: relative;
+}
+
+.commands-list {
+    background-color: var(--bs-dark);
+    border-radius: 10px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.command-item {
+    display: flex;
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 8px;
+}
+
+.command-item:last-child {
+    margin-bottom: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.command-item code {
+    background-color: rgba(var(--bs-info-rgb), 0.2);
+    padding: 2px 8px;
+    border-radius: 5px;
+    margin-left: 15px;
+    width: 160px;
+    display: inline-block;
+}
+
+.command-item span {
+    flex: 1;
+    color: var(--bs-light);
+}
+
+/* صفحه وضعیت */
+.status-summary {
+    margin-bottom: 30px;
+}
+
+.system-info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.system-info-item:last-child {
+    border-bottom: none;
+}
+
+.system-info-item span:first-child {
+    font-weight: 500;
+    color: var(--bs-info);
+}
+
+.system-info-item span:last-child {
+    color: var(--bs-light);
+    word-break: break-word;
+}
+
+/* جداول */
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    font-weight: 600;
+    color: var(--bs-info);
+    border-top: none;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* دکمه‌ها */
+.btn-outline-info, .btn-outline-success, .btn-outline-secondary {
+    border-width: 2px;
+}
+
+.btn-outline-info:hover, .btn-outline-success:hover, .btn-outline-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* وضعیت سیستم */
+.progress {
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+}
+
+.progress-bar {
+    border-radius: 10px;
+}
+
+/* آیکون‌ها */
+[data-feather] {
+    width: 20px;
+    height: 20px;
+    stroke-width: 2;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+}
+
+h5 [data-feather] {
+    margin-left: 5px;
+    margin-bottom: 3px;
+}
+
+/* نشان‌ها */
+.badge {
+    padding: 5px 10px;
+    font-weight: 500;
+    border-radius: 30px;
+}
+
+/* فوتر */
+footer {
+    opacity: 0.7;
+    transition: opacity 0.3s;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+footer:hover {
+    opacity: 1;
+}
+
+footer [data-feather="heart"] {
+    color: var(--bs-danger);
+}
+
+/* واکنش‌گرا برای موبایل */
+@media (max-width: 767.98px) {
+    .command-item {
+        flex-direction: column;
+    }
+    
+    .command-item code {
+        width: auto;
+        margin-bottom: 8px;
+        margin-left: 0;
+    }
+    
+    .system-info-item {
+        flex-direction: column;
+    }
+    
+    .system-info-item span:last-child {
+        margin-top: 5px;
+        opacity: 0.8;
+    }
+}
+
+/* انیمیشن‌ها */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.card {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* رنگ‌بندی تم تاریک */
+[data-bs-theme="dark"] {
+    --bs-dark: #1a1a2e;
+    --bs-body-bg: #16213e;
+    --bs-body-color: #e0e0e0;
+}
+
+[data-bs-theme="dark"] .card {
+    background-color: #1f2a44;
+}
+
+[data-bs-theme="dark"] .card-header {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="dark"] .table {
+    color: #e0e0e0;
+}
+
+[data-bs-theme="dark"] .table td, 
+[data-bs-theme="dark"] .table th {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="dark"] .table-hover tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-bs-theme="dark"] code {
+    color: var(--bs-info);
+    background-color: rgba(var(--bs-info-rgb), 0.1);
+}
