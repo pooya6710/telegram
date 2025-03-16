@@ -15,6 +15,8 @@ DATABASE_PATH = os.environ.get("DATABASE_PATH", "bot_database.db")
 
 # محدودیت‌های دانلود
 MAX_VIDEO_SIZE_MB = float('inf')  # بدون محدودیت حجم
+MAX_FILE_SIZE = float('inf')  # حداکثر سایز فایل - نامحدود
+VIDEO_SIZE_LIMIT = float('inf')  # محدودیت سایز ویدیو - نامحدود
 MAX_RETRIES = 3  # تعداد تلاش‌های مجدد برای دانلود
 DOWNLOAD_TIMEOUT = 600  # زمان انتظار برای دانلود (10 دقیقه)
 MAX_DOWNLOAD_TIME = int(os.environ.get("MAX_DOWNLOAD_TIME", "300"))  # حداکثر زمان دانلود به ثانیه
