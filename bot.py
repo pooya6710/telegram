@@ -1846,15 +1846,15 @@ def handle_callback_query(call):
                             bot.send_message(message.chat.id, f"⚠ خطا در دریافت وضعیت سرور: {str(e)}")
 
 
-                    # مدت زمان روشن بودن سرور با psutil
-                    if 'psutil' in globals():
-                        try:
-                            uptime_seconds = time.time() - psutil.boot_time()
-                            uptime_hours = uptime_seconds // 3600
-                            status_sections.append(f"🔹 **مدت روشن بودن:** `{int(uptime_hours)} ساعت`\n")
-                        except Exception as uptime_error:
-                            status_sections.append("🔹 **مدت روشن بودن:** `اطلاعات در دسترس نیست`\n")
-                            print(f"خطا در دریافت اطلاعات uptime: {uptime_error}")
+                            # مدت زمان روشن بودن سرور با psutil
+                            if 'psutil' in globals():
+                                try:
+                                    uptime_seconds = time.time() - psutil.boot_time()
+                                    uptime_hours = uptime_seconds // 3600
+                                    status_sections.append(f"🔹 **مدت روشن بودن:** `{int(uptime_hours)} ساعت`\n")
+                                except Exception as uptime_error:
+                                    status_sections.append("🔹 **مدت روشن بودن:** `اطلاعات در دسترس نیست`\n")
+                                    print(f"خطا در دریافت اطلاعات uptime: {uptime_error}")
             except Exception as time_error:
                 status_sections.append("🔹 **زمان سرور:** `اطلاعات در دسترس نیست`\n")
                 print(f"خطا در دریافت اطلاعات زمان: {time_error}")

@@ -175,6 +175,62 @@ def api_status():
     update_bot_status()
     return jsonify(bot_status)
 
+# صفحه وضعیت سیستم
+@app.route('/status')
+def status():
+    update_bot_status()
+    system_info = {}
+    
+    try:
+        system_info["os"] = platform.platform()
+        system_info["python"] = platform.python_version()
+    except Exception as e:
+        logger.error(f"خطا در دریافت اطلاعات سیستم: {e}")
+        system_info["os"] = "نامشخص"
+        system_info["python"] = "نامشخص"
+    
+    try:
+        system_info["cpu"] = {
+            "usage": psutil.cpu_percent()
+        }
+    except Exception as e:
+        logger.error(f"خطا در دریافت اطلاعات CPU: {e}")
+        system_info["cpu"] = {
+            "usage": 0
+        }
+    
+    try:
+        memory = psutil.virtual_memory()
+        system_info["memory"] = {
+            "total": round(memory.total / (1024**3), 2),  # به گیگابایت
+            "available": round(memory.available / (1024**3), 2),
+            "used_percent": memory.percent
+        }
+    except Exception as e:
+        logger.error(f"خطا در دریافت اطلاعات حافظه: {e}")
+        system_info["memory"] = {
+            "total": 0,
+            "available": 0,
+            "used_percent": 0
+        }
+    
+    try:
+        disk = psutil.disk_usage('/')
+        system_info["disk"] = {
+            "total": round(disk.total / (1024**3), 2),  # به گیگابایت
+            "free": round(disk.free / (1024**3), 2),
+            "used_percent": disk.percent
+        }
+    except Exception as e:
+        logger.error(f"خطا در دریافت اطلاعات دیسک: {e}")
+        system_info["disk"] = {
+            "total": 0,
+            "free": 0,
+            "used_percent": 0
+        }
+    
+    return render_template('status.html', bot_status=bot_status, system_info=system_info)
+
 # بررسی سلامت سرور
 @app.route('/ping')
 def ping():
