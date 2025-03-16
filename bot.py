@@ -1781,72 +1781,87 @@ def handle_callback_query(call):
                 status_sections = []
                 status_sections.append("📊 **وضعیت سرور:**\n")
 
-                # سیستم عامل و پایتون
-                try:
-                    status_sections.append(f"🔹 **سیستم عامل:** `{platform.platform()}`\n")
-                    status_sections.append(f"🔹 **پایتون:** `{platform.python_version()}`\n")
-                except Exception as sys_error:
-                    status_sections.append("🔹 **سیستم عامل:** `اطلاعات در دسترس نیست`\n")
-                    print(f"خطا در دریافت اطلاعات سیستم: {sys_error}")
-
                 # وضعیت ربات
                 status_sections.append(f"🔹 **وضعیت ربات:** `فعال ✅`\n")
 
-                # اگر psutil موجود باشد، از آن استفاده کن
-                try:
-                        import psutil
-                        import platform
-                        import datetime
-                except ImportError:
-                        print("⚠️ برخی ماژول‌های موردنیاز نصب نیستند!")
+# تابع نمایش وضعیت سرور برای دستور /status
+@bot.message_handler(commands=['status'])
+def server_status(message):
+    import platform
+    import datetime
+    import psutil
+    import shutil
+    
+    try:
+        status_sections = ["📊 **وضعیت سرور:**\n"]
 
-                def server_status(message):
-                        try:
-                            status_sections = ["📊 **وضعیت سرور:**\n"]
+        # سیستم‌عامل و پایتون
+        try:
+            status_sections.append(f"🔹 **سیستم عامل:** `{platform.platform()}`\n")
+            status_sections.append(f"🔹 **پایتون:** `{platform.python_version()}`\n")
+        except Exception as e:
+            status_sections.append("🔹 **سیستم عامل:** `اطلاعات در دسترس نیست`\n")
+            debug_log(f"خطا در دریافت اطلاعات سیستم: {e}", "ERROR")
 
-                            # سیستم‌عامل و پایتون
-                            try:
-                                status_sections.append(f"🔹 **سیستم عامل:**         `{platform.platform()}`\n")
-                                status_sections.append(f"🔹 **پایتون:**    `{platform.python_version()}`\n")
-                            except:
-                                status_sections.append("🔹 **سیستم عامل:** `اطلاعات در دسترس نیست`\n")
+        # CPU
+        try:
+            cpu_usage = psutil.cpu_percent(interval=1)
+            status_sections.append(f"🔹 **CPU:** `{cpu_usage}%`\n")
+        except Exception as e:
+            status_sections.append("🔹 **CPU:** `اطلاعات در دسترس نیست`\n")
+            debug_log(f"خطا در دریافت اطلاعات CPU: {e}", "ERROR")
 
-                            # CPU
-                            try:
-                                cpu_usage = psutil.cpu_percent(interval=1)
-                                status_sections.append(f"🔹 **CPU:** `{cpu_usage}%`\n")
-                            except:
-                                status_sections.append("🔹 **CPU:** `اطلاعات در دسترس نیست`\n")
+        # RAM
+        try:
+            ram = psutil.virtual_memory()
+            status_sections.append(f"🔹 **RAM:** `{ram.used / (1024**3):.2f}GB / {ram.total / (1024**3):.2f}GB`\n")
+        except Exception as e:
+            status_sections.append("🔹 **RAM:** `اطلاعات در دسترس نیست`\n")
+            debug_log(f"خطا در دریافت اطلاعات RAM: {e}", "ERROR")
 
-                            # RAM
-                            try:
-                                ram = psutil.virtual_memory()
-                                status_sections.append(f"🔹 **RAM:** `{ram.used / (1024**3):.2f}GB / {ram.total / (1024**3):.2f}GB`\n")
-                            except:
-                                status_sections.append("🔹 **RAM:** `اطلاعات در دسترس نیست`\n")
+        # فضای دیسک
+        try:
+            free_gb = shutil.disk_usage("/").free / (1024**3)
+            status_sections.append(f"🔹 **فضای باقی‌مانده:** `{free_gb:.2f}GB`\n")
+        except Exception as e:
+            status_sections.append("🔹 **فضای دیسک:** `اطلاعات در دسترس نیست`\n")
+            debug_log(f"خطا در دریافت اطلاعات دیسک: {e}", "ERROR")
 
-                            # فضای دیسک
-                            try:
-                                import shutil
-                                free_gb = shutil.disk_usage("/").free / (1024**3)
-                                status_sections.append(f"🔹 **فضای باقی‌مانده:** `{free_gb:.2f}GB`\n")
-                            except:
-                                status_sections.append("🔹 **فضای دیسک:** `اطلاعات در دسترس نیست`\n")
+        # زمان سرور
+        try:
+            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            status_sections.append(f"🔹 **زمان سرور:** `{current_time}`\n")
+        except Exception as e:
+            status_sections.append("🔹 **زمان سرور:** `اطلاعات در دسترس نیست`\n")
+            debug_log(f"خطا در دریافت اطلاعات زمان: {e}", "ERROR")
 
-                            # زمان سرور
-                            try:
-                                current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                                status_sections.append(f"🔹 **زمان سرور:** `{current_time}`\n")
-                            except:
-                                status_sections.append("🔹 **زمان سرور:** `اطلاعات در دسترس نیست`\n")
+        # مدت زمان روشن بودن سرور با psutil
+        try:
+            uptime_seconds = time.time() - psutil.boot_time()
+            uptime_hours = uptime_seconds // 3600
+            status_sections.append(f"🔹 **مدت روشن بودن:** `{int(uptime_hours)} ساعت`\n")
+        except Exception as e:
+            status_sections.append("🔹 **مدت روشن بودن:** `اطلاعات در دسترس نیست`\n")
+            debug_log(f"خطا در دریافت اطلاعات uptime: {e}", "ERROR")
 
-                            bot.send_message(message.chat.id, "".join(status_sections), parse_mode="Markdown")
+        # اطلاعات شبکه
+        try:
+            net_io = psutil.net_io_counters()
+            sent_gb = net_io.bytes_sent / (1024**3)
+            recv_gb = net_io.bytes_recv / (1024**3)
+            status_sections.append(f"🔹 **ترافیک شبکه:** `ارسال: {sent_gb:.2f}GB, دریافت: {recv_gb:.2f}GB`\n")
+        except Exception as e:
+            status_sections.append("🔹 **ترافیک شبکه:** `اطلاعات در دسترس نیست`\n")
+            debug_log(f"خطا در دریافت اطلاعات شبکه: {e}", "ERROR")
 
-                        except Exception as e:
-                            bot.send_message(message.chat.id, f"⚠ خطا در دریافت وضعیت سرور: {str(e)}")
+        # ارسال پیام نهایی
+        bot.send_message(message.chat.id, "".join(status_sections), parse_mode="Markdown")
 
+    except Exception as e:
+        debug_log(f"خطای کلی در دریافت وضعیت سرور: {e}", "ERROR")
+        bot.send_message(message.chat.id, f"⚠ خطا در دریافت وضعیت سرور: {str(e)}")
 
-                            # مدت زمان روشن بودن سرور با psutil
+# ادامه کد قبلی...
                             if 'psutil' in globals():
                                 try:
                                     uptime_seconds = time.time() - psutil.boot_time()
