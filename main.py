@@ -68,7 +68,8 @@ if not token_valid:
     sys.exit(1)
 
 # وارد کردن ماژول‌های بات 
-from bot import start_bot, get_cached_server_status
+from bot import start_bot
+from server_status import get_cached_server_status, generate_server_status
 
 # وارد کردن ماژول‌ها با مدیریت خطا
 try:
