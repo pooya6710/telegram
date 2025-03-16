@@ -6,6 +6,7 @@ import threading
 import json
 import traceback
 import platform
+import psutil
 from datetime import datetime
 from flask import Flask, jsonify, render_template, redirect, url_for, request
 
@@ -122,7 +123,7 @@ def update_bot_status():
 
 # صفحه اصلی داشبورد
 @app.route('/')
-def home():
+def index():
     update_bot_status()
 
     # اطلاعات سیستم
@@ -179,57 +180,96 @@ def api_status():
 @app.route('/status')
 def status():
     update_bot_status()
-    system_info = {}
     
+    # اطلاعات سیستم
     try:
-        system_info["os"] = platform.platform()
-        system_info["python"] = platform.python_version()
+        # تبدیل بایت به فرمت قابل خواندن
+        def format_bytes(bytes_value):
+            """تبدیل بایت به فرمت قابل خواندن برای انسان"""
+            suffixes = ['B', 'KB', 'MB', 'GB', 'TB']
+            index = 0
+            while bytes_value >= 1024 and index < len(suffixes) - 1:
+                bytes_value /= 1024
+                index += 1
+            return f"{bytes_value:.2f} {suffixes[index]}"
+        
+        # ساختار اطلاعات سیستم
+        system = {
+            "os": {
+                "system": platform.system(),
+                "release": platform.release(),
+                "architecture": platform.machine(),
+                "python_version": platform.python_version()
+            },
+            "cpu": {
+                "usage_percent": psutil.cpu_percent(interval=0.1),
+                "cores": psutil.cpu_count(logical=True)
+            },
+            "memory": {
+                "total": psutil.virtual_memory().total,
+                "available": psutil.virtual_memory().available,
+                "used": psutil.virtual_memory().used,
+                "percent_used": psutil.virtual_memory().percent,
+                "total_human": format_bytes(psutil.virtual_memory().total),
+                "used_human": format_bytes(psutil.virtual_memory().used)
+            },
+            "disk": {
+                "total": psutil.disk_usage('/').total,
+                "used": psutil.disk_usage('/').used,
+                "free": psutil.disk_usage('/').free,
+                "percent_used": psutil.disk_usage('/').percent,
+                "total_human": format_bytes(psutil.disk_usage('/').total),
+                "free_human": format_bytes(psutil.disk_usage('/').free)
+            },
+            "uptime": {
+                "seconds": int(time.time() - psutil.boot_time()),
+                "uptime_human": "",
+                "boot_time": datetime.fromtimestamp(psutil.boot_time()).strftime("%Y-%m-%d %H:%M:%S")
+            },
+            "process": {
+                "this_process": {
+                    "pid": os.getpid(),
+                    "memory_usage": format_bytes(psutil.Process(os.getpid()).memory_info().rss),
+                    "threads_count": len(psutil.Process(os.getpid()).threads())
+                }
+            }
+        }
+        
+        # فرمت زمان کارکرد
+        uptime_seconds = system["uptime"]["seconds"]
+        days = uptime_seconds // 86400
+        hours = (uptime_seconds % 86400) // 3600
+        minutes = (uptime_seconds % 3600) // 60
+        seconds = uptime_seconds % 60
+        
+        if days > 0:
+            system["uptime"]["uptime_human"] = f"{days} روز و {hours} ساعت"
+        elif hours > 0:
+            system["uptime"]["uptime_human"] = f"{hours} ساعت و {minutes} دقیقه"
+        else:
+            system["uptime"]["uptime_human"] = f"{minutes} دقیقه و {seconds} ثانیه"
+    
     except Exception as e:
         logger.error(f"خطا در دریافت اطلاعات سیستم: {e}")
-        system_info["os"] = "نامشخص"
-        system_info["python"] = "نامشخص"
+        system = {}
     
-    try:
-        system_info["cpu"] = {
-            "usage": psutil.cpu_percent()
-        }
-    except Exception as e:
-        logger.error(f"خطا در دریافت اطلاعات CPU: {e}")
-        system_info["cpu"] = {
-            "usage": 0
-        }
+    # دانلودهای فعال - در اینجا یک دیکشنری خالی برمی‌گردانیم چون هنوز API دانلودها پیاده‌سازی نشده
+    active_downloads = {}
     
-    try:
-        memory = psutil.virtual_memory()
-        system_info["memory"] = {
-            "total": round(memory.total / (1024**3), 2),  # به گیگابایت
-            "available": round(memory.available / (1024**3), 2),
-            "used_percent": memory.percent
-        }
-    except Exception as e:
-        logger.error(f"خطا در دریافت اطلاعات حافظه: {e}")
-        system_info["memory"] = {
-            "total": 0,
-            "available": 0,
-            "used_percent": 0
-        }
+    # کاربران - فعلاً لیست خالی
+    users = []
+    user_count = 0
     
-    try:
-        disk = psutil.disk_usage('/')
-        system_info["disk"] = {
-            "total": round(disk.total / (1024**3), 2),  # به گیگابایت
-            "free": round(disk.free / (1024**3), 2),
-            "used_percent": disk.percent
-        }
-    except Exception as e:
-        logger.error(f"خطا در دریافت اطلاعات دیسک: {e}")
-        system_info["disk"] = {
-            "total": 0,
-            "free": 0,
-            "used_percent": 0
-        }
+    # دانلودها - فعلاً لیست خالی
+    downloads = []
     
-    return render_template('status.html', bot_status=bot_status, system_info=system_info)
+    return render_template('status.html', 
+                          bot_status=bot_status, 
+                          system=system,
+                          active_downloads=active_downloads,
+                          users=users,
+                          user_count=user_count,
+                          downloads=downloads)
 
 # بررسی سلامت سرور
 @app.route('/ping')
