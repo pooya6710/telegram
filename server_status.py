@@ -42,11 +42,17 @@ def get_cached_server_status():
             if current_time - file_time < 600:  # کمتر از 10 دقیقه
                 with open("server_status.json", "r", encoding="utf-8") as file:
                     data = json.load(file)
-                    SERVER_CACHE["status"] = data["status"]
-                    SERVER_CACHE["timestamp"] = datetime.datetime.strptime(
-                        data["timestamp"], "%Y-%m-%d %H:%M:%S"
-                    )
-                    return data["status"]
+                    if isinstance(data, dict) and "status" in data and "timestamp" in data:
+                        SERVER_CACHE["status"] = data["status"]
+                        try:
+                            SERVER_CACHE["timestamp"] = datetime.datetime.strptime(
+                                data["timestamp"], "%Y-%m-%d %H:%M:%S"
+                            )
+                            return data["status"]
+                        except ValueError:
+                            debug_log("فرمت نادرست timestamp در فایل کش", "WARNING")
+                    else:
+                        debug_log("ساختار نادرست در فایل کش", "WARNING")
     except Exception as e:
         debug_log(f"خطا در خواندن فایل کش وضعیت سرور: {e}", "ERROR")
     

@@ -68,7 +68,7 @@ if not token_valid:
     sys.exit(1)
 
 # وارد کردن ماژول‌های بات 
-from bot import start_bot
+from bot import start_bot, TOKEN
 from server_status import get_cached_server_status, generate_server_status
 
 # وارد کردن ماژول‌ها با مدیریت خطا
@@ -181,7 +181,7 @@ def api_status():
 @app.route('/status')
 def status():
     update_bot_status()
-    
+
     # اطلاعات سیستم
     try:
         # تبدیل بایت به فرمت قابل خواندن
@@ -193,7 +193,7 @@ def status():
                 bytes_value /= 1024
                 index += 1
             return f"{bytes_value:.2f} {suffixes[index]}"
-        
+
         # ساختار اطلاعات سیستم
         system = {
             "os": {
@@ -246,35 +246,35 @@ def status():
                 "active_threads": threading.active_count()
             }
         }
-        
+
         # فرمت زمان کارکرد
         uptime_seconds = system["uptime"]["seconds"]
         days = uptime_seconds // 86400
         hours = (uptime_seconds % 86400) // 3600
         minutes = (uptime_seconds % 3600) // 60
         seconds = uptime_seconds % 60
-        
+
         if days > 0:
             system["uptime"]["uptime_human"] = f"{days} روز و {hours} ساعت"
         elif hours > 0:
             system["uptime"]["uptime_human"] = f"{hours} ساعت و {minutes} دقیقه"
         else:
             system["uptime"]["uptime_human"] = f"{minutes} دقیقه و {seconds} ثانیه"
-    
+
     except Exception as e:
         logger.error(f"خطا در دریافت اطلاعات سیستم: {e}")
         system = {}
-    
+
     # دانلودهای فعال - در اینجا یک دیکشنری خالی برمی‌گردانیم چون هنوز API دانلودها پیاده‌سازی نشده
     active_downloads = {}
-    
+
     # کاربران - فعلاً لیست خالی
     users = []
     user_count = 0
-    
+
     # دانلودها - فعلاً لیست خالی
     downloads = []
-    
+
     return render_template('status.html', 
                           bot_status=bot_status, 
                           system=system,
@@ -295,17 +295,11 @@ def run_bot():
         # ذخیره وضعیت در فایل
         with open(SERVER_STATUS_FILE, 'w', encoding='utf-8') as f:
             json.dump({"is_bot_running": True}, f)
+        
+        if not start_bot():
+            bot_status["running"] = False
+            logger.error("⚠️ خطا در راه‌اندازی ربات")
 
-        # اجرای ربات در یک ترد جداگانه
-        def bot_runner():
-            # مستقیماً از حالت polling استفاده می‌کنیم برای پایداری بیشتر
-            logger.info("🔄 راه‌اندازی ربات در حالت polling برای پایداری بیشتر...")
-            os.environ['WEBHOOK_MODE'] = 'false'
-            start_bot()  # اجرای ربات در حالت polling
-
-        bot_thread = threading.Thread(target=bot_runner)
-        bot_thread.daemon = True
-        bot_thread.start()
         logger.info("🚀 ربات تلگرام با موفقیت راه‌اندازی شد!")
     except Exception as e:
         logger.error(f"⚠️ خطا در راه‌اندازی ربات: {e}")
