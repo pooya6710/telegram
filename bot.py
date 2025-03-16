@@ -362,7 +362,23 @@ def get_main_menu_markup():
 def handle_callback_query(call):
     """پردازش کلیک روی دکمه‌های شیشه‌ای"""
     try:
+        # دکمه بازگشت به منوی اصلی
         if call.data == "back_to_main":
+            markup = types.InlineKeyboardMarkup(row_width=2)
+            help_btn = types.InlineKeyboardButton("📚 راهنما", callback_data="download_help")
+            quality_btn = types.InlineKeyboardButton("📊 کیفیت ویدیو", callback_data="select_quality")
+            status_btn = types.InlineKeyboardButton("📈 وضعیت سرور", callback_data="server_status")
+            
+            markup.add(help_btn, quality_btn)
+            markup.add(status_btn)
+            
+            bot.edit_message_text(
+                "به منوی اصلی بازگشتید! از دکمه‌های زیر استفاده کنید:",
+                chat_id=call.message.chat.id,
+                message_id=call.message.message_id,
+                reply_markup=markup
+            )
+            return
             bot.edit_message_text(
                 "👋 به منوی اصلی بازگشتید!\n\n"
                 "🎬 از دکمه‌های زیر استفاده کنید:",

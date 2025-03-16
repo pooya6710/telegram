@@ -14,7 +14,9 @@ BACKEND_PORT = 8000  # پورت برای سرویس‌های داخلی
 DATABASE_PATH = os.environ.get("DATABASE_PATH", "bot_database.db")
 
 # محدودیت‌های دانلود
-MAX_VIDEO_SIZE_MB = float('inf')  # حداکثر حجم ویدیو به مگابایت (نامحدود)
+MAX_VIDEO_SIZE_MB = float('inf')  # بدون محدودیت حجم
+MAX_RETRIES = 3  # تعداد تلاش‌های مجدد برای دانلود
+DOWNLOAD_TIMEOUT = 600  # زمان انتظار برای دانلود (10 دقیقه)
 MAX_DOWNLOAD_TIME = int(os.environ.get("MAX_DOWNLOAD_TIME", "300"))  # حداکثر زمان دانلود به ثانیه
 MAX_DOWNLOADS_PER_USER = int(os.environ.get("MAX_DOWNLOADS_PER_USER", "10"))  # حداکثر تعداد دانلود همزمان برای هر کاربر
 MAX_VIDEO_DURATION = int(os.environ.get("MAX_VIDEO_DURATION", "600"))  # حداکثر مدت ویدیو به ثانیه
