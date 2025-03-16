@@ -347,6 +347,70 @@ def server_status_command(message):
             debug_log(f"خطای کلی در دریافت وضعیت سرور: {e}", "ERROR")
             bot.send_message(message.chat.id, f"⚠ خطا در دریافت وضعیت سرور: {str(e)}")
 
+# پردازش دکمه‌های شیشه‌ای
+@bot.callback_query_handler(func=lambda call: True)
+def handle_callback_query(call):
+    """پردازش کلیک روی دکمه‌های شیشه‌ای"""
+    try:
+        if call.data == "download_help":
+            bot.answer_callback_query(call.id)
+            bot.edit_message_text(
+                "🎥 *راهنمای دانلود ویدیو*\n\n"
+                "1️⃣ لینک ویدیو را از یوتیوب یا اینستاگرام کپی کنید\n"
+                "2️⃣ لینک را برای ربات ارسال کنید\n"
+                "3️⃣ کیفیت مورد نظر را انتخاب کنید\n"
+                "4️⃣ صبر کنید تا ویدیو دانلود و ارسال شود\n\n"
+                "⚠️ *نکته:* حداکثر سایز فایل قابل ارسال 50MB است",
+                chat_id=call.message.chat.id,
+                message_id=call.message.message_id,
+                parse_mode="Markdown"
+            )
+        
+        elif call.data == "select_quality":
+            markup = types.InlineKeyboardMarkup(row_width=3)
+            qualities = ["144p", "240p", "360p", "480p", "720p"]
+            buttons = [types.InlineKeyboardButton(q, callback_data=f"quality_{q}") for q in qualities]
+            markup.add(*buttons)
+            
+            bot.answer_callback_query(call.id)
+            bot.edit_message_text(
+                "📊 کیفیت مورد نظر را انتخاب کنید:",
+                chat_id=call.message.chat.id,
+                message_id=call.message.message_id,
+                reply_markup=markup
+            )
+            
+        elif call.data.startswith("quality_"):
+            quality = call.data.split("_")[1]
+            user_id = str(call.from_user.id)
+            bot.user_video_quality[user_id] = quality
+            
+            bot.answer_callback_query(call.id, f"✅ کیفیت {quality} انتخاب شد")
+            bot.edit_message_text(
+                f"✅ کیفیت پیش‌فرض شما به {quality} تغییر کرد",
+                chat_id=call.message.chat.id,
+                message_id=call.message.message_id
+            )
+            
+        elif call.data == "server_status":
+            from server_status import generate_server_status
+            status_text = generate_server_status()
+            
+            bot.answer_callback_query(call.id)
+            bot.edit_message_text(
+                status_text,
+                chat_id=call.message.chat.id,
+                message_id=call.message.message_id,
+                parse_mode="Markdown"
+            )
+            
+    except Exception as e:
+        debug_log(f"خطا در پردازش callback query: {e}", "ERROR")
+        try:
+            bot.answer_callback_query(call.id, "⚠️ خطایی رخ داد")
+        except:
+            pass
+
 # تابع راه‌اندازی ربات
 def start_bot():
     """راه‌اندازی ربات تلگرام"""
