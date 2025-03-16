@@ -385,7 +385,11 @@ def handle_callback_query(call):
             )
             return
 
-        if call.data == "download_help":
+        elif call.data == "download_help":
+            markup = types.InlineKeyboardMarkup()
+            back_btn = types.InlineKeyboardButton("🔙 بازگشت به منو", callback_data="back_to_main")
+            markup.add(back_btn)
+
             bot.answer_callback_query(call.id)
             bot.edit_message_text(
                 "🎥 *راهنمای دانلود ویدیو*\n\n"
@@ -393,10 +397,11 @@ def handle_callback_query(call):
                 "2️⃣ لینک را برای ربات ارسال کنید\n"
                 "3️⃣ کیفیت مورد نظر را انتخاب کنید\n"
                 "4️⃣ صبر کنید تا ویدیو دانلود و ارسال شود\n\n"
-                "⚠️ *نکته:* حداکثر سایز فایل قابل ارسال 50MB است",
+                "⚠️ *نکته:* حداکثر سایز فایل قابل ارسال نامحدود است",
                 chat_id=call.message.chat.id,
                 message_id=call.message.message_id,
-                parse_mode="Markdown"
+                parse_mode="Markdown",
+                reply_markup=markup
             )
 
         elif call.data == "select_quality":
