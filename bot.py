@@ -348,10 +348,29 @@ def server_status_command(message):
             bot.send_message(message.chat.id, f"⚠ خطا در دریافت وضعیت سرور: {str(e)}")
 
 # پردازش دکمه‌های شیشه‌ای
+def get_main_menu_markup():
+    """ایجاد کیبورد منوی اصلی"""
+    markup = types.InlineKeyboardMarkup(row_width=2)
+    help_btn = types.InlineKeyboardButton("📚 راهنما", callback_data="download_help")
+    quality_btn = types.InlineKeyboardButton("📊 کیفیت ویدیو", callback_data="select_quality")
+    status_btn = types.InlineKeyboardButton("📈 وضعیت سرور", callback_data="server_status")
+    markup.add(help_btn, quality_btn)
+    markup.add(status_btn)
+    return markup
+
 @bot.callback_query_handler(func=lambda call: True)
 def handle_callback_query(call):
     """پردازش کلیک روی دکمه‌های شیشه‌ای"""
     try:
+        if call.data == "back_to_main":
+            bot.edit_message_text(
+                "👋 به منوی اصلی بازگشتید!\n\n"
+                "🎬 از دکمه‌های زیر استفاده کنید:",
+                chat_id=call.message.chat.id,
+                message_id=call.message.message_id,
+                reply_markup=get_main_menu_markup()
+            )
+            return
         if call.data == "download_help":
             bot.answer_callback_query(call.id)
             bot.edit_message_text(
@@ -370,7 +389,9 @@ def handle_callback_query(call):
             markup = types.InlineKeyboardMarkup(row_width=3)
             qualities = ["144p", "240p", "360p", "480p", "720p"]
             buttons = [types.InlineKeyboardButton(q, callback_data=f"quality_{q}") for q in qualities]
+            back_btn = types.InlineKeyboardButton("🔙 بازگشت", callback_data="back_to_main")
             markup.add(*buttons)
+            markup.add(back_btn)
             
             bot.answer_callback_query(call.id)
             bot.edit_message_text(

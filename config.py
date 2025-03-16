@@ -14,7 +14,7 @@ BACKEND_PORT = 8000  # پورت برای سرویس‌های داخلی
 DATABASE_PATH = os.environ.get("DATABASE_PATH", "bot_database.db")
 
 # محدودیت‌های دانلود
-MAX_VIDEO_SIZE_MB = int(os.environ.get("MAX_VIDEO_SIZE_MB", "50"))  # حداکثر حجم ویدیو به مگابایت
+MAX_VIDEO_SIZE_MB = float('inf')  # حداکثر حجم ویدیو به مگابایت (نامحدود)
 MAX_DOWNLOAD_TIME = int(os.environ.get("MAX_DOWNLOAD_TIME", "300"))  # حداکثر زمان دانلود به ثانیه
 MAX_DOWNLOADS_PER_USER = int(os.environ.get("MAX_DOWNLOADS_PER_USER", "10"))  # حداکثر تعداد دانلود همزمان برای هر کاربر
 MAX_VIDEO_DURATION = int(os.environ.get("MAX_VIDEO_DURATION", "600"))  # حداکثر مدت ویدیو به ثانیه
@@ -61,7 +61,7 @@ BOT_MESSAGES = {
 /download [YouTube URL] - دانلود ویدیو
 /status - وضعیت سیستم
 /help - راهنمای استفاده از ربات""",
-    
+
     'help': """🔍 راهنمای استفاده از ربات دانلود ویدیو یوتیوب:
 
 ◾️ برای دانلود ویدیو، لینک یوتیوب را ارسال کنید.
@@ -74,12 +74,11 @@ BOT_MESSAGES = {
   /cancel [download_id] - لغو دانلود
 
 ◾️ محدودیت‌ها:
-  • حداکثر حجم ویدیو: {max_size} MB
   • حداکثر مدت ویدیو: {max_duration} دقیقه
   • حداکثر تعداد دانلود همزمان: {max_downloads}
 
 📌 در صورت بروز مشکل با ادمین تماس بگیرید.""",
-    
+
     'admin_help': """🔍 راهنمای دستورات مدیریتی:
 
 ◾️ مدیریت کاربران:
@@ -97,7 +96,7 @@ BOT_MESSAGES = {
 ◾️ مدیریت دانلودها:
   /downloads - مشاهده همه دانلودها
   /cancelall - لغو همه دانلودهای در حال انجام""",
-    
+
     'invalid_url': "❌ لینک نامعتبر است. لطفاً یک لینک یوتیوب معتبر ارسال کنید.",
     'processing': "⏳ درحال پردازش لینک...",
     'download_started': "🔄 دانلود شروع شد. شناسه دانلود: {download_id}",
