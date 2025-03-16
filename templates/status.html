@@ -198,6 +198,38 @@
                             <span>تعداد ترد‌های فرایند:</span>
                             <span>{{ system.process.this_process.threads_count }}</span>
                         </div>
+                        {% if system.network %}
+                        <div class="system-info-item">
+                            <span>تعداد اتصالات شبکه:</span>
+                            <span>{{ system.network.connections }}</span>
+                        </div>
+                        <div class="system-info-item">
+                            <span>دریافت شبکه:</span>
+                            <span>{{ system.network.bytes_recv }}</span>
+                        </div>
+                        <div class="system-info-item">
+                            <span>ارسال شبکه:</span>
+                            <span>{{ system.network.bytes_sent }}</span>
+                        </div>
+                        {% endif %}
+                        {% if system.server %}
+                        <div class="system-info-item">
+                            <span>نام میزبان:</span>
+                            <span>{{ system.server.hostname }}</span>
+                        </div>
+                        <div class="system-info-item">
+                            <span>منطقه زمانی:</span>
+                            <span>{{ system.server.timezone }}</span>
+                        </div>
+                        <div class="system-info-item">
+                            <span>تعداد ترد‌های فعال:</span>
+                            <span>{{ system.server.active_threads }}</span>
+                        </div>
+                        <div class="system-info-item">
+                            <span>زمان سرور:</span>
+                            <span>{{ system.server.current_time }}</span>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>

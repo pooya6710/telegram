@@ -232,6 +232,17 @@ def status():
                     "memory_usage": format_bytes(psutil.Process(os.getpid()).memory_info().rss),
                     "threads_count": len(psutil.Process(os.getpid()).threads())
                 }
+            },
+            "network": {
+                "connections": len(psutil.net_connections()),
+                "bytes_sent": format_bytes(psutil.net_io_counters().bytes_sent),
+                "bytes_recv": format_bytes(psutil.net_io_counters().bytes_recv)
+            },
+            "server": {
+                "hostname": platform.node(),
+                "current_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "timezone": time.tzname[0],
+                "active_threads": threading.active_count()
             }
         }
         
