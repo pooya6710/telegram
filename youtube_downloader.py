@@ -727,3 +727,31 @@ def clean_old_downloads(max_age_days: int = 1) -> int:
     return count
 
 import datetime
+async def process_youtube_url(message, url):
+    """پردازش لینک یوتیوب و شروع دانلود"""
+    try:
+        # اعتبارسنجی URL
+        if not validate_youtube_url(url):
+            bot.reply_to(message, "❌ لینک یوتیوب نامعتبر است.")
+            return
+
+        # استخراج اطلاعات ویدیو
+        video_info = extract_video_info(url)
+        if not video_info:
+            bot.reply_to(message, "❌ خطا در دریافت اطلاعات ویدیو.")
+            return
+
+        # شروع دانلود
+        download_id = int(time.time())
+        success, file_path, error = download_video(url, download_id, message.from_user.id)
+
+        if success and file_path:
+            # ارسال ویدیو به کاربر
+            with open(file_path, 'rb') as video_file:
+                bot.send_video(message.chat.id, video_file, caption=f"✅ دانلود شد\n🎥 {video_info.get('title', '')}")
+        else:
+            bot.reply_to(message, f"❌ خطا در دانلود: {error.get('error', 'خطای نامشخص')}")
+
+    except Exception as e:
+        logger.error(f"خطا در پردازش لینک یوتیوب: {str(e)}")
+        bot.reply_to(message, "⚠️ خطایی رخ داد. لطفا دوباره تلاش کنید.")
