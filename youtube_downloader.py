@@ -41,24 +41,26 @@ def validate_youtube_url(url: str) -> bool:
     Returns:
         True اگر URL معتبر باشد
     """
-    # الگوهای معتبر برای URL های یوتیوب
-    youtube_regex = (
-        r'(https?://)?(www\.)?'
-        r'(youtube|youtu|youtube-nocookie)\.(com|be)/'
-        r'(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})'
-    )
+    if not url:
+        return False
+        
+    url = url.strip()
     
-    youtube_regex_match = re.match(youtube_regex, url)
+    patterns = [
+        r'(?:https?://)?(?:www\.)?youtube\.com/watch\?v=([^&=%\?]{11})',
+        r'(?:https?://)?(?:www\.)?youtube\.com/embed/([^&=%\?]{11})',
+        r'(?:https?://)?(?:www\.)?youtube\.com/v/([^&=%\?]{11})',
+        r'(?:https?://)?(?:www\.)?youtu\.be/([^&=%\?]{11})',
+        r'(?:https?://)?(?:www\.)?youtube\.com/shorts/([^&=%\?]{11})'
+    ]
     
-    # بررسی برای لینک‌های کوتاه youtu.be
-    if youtube_regex_match:
-        return True
-    
-    # الگوی youtu.be
-    short_regex = r'(https?://)?(www\.)?(youtu\.be)/([^&=%\?]{11})'
-    short_regex_match = re.match(short_regex, url)
-    
-    return short_regex_match is not None
+    for pattern in patterns:
+        if re.match(pattern, url):
+            debug_log(f"لینک یوتیوب معتبر شناسایی شد: {url}", "INFO")
+            return True
+            
+    debug_log(f"لینک نامعتبر: {url}", "WARNING")
+    return False
 
 @debug_decorator
 def extract_video_info(url: str) -> Optional[Dict[str, Any]]:
