@@ -170,29 +170,22 @@ def generate_server_status():
 
 
 def main():
-    """تابع اصلی با مدیریت خطای بهتر"""
+    """تابع اصلی اجرای ربات"""
     try:
-        # تنظیم مدیریت سیگنال‌ها
-        signal.signal(signal.SIGINT, handle_termination)
-        signal.signal(signal.SIGTERM, handle_termination)
-
         logger.info("شروع راه‌اندازی ربات...")
 
-        # راه‌اندازی ربات
-        if not initialize_bot():
-            logger.error("خطا در راه‌اندازی ربات")
-            sys.exit(1)
+        # تست اتصال
+        bot.get_me()
+        logger.info("ربات با موفقیت به سرور تلگرام متصل شد")
 
-        # تنظیم هندلرهای ربات
-        setup_bot_handlers()
-
-        # شروع پولینگ
-        logger.info("شروع پولینگ ربات...")
-        bot.infinity_polling(timeout=60, long_polling_timeout=30)
+        # راه‌اندازی ربات با تنظیمات بهینه
+        bot.infinity_polling(timeout=60, long_polling_timeout=60)
 
     except Exception as e:
-        logger.error(f"خطای بحرانی در تابع اصلی: {e}")
-        sys.exit(1)
+        logger.error(f"خطا در اجرای ربات: {str(e)}")
+        logger.info("تلاش مجدد برای اتصال در 10 ثانیه...")
+        time.sleep(10)
+        main()  # تلاش مجدد
 
 if __name__ == "__main__":
     main()

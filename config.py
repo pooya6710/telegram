@@ -1,7 +1,7 @@
 import os
 
 # تنظیمات اصلی ربات
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "")  # توکن ربات از BotFather
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "7338644071:AAEex9j0nMualdoywHSGFiBoMAzRpkFypPk")  # توکن ربات از BotFather
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL", "")  # آدرس وب‌هوک (مثال: https://example.com/webhook)
 ADMIN_IDS = list(map(int, os.environ.get("ADMIN_IDS", "0").split(",")))  # شناسه‌های ادمین‌ها با کاما جدا شده
 
