@@ -105,14 +105,33 @@ def create_process_lock():
 def setup_bot_handlers():
     """تنظیم هندلرهای ربات"""
     @bot.message_handler(func=lambda message: 'youtube.com' in message.text or 'youtu.be' in message.text)
-    def youtube_link_handler(message):
+    async def youtube_link_handler(message):
         try:
             from youtube_downloader import process_youtube_url
-            process_youtube_url(message, message.text.strip())
+            debug_msg = bot.reply_to(message, "🔄 در حال پردازش لینک...")
+            
+            await process_youtube_url(message, message.text.strip())
             logger.info(f"YouTube link received from user {message.from_user.id}: {message.text}")
+            
         except Exception as e:
-            logger.error(f"Error processing YouTube link: {e}")
-            bot.reply_to(message, "⚠️ خطا در پردازش لینک یوتیوب. لطفا دوباره تلاش کنید.")
+            error_msg = str(e)
+            detailed_error = traceback.format_exc()
+            logger.error(f"Error processing YouTube link: {detailed_error}")
+            
+            if "Invalid URL" in error_msg:
+                error_response = "❌ لینک نامعتبر است. لطفاً یک لینک معتبر یوتیوب ارسال کنید."
+            elif "Video unavailable" in error_msg:
+                error_response = "❌ این ویدیو در دسترس نیست یا خصوصی است."
+            elif "Sign in" in error_msg:
+                error_response = "❌ این ویدیو نیاز به ورود به حساب کاربری دارد."
+            else:
+                error_response = f"⚠️ خطا در پردازش لینک:\n{error_msg}"
+            
+            bot.edit_message_text(
+                error_response,
+                message.chat.id,
+                debug_msg.message_id
+            )
 
     @bot.message_handler(commands=['start'])
     def handle_start(message):

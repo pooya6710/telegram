@@ -729,7 +729,9 @@ def clean_old_downloads(max_age_days: int = 1) -> int:
 import datetime
 async def process_youtube_url(message, url):
     """پردازش لینک یوتیوب و شروع دانلود"""
+    debug_log(f"شروع پردازش URL: {url}", "INFO")
     try:
+        debug_log("بررسی اعتبار URL", "INFO")
         # اعتبارسنجی URL
         if not validate_youtube_url(url):
             bot.reply_to(message, "❌ لینک یوتیوب نامعتبر است.")
