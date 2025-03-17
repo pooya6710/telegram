@@ -1,97 +1,66 @@
-
 import logging
-import json
-import os
-import time
-from datetime import datetime
-from functools import wraps
+import datetime
 import traceback
-import inspect
-import threading
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
-# تنظیمات لاگر
+# تنظیم لاگر
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("detailed_debug.log"),
+        logging.FileHandler("debug_logs.txt"),
         logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
 
-class AdvancedDebugger:
-    def __init__(self):
-        self.download_states: Dict[int, Dict[str, Any]] = {}
-        self.lock = threading.Lock()
-        
-    def log_download_start(self, download_id: int, url: str, user_id: int) -> None:
-        with self.lock:
-            self.download_states[download_id] = {
-                'start_time': datetime.now().isoformat(),
-                'url': url,
-                'user_id': user_id,
-                'steps': [],
-                'errors': [],
-                'status': 'starting'
-            }
-            self._save_state()
-    
-    def log_step(self, download_id: int, step_name: str, details: dict) -> None:
-        with self.lock:
-            if download_id in self.download_states:
-                self.download_states[download_id]['steps'].append({
-                    'time': datetime.now().isoformat(),
-                    'name': step_name,
-                    'details': details
-                })
-                self._save_state()
-    
-    def log_error(self, download_id: int, error: Exception, context: dict = None) -> None:
-        with self.lock:
-            if download_id in self.download_states:
-                error_info = {
-                    'time': datetime.now().isoformat(),
-                    'type': type(error).__name__,
-                    'message': str(error),
-                    'traceback': traceback.format_exc(),
-                    'context': context or {}
-                }
-                self.download_states[download_id]['errors'].append(error_info)
-                self.download_states[download_id]['status'] = 'error'
-                self._save_state()
-                
-                # لاگ کردن با جزئیات بیشتر
-                logger.error(f"Error in download {download_id}:", exc_info=True, extra={
-                    'download_id': download_id,
-                    'error_info': error_info,
-                    'download_state': self.download_states[download_id]
-                })
-    
-    def log_completion(self, download_id: int, success: bool, details: dict = None) -> None:
-        with self.lock:
-            if download_id in self.download_states:
-                self.download_states[download_id].update({
-                    'end_time': datetime.now().isoformat(),
-                    'success': success,
-                    'completion_details': details or {},
-                    'status': 'completed' if success else 'failed'
-                })
-                self._save_state()
-    
-    def get_download_state(self, download_id: int) -> Optional[Dict[str, Any]]:
-        with self.lock:
-            return self.download_states.get(download_id)
-    
-    def _save_state(self) -> None:
-        try:
-            with open('debug_states.json', 'w', encoding='utf-8') as f:
-                json.dump(self.download_states, f, ensure_ascii=False, indent=2)
-        except Exception as e:
-            logger.error(f"Error saving debug state: {e}")
+def debug_log(message: str, level: str = "INFO", context: Optional[Dict[str, Any]] = None) -> None:
+    """ثبت پیام‌های دیباگ"""
+    if context is None:
+        context = {}
 
-# ایجاد نمونه سینگلتون
+    log_func = getattr(logger, level.lower(), logger.info)
+    log_func(f"{message} | Context: {context}")
+
+def debug_decorator(func):
+    """دکوراتور برای ثبت ورود و خروج توابع"""
+    def wrapper(*args, **kwargs):
+        func_name = func.__name__
+        debug_log(f"شروع اجرای تابع {func_name}", "INFO")
+        try:
+            result = func(*args, **kwargs)
+            debug_log(f"پایان موفق تابع {func_name}", "INFO")
+            return result
+        except Exception as e:
+            debug_log(f"خطا در تابع {func_name}: {str(e)}", "ERROR", {
+                "error_type": type(e).__name__,
+                "traceback": traceback.format_exc()
+            })
+            raise
+    return wrapper
+
+def debug_download(func):
+    """دکوراتور مخصوص دیباگ دانلودها"""
+    def wrapper(*args, **kwargs):
+        download_id = args[1] if len(args) > 1 else "unknown"
+        debug_log(f"شروع دانلود {download_id}", "INFO")
+        try:
+            result = func(*args, **kwargs)
+            debug_log(f"پایان دانلود {download_id}", "INFO")
+            return result
+        except Exception as e:
+            debug_log(f"خطا در دانلود {download_id}: {str(e)}", "ERROR")
+            raise
+    return wrapper
+
+class AdvancedDebugger:
+    """کلاس پیشرفته برای دیباگ"""
+    def __init__(self):
+        self.start_time = datetime.datetime.now()
+
+    def log_step(self, step_id: int, step_name: str, context: Dict[str, Any]) -> None:
+        debug_log(f"گام {step_id}: {step_name}", "INFO", context)
+
 debugger = AdvancedDebugger()
 
 def log_youtube_process(url, user_id, status):
@@ -102,44 +71,4 @@ def log_youtube_process(url, user_id, status):
         "timestamp": datetime.datetime.now().isoformat()
     })
 
-def debug_download(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        # استخراج اطلاعات تابع
-        frame = inspect.currentframe()
-        arg_info = inspect.getargvalues(frame)
-        call_info = {
-            'args': arg_info.args,
-            'locals': {key: arg_info.locals[key] for key in arg_info.args}
-        }
-        
-        # استخراج download_id از آرگومان‌ها
-        download_id = None
-        for key, value in kwargs.items():
-            if 'download_id' in key:
-                download_id = value
-                break
-        if download_id is None and len(args) > 1:
-            download_id = args[1]  # فرض می‌کنیم دومین آرگومان download_id است
-            
-        if download_id:
-            debugger.log_step(download_id, func.__name__, {
-                'call_info': call_info,
-                'thread_id': threading.get_ident()
-            })
-            
-        try:
-            result = func(*args, **kwargs)
-            if download_id:
-                debugger.log_step(download_id, f"{func.__name__}_completed", {
-                    'result': str(result)
-                })
-            return result
-        except Exception as e:
-            if download_id:
-                debugger.log_error(download_id, e, {
-                    'function': func.__name__,
-                    'call_info': call_info
-                })
-            raise
-    return wrapper
+#The original AdvancedDebugger class and its associated functions are removed because they are replaced by the new ones in the edited code.  The function calls are adapted to use the new functions.
