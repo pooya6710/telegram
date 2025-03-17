@@ -455,18 +455,23 @@ def handle_callback_query(call):
 def start_bot():
     """راه‌اندازی ربات تلگرام"""
     import os
+    import sys
     
     # بررسی فایل قفل
     if os.path.exists("bot.lock"):
         try:
-            os.remove("bot.lock")
+            with open("bot.lock", "r") as f:
+                pid = f.read().strip()
+                if pid and os.path.exists(f"/proc/{pid}"):
+                    debug_log("یک نمونه از ربات در حال اجراست", "WARNING")
+                    return False
         except:
             pass
             
-    # ایجاد فایل قفل
+    # ایجاد فایل قفل با PID فرآیند فعلی
     try:
         with open("bot.lock", "w") as f:
-            f.write("1")
+            f.write(str(os.getpid()))
     except:
         pass
         
