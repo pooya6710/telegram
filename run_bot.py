@@ -23,7 +23,7 @@ TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 if not TOKEN:
     logger.error("توکن ربات تنظیم نشده است")
     sys.exit(1)
-bot = None
+bot = telebot.TeleBot(TOKEN)
 
 def kill_other_bot_instances():
     """حذف سایر نمونه‌های در حال اجرای ربات"""

@@ -287,6 +287,16 @@ def format_filesize(size: Optional[int]) -> str:
 @debug_decorator
 def download_video(url: str, download_id: int, user_id: int, quality: str = "best", 
                   progress_callback: Optional[Callable[[float, str], None]] = None) -> Tuple[bool, Optional[str], Optional[Dict]]:
+    
+    # تنظیمات yt-dlp
+    ydl_opts = {
+        'format': f'bestvideo[height<={quality[:-1]}][ext=mp4]+bestaudio/best[height<={quality[:-1]}]' if quality != "best" else 'best',
+        'outtmpl': f'downloads/{download_id}/%(title)s.%(ext)s',
+        'quiet': True,
+        'no_warnings': True,
+        'extract_flat': False,
+        'writethumbnail': True
+    }
     """
     دانلود ویدیو
     
