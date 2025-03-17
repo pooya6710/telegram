@@ -19,7 +19,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-TOKEN = "7338644071:AAEex9j0nMualdoywHSGFiBoMAzRpkFypPk"
+TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+if not TOKEN:
+    logger.error("توکن ربات تنظیم نشده است")
+    sys.exit(1)
 bot = None
 
 def kill_other_bot_instances():
