@@ -169,11 +169,19 @@ def generate_server_status():
     return "📈 سرور در حال اجرا است.  CPU: 50%, Memory: 75%"
 
 
+from debug_handler import debugger
+
 def main():
     """تابع اصلی اجرای ربات"""
     global bot
     try:
         logger.info("شروع راه‌اندازی ربات...")
+        
+        # تنظیم مدیریت خطای سراسری
+        def handle_exception(exc_type, exc_value, exc_traceback):
+            logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+        
+        sys.excepthook = handle_exception
         
         # ایجاد نمونه جدید ربات
         bot = telebot.TeleBot(TOKEN)

@@ -284,9 +284,13 @@ def format_filesize(size: Optional[int]) -> str:
         size_gb = size_mb / 1024
         return f"{size_gb:.2f} GB"
 
-@debug_decorator
+from debug_handler import debug_download, debugger
+
+@debug_download
 def download_video(url: str, download_id: int, user_id: int, quality: str = "best", 
                   progress_callback: Optional[Callable[[float, str], None]] = None) -> Tuple[bool, Optional[str], Optional[Dict]]:
+    # ثبت شروع دانلود در دیباگر
+    debugger.log_download_start(download_id, url, user_id)
     
     # تنظیمات yt-dlp
     ydl_opts = {
