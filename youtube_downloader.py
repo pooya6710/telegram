@@ -489,6 +489,17 @@ def download_video(url: str, download_id: int, user_id: int, quality: str = "bes
             
     except (DownloadError, ExtractorError) as e:
         error_msg = f"خطا در دانلود ویدیو: {str(e)}"
+        detailed_error = str(e)
+        
+        if "Video unavailable" in detailed_error:
+            error_msg = "این ویدیو در دسترس نیست یا حذف شده است"
+        elif "Sign in" in detailed_error:
+            error_msg = "این ویدیو نیاز به ورود به حساب کاربری دارد"
+        elif "Private video" in detailed_error:
+            error_msg = "این ویدیو خصوصی است"
+        elif "copyright" in detailed_error.lower():
+            error_msg = "این ویدیو به دلیل مسائل کپی‌رایت قابل دانلود نیست"
+            
         debug_log(error_msg, "ERROR")
         update_download_status(download_id, DownloadStatus.FAILED, error_message=error_msg)
         return False, None, {"error": error_msg}
