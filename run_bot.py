@@ -106,7 +106,7 @@ def create_process_lock():
 def setup_bot_handlers():
     """تنظیم هندلرهای ربات"""
     @bot.message_handler(func=lambda message: 'youtube.com' in message.text or 'youtu.be' in message.text)
-    async def youtube_link_handler(message):
+    def youtube_link_handler(message):
         try:
             from youtube_downloader import download_video, validate_youtube_url, extract_video_info
             debug_msg = bot.reply_to(message, "🔄 در حال پردازش لینک...")

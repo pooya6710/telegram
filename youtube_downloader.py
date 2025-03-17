@@ -718,7 +718,7 @@ def clean_old_downloads(max_age_days: int = 1) -> int:
     return count
 
 import datetime
-async def process_youtube_url(message, url):
+def process_youtube_url(message, url):
     """پردازش لینک یوتیوب و شروع دانلود"""
     debug_log(f"شروع پردازش URL: {url}", "INFO")
     try:
