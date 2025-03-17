@@ -7,6 +7,7 @@ import signal
 import json
 from datetime import datetime
 import psutil
+import traceback
 
 # تنظیم سیستم لاگینگ
 logging.basicConfig(
@@ -107,17 +108,35 @@ def setup_bot_handlers():
     @bot.message_handler(func=lambda message: 'youtube.com' in message.text or 'youtu.be' in message.text)
     async def youtube_link_handler(message):
         try:
-            from youtube_downloader import process_youtube_url
+            from youtube_downloader import download_video, validate_youtube_url, extract_video_info
             debug_msg = bot.reply_to(message, "🔄 در حال پردازش لینک...")
-            
-            await process_youtube_url(message, message.text.strip())
-            logger.info(f"YouTube link received from user {message.from_user.id}: {message.text}")
-            
+
+            url = message.text.strip()
+            if not validate_youtube_url(url):
+                bot.edit_message_text("❌ لینک نامعتبر است", message.chat.id, debug_msg.message_id)
+                return
+
+            video_info = extract_video_info(url)
+            if not video_info:
+                bot.edit_message_text("❌ خطا در دریافت اطلاعات ویدیو", message.chat.id, debug_msg.message_id)
+                return
+
+            bot.edit_message_text("⏳ در حال دانلود ویدیو...", message.chat.id, debug_msg.message_id)
+            success, file_path, error = download_video(url, int(time.time()), message.from_user.id)
+
+            if success and file_path:
+                with open(file_path, 'rb') as video_file:
+                    bot.send_video(message.chat.id, video_file, caption=f"✅ دانلود شد\n🎥 {video_info.get('title', '')}")
+                os.remove(file_path)  # پاک کردن فایل پس از ارسال
+            else:
+                error_msg = error.get('error', 'خطای نامشخص') if error else 'خطای نامشخص'
+                bot.edit_message_text(f"❌ {error_msg}", message.chat.id, debug_msg.message_id)
+
         except Exception as e:
             error_msg = str(e)
             detailed_error = traceback.format_exc()
             logger.error(f"Error processing YouTube link: {detailed_error}")
-            
+
             if "Invalid URL" in error_msg:
                 error_response = "❌ لینک نامعتبر است. لطفاً یک لینک معتبر یوتیوب ارسال کنید."
             elif "Video unavailable" in error_msg:
@@ -126,7 +145,7 @@ def setup_bot_handlers():
                 error_response = "❌ این ویدیو نیاز به ورود به حساب کاربری دارد."
             else:
                 error_response = f"⚠️ خطا در پردازش لینک:\n{error_msg}"
-            
+
             bot.edit_message_text(
                 error_response,
                 message.chat.id,
@@ -205,19 +224,19 @@ def main():
     global bot
     try:
         logger.info("شروع راه‌اندازی ربات...")
-        
+
         # تنظیم مدیریت خطای سراسری
         def handle_exception(exc_type, exc_value, exc_traceback):
             logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
-        
+
         sys.excepthook = handle_exception
-        
+
         # ایجاد نمونه جدید ربات
         bot = telebot.TeleBot(TOKEN)
-        
+
         # تنظیم هندلرهای ربات
         setup_bot_handlers()
-        
+
         # تست اتصال
         bot.get_me()
         logger.info("ربات با موفقیت به سرور تلگرام متصل شد")

@@ -1,4 +1,82 @@
 import os
+import sys
+import yt_dlp
+import logging
+from datetime import datetime
+from debug_handler import debug_log
+
+# تنظیم مسیر ذخیره فایل‌ها
+DOWNLOAD_PATH = './downloads'
+if not os.path.exists(DOWNLOAD_PATH):
+    os.makedirs(DOWNLOAD_PATH)
+
+def download_video(url, download_id, user_id):
+    """
+    دانلود ویدیو با خطایابی پیشرفته
+    """
+    try:
+        debug_log(f"شروع دانلود برای URL: {url}", "INFO")
+
+        output_path = os.path.join(DOWNLOAD_PATH, f'video_{download_id}_{user_id}.%(ext)s')
+
+        ydl_opts = {
+            'format': 'best[ext=mp4]/best',
+            'outtmpl': output_path,
+            'noplaylist': True,
+            'progress_hooks': [lambda d: debug_log(f"پیشرفت دانلود: {d['status']}", "INFO")],
+        }
+
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            debug_log("استخراج اطلاعات ویدیو...", "INFO")
+            info = ydl.extract_info(url, download=True)
+
+            video_path = os.path.join(DOWNLOAD_PATH, f"video_{download_id}_{user_id}.{info['ext']}")
+
+            if os.path.exists(video_path):
+                debug_log(f"دانلود موفق - مسیر فایل: {video_path}", "INFO")
+                return True, video_path, None
+            else:
+                debug_log("فایل دانلود شده پیدا نشد", "ERROR")
+                return False, None, {"error": "فایل دانلود شده پیدا نشد"}
+
+    except yt_dlp.utils.DownloadError as e:
+        error_msg = str(e)
+        debug_log(f"خطای دانلود: {error_msg}", "ERROR")
+
+        if "Video unavailable" in error_msg:
+            return False, None, {"error": "ویدیو در دسترس نیست"}
+        elif "Sign in" in error_msg:
+            return False, None, {"error": "این ویدیو نیاز به ورود به حساب کاربری دارد"}
+        else:
+            return False, None, {"error": f"خطا در دانلود: {error_msg}"}
+
+    except Exception as e:
+        debug_log(f"خطای ناشناخته: {str(e)}", "ERROR")
+        return False, None, {"error": f"خطای سیستمی: {str(e)}"}
+
+def validate_youtube_url(url):
+    """اعتبارسنجی URL یوتیوب"""
+    return "youtube.com" in url or "youtu.be" in url
+
+def extract_video_info(url):
+    """استخراج اطلاعات ویدیو"""
+    try:
+        with yt_dlp.YoutubeDL() as ydl:
+            return ydl.extract_info(url, download=False)
+    except:
+        return None
+
+def clean_old_downloads():
+    """پاکسازی فایل‌های قدیمی"""
+    try:
+        for file in os.listdir(DOWNLOAD_PATH):
+            file_path = os.path.join(DOWNLOAD_PATH, file)
+            if os.path.getctime(file_path) < (datetime.now().timestamp() - 3600):  # حذف فایل‌های قدیمی‌تر از 1 ساعت
+                os.remove(file_path)
+    except Exception as e:
+        debug_log(f"خطا در پاکسازی فایل‌های قدیمی: {str(e)}", "ERROR")
+
+import os
 import time
 import json
 import re
@@ -34,106 +112,35 @@ active_downloads = {}  # نگهداری اطلاعات دانلودهای فعا
 def validate_youtube_url(url: str) -> bool:
     """
     اعتبارسنجی URL یوتیوب
-
     Args:
         url: آدرس ویدیو
-
     Returns:
         True اگر URL معتبر باشد
     """
-    if not url:
-        return False
+    return "youtube.com" in url or "youtu.be" in url
 
-    url = url.strip()
-
-    patterns = [
-        r'(?:https?://)?(?:www\.)?youtube\.com/watch\?v=([^&=%\?]{11})',
-        r'(?:https?://)?(?:www\.)?youtube\.com/embed/([^&=%\?]{11})',
-        r'(?:https?://)?(?:www\.)?youtube\.com/v/([^&=%\?]{11})',
-        r'(?:https?://)?(?:www\.)?youtu\.be/([^&=%\?]{11})',
-        r'(?:https?://)?(?:www\.)?youtube\.com/shorts/([^&=%\?]{11})'
-    ]
-
-    for pattern in patterns:
-        if re.match(pattern, url):
-            debug_log(f"لینک یوتیوب معتبر شناسایی شد: {url}", "INFO")
-            return True
-
-    debug_log(f"لینک نامعتبر: {url}", "WARNING")
-    return False
 
 @debug_decorator
 def extract_video_info(url: str) -> Optional[Dict[str, Any]]:
     """
     استخراج اطلاعات ویدیو بدون دانلود
-
     Args:
         url: آدرس ویدیو
-
     Returns:
         دیکشنری اطلاعات ویدیو یا None در صورت خطا
     """
-    if not YTDLP_AVAILABLE:
-        debug_log("yt_dlp در دسترس نیست", "ERROR")
-        return None
-
-    # تنظیمات برای استخراج اطلاعات (بدون دانلود)
-    ydl_opts = {
-        'skip_download': True,
-        'format': 'best',
-        'quiet': True,
-        'no_warnings': True,
-        'ignoreerrors': True,
-        'noplaylist': True,
-        'source_address': '0.0.0.0',
-    }
-
-    debug_log(f"استخراج اطلاعات ویدیو از URL: {url}", "INFO")
-
     try:
-        with YoutubeDL(ydl_opts) as ydl:
-            info_dict = ydl.extract_info(url, download=False)
-
-            if not info_dict:
-                debug_log("اطلاعات ویدیو دریافت نشد", "WARNING")
-                return None
-
-            # بررسی اطلاعات استخراج شده
-            debug_log(f"اطلاعات ویدیو با موفقیت استخراج شد: {info_dict.get('title', 'بدون عنوان')}", "INFO")
-
-            # برگرداندن اطلاعات مفید
-            video_info = {
-                'id': info_dict.get('id'),
-                'title': info_dict.get('title'),
-                'url': url,
-                'duration': info_dict.get('duration'),
-                'duration_string': format_duration(info_dict.get('duration')),
-                'uploader': info_dict.get('uploader'),
-                'channel_url': info_dict.get('channel_url'),
-                'view_count': info_dict.get('view_count'),
-                'upload_date': info_dict.get('upload_date'),
-                'thumbnail': get_best_thumbnail(info_dict),
-                'description': info_dict.get('description', '')[:200] + '...' if info_dict.get('description') and len(info_dict.get('description')) > 200 else info_dict.get('description', ''),
-                'formats': extract_formats(info_dict)
-            }
-
-            return video_info
-
-    except (DownloadError, ExtractorError) as e:
-        debug_log(f"خطا در استخراج اطلاعات ویدیو: {str(e)}", "ERROR")
-        return None
-    except Exception as e:
-        debug_log(f"خطای غیرمنتظره در استخراج اطلاعات ویدیو: {str(e)}", "ERROR")
+        with yt_dlp.YoutubeDL() as ydl:
+            return ydl.extract_info(url, download=False)
+    except:
         return None
 
 @debug_decorator
 def format_duration(duration: Optional[int]) -> str:
     """
     فرمت‌بندی مدت زمان
-
     Args:
         duration: مدت زمان به ثانیه
-
     Returns:
         متن فرمت‌بندی شده
     """
@@ -152,10 +159,8 @@ def format_duration(duration: Optional[int]) -> str:
 def get_best_thumbnail(info_dict: Dict[str, Any]) -> Optional[str]:
     """
     دریافت بهترین تصویر بندانگشتی
-
     Args:
         info_dict: دیکشنری اطلاعات ویدیو
-
     Returns:
         آدرس تصویر بندانگشتی یا None
     """
@@ -189,10 +194,8 @@ def get_best_thumbnail(info_dict: Dict[str, Any]) -> Optional[str]:
 def extract_formats(info_dict: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     استخراج فرمت‌های موجود
-
     Args:
         info_dict: دیکشنری اطلاعات ویدیو
-
     Returns:
         لیست فرمت‌های موجود
     """
@@ -259,10 +262,8 @@ def extract_formats(info_dict: Dict[str, Any]) -> List[Dict[str, Any]]:
 def format_filesize(size: Optional[int]) -> str:
     """
     فرمت‌بندی حجم فایل
-
     Args:
         size: حجم به بایت
-
     Returns:
         متن فرمت‌بندی شده
     """
@@ -314,14 +315,12 @@ def download_video(url: str, download_id: int, user_id: int, quality: str = "bes
         })
     """
     دانلود ویدیو
-
     Args:
         url: آدرس ویدیو
         download_id: شناسه دانلود
         user_id: شناسه کاربر
         quality: کیفیت دانلود
         progress_callback: تابع کال‌بک پیشرفت
-
     Returns:
         (وضعیت موفقیت، مسیر فایل، خطا)
     """
@@ -545,10 +544,8 @@ def download_video(url: str, download_id: int, user_id: int, quality: str = "bes
 def get_download_progress(download_id: int) -> Dict[str, Any]:
     """
     دریافت وضعیت پیشرفت دانلود
-
     Args:
         download_id: شناسه دانلود
-
     Returns:
         دیکشنری وضعیت پیشرفت
     """
@@ -634,10 +631,8 @@ def get_download_progress(download_id: int) -> Dict[str, Any]:
 def cancel_download(download_id: int) -> bool:
     """
     لغو دانلود
-
     Args:
         download_id: شناسه دانلود
-
     Returns:
         True در صورت موفقیت
     """
@@ -669,7 +664,6 @@ def cancel_download(download_id: int) -> bool:
 def get_active_downloads_count() -> int:
     """
     دریافت تعداد دانلودهای فعال
-
     Returns:
         تعداد دانلودهای فعال
     """
@@ -680,7 +674,6 @@ def get_active_downloads_count() -> int:
 def get_all_active_downloads() -> Dict[int, Dict[str, Any]]:
     """
     دریافت همه دانلودهای فعال
-
     Returns:
         دیکشنری از همه دانلودهای فعال
     """
@@ -691,10 +684,8 @@ def get_all_active_downloads() -> Dict[int, Dict[str, Any]]:
 def clean_old_downloads(max_age_days: int = 1) -> int:
     """
     پاکسازی دانلودهای قدیمی
-
     Args:
         max_age_days: حداکثر عمر دانلودها به روز
-
     Returns:
         تعداد فایل‌های پاک شده
     """
@@ -757,3 +748,5 @@ async def process_youtube_url(message, url):
     except Exception as e:
         logger.error(f"خطا در پردازش لینک یوتیوب: {str(e)}")
         bot.reply_to(message, "⚠️ خطایی رخ داد. لطفا دوباره تلاش کنید.")
+
+clean_old_downloads()
