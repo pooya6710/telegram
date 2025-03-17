@@ -4,6 +4,8 @@ import telebot
 import logging
 import psutil
 import time
+import signal
+import sys
 
 # تنظیم سیستم لاگینگ
 logging.basicConfig(level=logging.INFO)
@@ -12,25 +14,44 @@ logger = logging.getLogger(__name__)
 TOKEN = "7338644071:AAEex9j0nMualdoywHSGFiBoMAzRpkFypPk"
 bot = telebot.TeleBot(TOKEN)
 
-def check_existing_bot():
-    """Check and terminate any existing bot processes"""
+def kill_existing_bots():
+    """Find and kill any existing bot processes"""
+    try:
+        current_pid = os.getpid()
+        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+            try:
+                # Check if it's a Python process running run_bot.py
+                if proc.info['pid'] != current_pid and proc.info['name'] == 'python':
+                    cmdline = proc.info['cmdline']
+                    if cmdline and any('run_bot.py' in cmd for cmd in cmdline):
+                        logger.info(f"Terminating existing bot process: {proc.info['pid']}")
+                        proc.terminate()
+                        proc.wait(timeout=3)
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
+                continue
+    except Exception as e:
+        logger.error(f"Error in kill_existing_bots: {e}")
+
+def signal_handler(signum, frame):
+    """Handle termination signals"""
+    logger.info("Received termination signal. Cleaning up...")
     try:
         if os.path.exists("bot.lock"):
-            with open("bot.lock", "r") as f:
-                old_pid = int(f.read().strip())
-                if psutil.pid_exists(old_pid):
-                    try:
-                        process = psutil.Process(old_pid)
-                        process.terminate()
-                        time.sleep(1)
-                    except:
-                        pass
             os.remove("bot.lock")
-        
+        sys.exit(0)
+    except Exception as e:
+        logger.error(f"Error in cleanup: {e}")
+        sys.exit(1)
+
+def create_lock_file():
+    """Create and manage lock file"""
+    try:
         with open("bot.lock", "w") as f:
             f.write(str(os.getpid()))
+        return True
     except Exception as e:
-        logger.error(f"Error handling bot lock: {e}")
+        logger.error(f"Error creating lock file: {e}")
+        return False
 
 @bot.message_handler(commands=['start'])
 def handle_start(message):
@@ -42,7 +63,7 @@ def handle_start(message):
     markup.add(status_btn)
     
     bot.reply_to(message, 
-        "👋 سلام پویا!\n\n"
+        "👋 سلام!\n\n"
         "🎬 به ربات دانلود ویدیو خوش آمدید.\n\n"
         "🔸 قابلیت‌های ربات:\n"
         "• دانلود ویدیو از یوتیوب و اینستاگرام\n"
@@ -69,13 +90,32 @@ def callback_handler(call):
         bot.reply_to(call.message, "📈 سرور در حال اجرا است")
 
 if __name__ == "__main__":
+    # تنظیم signal handlers
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
     logger.info("🚀 ربات در حال راه‌اندازی...")
     try:
-        check_existing_bot()
+        # متوقف کردن نمونه‌های قبلی
+        kill_existing_bots()
+        time.sleep(1)  # صبر برای اطمینان از توقف کامل
+        
+        # ایجاد فایل قفل جدید
+        if not create_lock_file():
+            logger.error("خطا در ایجاد فایل قفل")
+            sys.exit(1)
+            
+        # حذف وب‌هوک قبلی
         bot.remove_webhook()
         time.sleep(0.5)
-        bot.infinity_polling()
+        
+        # شروع پولینگ
+        logger.info("شروع پولینگ ربات...")
+        bot.infinity_polling(timeout=60, long_polling_timeout=30)
+        
     except Exception as e:
         logger.error(f"❌ خطا در راه‌اندازی ربات: {e}")
+    finally:
+        # پاکسازی در هنگام خروج
         if os.path.exists("bot.lock"):
             os.remove("bot.lock")
