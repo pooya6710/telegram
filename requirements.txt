@@ -38,3 +38,11 @@ flask
 psutil
 pyTelegramBotAPI
 yt-dlp
+psutil
+pyTelegramBotAPI
+requests
+yt-dlp
+psutil
+pyTelegramBotAPI
+requests
+yt-dlp
