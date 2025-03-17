@@ -454,6 +454,22 @@ def handle_callback_query(call):
 # تابع راه‌اندازی ربات
 def start_bot():
     """راه‌اندازی ربات تلگرام"""
+    import os
+    
+    # بررسی فایل قفل
+    if os.path.exists("bot.lock"):
+        try:
+            os.remove("bot.lock")
+        except:
+            pass
+            
+    # ایجاد فایل قفل
+    try:
+        with open("bot.lock", "w") as f:
+            f.write("1")
+    except:
+        pass
+        
     # بارگیری اطلاعات هشتگ‌ها
     load_hashtags()
 
