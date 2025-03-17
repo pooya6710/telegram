@@ -2,6 +2,9 @@
 import os
 import telebot
 import logging
+import json
+import time
+import psutil
 
 # تنظیم سیستم لاگینگ
 logging.basicConfig(level=logging.INFO)
@@ -9,6 +12,24 @@ logger = logging.getLogger(__name__)
 
 TOKEN = "7338644071:AAEex9j0nMualdoywHSGFiBoMAzRpkFypPk"
 bot = telebot.TeleBot(TOKEN)
+
+def check_existing_bot():
+    if os.path.exists("bot.lock"):
+        try:
+            with open("bot.lock", "r") as f:
+                old_pid = int(f.read().strip())
+                if psutil.pid_exists(old_pid):
+                    process = psutil.Process(old_pid)
+                    process.terminate()
+                    logger.info(f"Terminated existing bot process (PID: {old_pid})")
+                    time.sleep(1)
+        except Exception as e:
+            logger.error(f"Error handling existing bot: {e}")
+        os.remove("bot.lock")
+    
+    # Create new lock file
+    with open("bot.lock", "w") as f:
+        f.write(str(os.getpid()))
 
 @bot.message_handler(commands=['start'])
 def handle_start(message):
@@ -49,6 +70,7 @@ def callback_handler(call):
 if __name__ == "__main__":
     logger.info("🚀 ربات در حال راه‌اندازی...")
     try:
+        check_existing_bot()
         # حذف وبهوک های قبلی
         bot.remove_webhook()
         # شروع پولینگ
