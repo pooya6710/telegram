@@ -19,7 +19,7 @@ logger = logging.getLogger("telegram_bot_debug")
 logger.setLevel(logging.DEBUG)
 
 # مسیر فایل لاگ
-LOG_FILE = "debug_logs.txt"
+LOG_FILE = os.path.join(os.path.dirname(__file__), "debug_logs.txt")
 
 # تنظیمات دیباگینگ
 DEBUG_CONFIG = {

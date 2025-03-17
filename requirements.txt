@@ -20,3 +20,13 @@ psutil
 pyTelegramBotAPI
 requests
 yt-dlp
+flask
+psutil
+pyTelegramBotAPI
+requests
+yt-dlp
+flask
+psutil
+pyTelegramBotAPI
+requests
+yt-dlp
