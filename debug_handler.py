@@ -94,6 +94,14 @@ class AdvancedDebugger:
 # ایجاد نمونه سینگلتون
 debugger = AdvancedDebugger()
 
+def log_youtube_process(url, user_id, status):
+    debugger.log_step(-1, "youtube_process", {
+        "url": url,
+        "user_id": user_id,
+        "status": status,
+        "timestamp": datetime.datetime.now().isoformat()
+    })
+
 def debug_download(func):
     @wraps(func)
     def wrapper(*args, **kwargs):

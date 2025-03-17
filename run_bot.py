@@ -104,6 +104,16 @@ def create_process_lock():
 
 def setup_bot_handlers():
     """تنظیم هندلرهای ربات"""
+    @bot.message_handler(func=lambda message: 'youtube.com' in message.text or 'youtu.be' in message.text)
+    def youtube_link_handler(message):
+        try:
+            from youtube_downloader import process_youtube_url
+            process_youtube_url(message, message.text.strip())
+            logger.info(f"YouTube link received from user {message.from_user.id}: {message.text}")
+        except Exception as e:
+            logger.error(f"Error processing YouTube link: {e}")
+            bot.reply_to(message, "⚠️ خطا در پردازش لینک یوتیوب. لطفا دوباره تلاش کنید.")
+
     @bot.message_handler(commands=['start'])
     def handle_start(message):
         try:
