@@ -4,48 +4,54 @@ import telebot
 import logging
 
 # تنظیم سیستم لاگینگ
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# تنظیم توکن ربات (میتوانید مستقیماً اینجا وارد کنید)
-TOKEN = "7338644071:AAEex9j0nMualdoywHSGFiBoMAzRpkFypPk"  # توکن ربات شما
-if not TOKEN:
-    TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-
-if not TOKEN:
-    logger.error("❌ هیچ توکنی تنظیم نشده است! لطفا توکن را در متغیر TOKEN یا در متغیرهای محیطی تنظیم کنید.")
-    exit(1)
-
-# ایجاد نمونه ربات
+TOKEN = "7338644071:AAEex9j0nMualdoywHSGFiBoMAzRpkFypPk"
 bot = telebot.TeleBot(TOKEN)
 
-# تعریف دستور /start
 @bot.message_handler(commands=['start'])
 def handle_start(message):
-    bot.reply_to(message, "سلام! ربات راه‌اندازی شد و آماده استفاده است. 🤖")
+    markup = telebot.types.InlineKeyboardMarkup(row_width=2)
+    help_btn = telebot.types.InlineKeyboardButton("📚 راهنما", callback_data="help")
+    quality_btn = telebot.types.InlineKeyboardButton("📊 کیفیت ویدیو", callback_data="quality")
+    status_btn = telebot.types.InlineKeyboardButton("📈 وضعیت سرور", callback_data="status")
+    markup.add(help_btn, quality_btn)
+    markup.add(status_btn)
+    
+    bot.reply_to(message, 
+        "👋 سلام پویا!\n\n"
+        "🎬 به ربات دانلود ویدیو خوش آمدید.\n\n"
+        "🔸 قابلیت‌های ربات:\n"
+        "• دانلود ویدیو از یوتیوب و اینستاگرام\n"
+        "• امکان انتخاب کیفیت ویدیو\n" 
+        "• جستجوی هشتگ در کانال‌های تلگرام\n"
+        "• نمایش وضعیت سرور\n\n"
+        "🔹 روش استفاده:\n"
+        "• برای دانلود ویدیو، لینک ویدیوی مورد نظر را ارسال کنید\n"
+        "• برای جستجوی هشتگ، از دستور /search_hashtag استفاده کنید\n"
+        "• برای نمایش وضعیت سرور، از دستور /status استفاده کنید",
+        reply_markup=markup
+    )
 
-# تعریف دستور /help
-@bot.message_handler(commands=['help'])
-def handle_help(message):
-    help_text = """
-🤖 راهنمای استفاده از ربات:
-/start - شروع کار با ربات
-/help - نمایش این راهنما
-    """
-    bot.reply_to(message, help_text)
-
-# پاسخ به پیام های متنی
-@bot.message_handler(func=lambda message: True)
-def echo_message(message):
-    bot.reply_to(message, f"پیام شما دریافت شد: {message.text}")
+@bot.callback_query_handler(func=lambda call: True)
+def callback_handler(call):
+    if call.data == "help":
+        bot.answer_callback_query(call.id)
+        bot.reply_to(call.message, "🔹 راهنمای استفاده از ربات:\n• برای دانلود ویدیو، لینک را ارسال کنید\n• برای جستجوی هشتگ، از /search_hashtag استفاده کنید")
+    elif call.data == "quality":
+        bot.answer_callback_query(call.id)
+        bot.reply_to(call.message, "📊 کیفیت‌های موجود: 144p, 240p, 360p, 480p, 720p, 1080p")
+    elif call.data == "status":
+        bot.answer_callback_query(call.id)
+        bot.reply_to(call.message, "📈 سرور در حال اجرا است")
 
 if __name__ == "__main__":
     logger.info("🚀 ربات در حال راه‌اندازی...")
     try:
-        logger.info("🤖 ربات با موفقیت راه‌اندازی شد!")
+        # حذف وبهوک های قبلی
+        bot.remove_webhook()
+        # شروع پولینگ
         bot.infinity_polling()
     except Exception as e:
         logger.error(f"❌ خطا در راه‌اندازی ربات: {e}")

@@ -9,7 +9,7 @@ deploymentTarget = "autoscale"
 run = ["sh", "-c", "python main.py"]
 
 [workflows]
-runButton = "Start Bot"
+runButton = "Simple Bot"
 
 [[workflows.workflow]]
 name = "Project"
@@ -52,6 +52,15 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python main.py"
+
+[[workflows.workflow]]
+name = "Simple Bot"
+author = 40573513
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python run_bot.py"
 
 [[ports]]
 localPort = 5000
