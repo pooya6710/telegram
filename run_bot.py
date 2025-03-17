@@ -171,9 +171,16 @@ def generate_server_status():
 
 def main():
     """تابع اصلی اجرای ربات"""
+    global bot
     try:
         logger.info("شروع راه‌اندازی ربات...")
-
+        
+        # ایجاد نمونه جدید ربات
+        bot = telebot.TeleBot(TOKEN)
+        
+        # تنظیم هندلرهای ربات
+        setup_bot_handlers()
+        
         # تست اتصال
         bot.get_me()
         logger.info("ربات با موفقیت به سرور تلگرام متصل شد")
