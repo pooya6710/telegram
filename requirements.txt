@@ -11,3 +11,7 @@ yt-dlp
 psutil
 flask-wtf
 gunicorn
+flask
+psutil
+pyTelegramBotAPI
+yt-dlp
