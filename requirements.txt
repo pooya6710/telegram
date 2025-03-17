@@ -46,3 +46,5 @@ psutil
 pyTelegramBotAPI
 requests
 yt-dlp
+telebot
+yt-dlp
