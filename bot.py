@@ -457,19 +457,17 @@ def start_bot():
     import os
     import sys
     import psutil
+    import time
+    
+    # حذف فایل قفل قدیمی اگر وجود دارد
+    try:
+        if os.path.exists("bot.lock"):
+            os.remove("bot.lock")
+            time.sleep(1)  # کمی صبر برای اطمینان از حذف کامل
+    except:
+        pass
 
-    # بررسی فایل قفل
-    if os.path.exists("bot.lock"):
-        try:
-            with open("bot.lock", "r") as f:
-                pid = f.read().strip()
-                if pid and psutil.pid_exists(int(pid)):
-                    debug_log("یک نمونه از ربات در حال اجراست", "WARNING")
-                    return False
-        except:
-            pass
-
-    # ایجاد فایل قفل با PID فرآیند فعلی
+    # ایجاد فایل قفل جدید
     try:
         with open("bot.lock", "w") as f:
             f.write(str(os.getpid()))
