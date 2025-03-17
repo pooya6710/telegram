@@ -2,9 +2,8 @@
 import os
 import telebot
 import logging
-import json
-import time
 import psutil
+import time
 
 # تنظیم سیستم لاگینگ
 logging.basicConfig(level=logging.INFO)
@@ -14,22 +13,24 @@ TOKEN = "7338644071:AAEex9j0nMualdoywHSGFiBoMAzRpkFypPk"
 bot = telebot.TeleBot(TOKEN)
 
 def check_existing_bot():
-    if os.path.exists("bot.lock"):
-        try:
+    """Check and terminate any existing bot processes"""
+    try:
+        if os.path.exists("bot.lock"):
             with open("bot.lock", "r") as f:
                 old_pid = int(f.read().strip())
                 if psutil.pid_exists(old_pid):
-                    process = psutil.Process(old_pid)
-                    process.terminate()
-                    logger.info(f"Terminated existing bot process (PID: {old_pid})")
-                    time.sleep(1)
-        except Exception as e:
-            logger.error(f"Error handling existing bot: {e}")
-        os.remove("bot.lock")
-    
-    # Create new lock file
-    with open("bot.lock", "w") as f:
-        f.write(str(os.getpid()))
+                    try:
+                        process = psutil.Process(old_pid)
+                        process.terminate()
+                        time.sleep(1)
+                    except:
+                        pass
+            os.remove("bot.lock")
+        
+        with open("bot.lock", "w") as f:
+            f.write(str(os.getpid()))
+    except Exception as e:
+        logger.error(f"Error handling bot lock: {e}")
 
 @bot.message_handler(commands=['start'])
 def handle_start(message):
@@ -71,9 +72,10 @@ if __name__ == "__main__":
     logger.info("🚀 ربات در حال راه‌اندازی...")
     try:
         check_existing_bot()
-        # حذف وبهوک های قبلی
         bot.remove_webhook()
-        # شروع پولینگ
+        time.sleep(0.5)
         bot.infinity_polling()
     except Exception as e:
         logger.error(f"❌ خطا در راه‌اندازی ربات: {e}")
+        if os.path.exists("bot.lock"):
+            os.remove("bot.lock")
