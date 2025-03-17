@@ -1,13 +1,14 @@
-
 import os
 import sys
-import telebot
+import json
 import logging
 import psutil
 import time
 import signal
-import json
 from datetime import datetime
+import telebot
+from threading import Lock, Thread
+from queue import Queue
 
 # تنظیم سیستم لاگینگ
 logging.basicConfig(
@@ -20,194 +21,162 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# متغیرهای گلوبال
 TOKEN = "7338644071:AAEex9j0nMualdoywHSGFiBoMAzRpkFypPk"
 bot = None
-current_process = None
+download_queue = Queue()
+active_downloads = {}
+lock = Lock()
 
 def initialize_bot():
-    """راه‌اندازی نمونه ربات با مدیریت خطا"""
+    """Initialize bot with proper error handling"""
     global bot
     try:
         bot = telebot.TeleBot(TOKEN)
-        logger.info("ربات با موفقیت راه‌اندازی شد")
+        logger.info("Bot initialized successfully")
         return True
     except Exception as e:
-        logger.error(f"خطا در راه‌اندازی ربات: {e}")
+        logger.error(f"Error initializing bot: {str(e)}")
         return False
 
-def find_and_kill_bot_processes():
-    """یافتن و متوقف کردن تمام پروسه‌های ربات"""
+def clean_up():
+    """Clean up resources before exit"""
     try:
-        current_pid = os.getpid()
-        killed = []
-        
+        if os.path.exists("bot.lock"):
+            os.remove("bot.lock")
+        logger.info("Cleanup completed")
+    except Exception as e:
+        logger.error(f"Error in cleanup: {str(e)}")
+
+def kill_existing_bots():
+    """Kill any existing bot processes"""
+    current_pid = os.getpid()
+    killed = []
+
+    try:
         for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
             try:
-                # بررسی پروسه‌های پایتون که run_bot.py را اجرا می‌کنند
-                if proc.info['pid'] != current_pid:
-                    cmdline = proc.info.get('cmdline', [])
-                    if cmdline and ('python' in cmdline[0].lower() and 'run_bot.py' in ' '.join(cmdline)):
-                        logger.info(f"توقف پروسه ربات: {proc.info['pid']}")
-                        proc.terminate()
-                        proc.wait(timeout=3)
-                        killed.append(proc.info['pid'])
-            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired) as e:
-                logger.warning(f"خطا در توقف پروسه: {e}")
+                if (proc.info['pid'] != current_pid and 
+                    'python' in proc.info['name'].lower() and 
+                    any('run_bot.py' in cmd for cmd in proc.info.get('cmdline', []))):
+                    proc.terminate()
+                    proc.wait(timeout=3)
+                    killed.append(proc.info['pid'])
+                    logger.info(f"Terminated bot process: {proc.info['pid']}")
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
                 continue
-        
-        return killed
     except Exception as e:
-        logger.error(f"خطا در یافتن و توقف پروسه‌ها: {e}")
-        return []
+        logger.error(f"Error killing existing bots: {str(e)}")
 
-def cleanup_resources():
-    """پاکسازی منابع قبل از خروج"""
+    return killed
+
+def create_lock_file():
+    """Create and manage lock file"""
     try:
-        # حذف فایل قفل
-        if os.path.exists("bot.lock"):
-            try:
-                with open("bot.lock", "r") as f:
-                    lock_data = json.load(f)
-                    if lock_data.get("pid") == os.getpid():
-                        os.remove("bot.lock")
-                        logger.info("فایل قفل حذف شد")
-            except:
-                os.remove("bot.lock")
-                logger.info("فایل قفل با خطا حذف شد")
-        
-        # توقف پروسه فعلی
-        if current_process:
-            try:
-                current_process.terminate()
-                logger.info("پروسه ربات متوقف شد")
-            except:
-                pass
-                
-    except Exception as e:
-        logger.error(f"خطا در پاکسازی منابع: {e}")
-
-def handle_termination(signum, frame):
-    """مدیریت سیگنال‌های خاتمه"""
-    logger.info(f"سیگنال {signum} دریافت شد")
-    cleanup_resources()
-    sys.exit(0)
-
-def create_process_lock():
-    """ایجاد و مدیریت فایل قفل با مدیریت خطا"""
-    try:
-        pid = os.getpid()
         lock_data = {
-            "pid": pid,
+            "pid": os.getpid(),
             "start_time": datetime.now().isoformat(),
-            "token_hash": hash(TOKEN)  # ذخیره هش توکن برای امنیت بیشتر
+            "token_hash": hash(TOKEN)
         }
-        
+
         with open("bot.lock", "w") as f:
             json.dump(lock_data, f)
-        
-        logger.info(f"فایل قفل با PID {pid} ایجاد شد")
+
+        logger.info(f"Lock file created with PID {os.getpid()}")
         return True
     except Exception as e:
-        logger.error(f"خطا در ایجاد فایل قفل: {e}")
+        logger.error(f"Error creating lock file: {str(e)}")
         return False
 
-def setup_bot_handlers():
-    """تنظیم هندلرهای ربات"""
-    
-    @bot.message_handler(commands=['start'])
-    def handle_start(message):
+def setup_handlers(bot_instance):
+    """Set up bot message handlers"""
+
+    @bot_instance.message_handler(commands=['start'])
+    def start(message):
         try:
             markup = telebot.types.InlineKeyboardMarkup(row_width=2)
             help_btn = telebot.types.InlineKeyboardButton("📚 راهنما", callback_data="help")
-            quality_btn = telebot.types.InlineKeyboardButton("📊 کیفیت ویدیو", callback_data="quality")
-            status_btn = telebot.types.InlineKeyboardButton("📈 وضعیت سرور", callback_data="status")
-            
-            markup.add(help_btn, quality_btn)
-            markup.add(status_btn)
-            
-            bot.reply_to(message, 
+            status_btn = telebot.types.InlineKeyboardButton("📈 وضعیت", callback_data="status")
+
+            markup.add(help_btn, status_btn)
+
+            bot_instance.reply_to(message, 
                 "👋 سلام!\n\n"
                 "🎬 به ربات دانلود ویدیو خوش آمدید.\n\n"
                 "🔸 قابلیت‌های ربات:\n"
                 "• دانلود ویدیو از یوتیوب و اینستاگرام\n"
                 "• امکان انتخاب کیفیت ویدیو\n"
-                "• نمایش وضعیت سرور\n\n"
-                "🔹 روش استفاده:\n"
-                "• برای دانلود ویدیو، لینک را ارسال کنید\n"
-                "• برای تنظیم کیفیت، از دکمه کیفیت ویدیو استفاده کنید\n"
-                "• برای مشاهده وضعیت، دکمه وضعیت سرور را بزنید",
+                "• نمایش وضعیت سرور",
                 reply_markup=markup
             )
-            logger.info(f"دستور start برای کاربر {message.from_user.id} اجرا شد")
         except Exception as e:
-            logger.error(f"خطا در اجرای دستور start: {e}")
-            bot.reply_to(message, "⚠️ خطایی رخ داد. لطفا دوباره تلاش کنید.")
+            logger.error(f"Error in start command: {str(e)}")
+            bot_instance.reply_to(message, "متأسفانه خطایی رخ داد. لطفا دوباره تلاش کنید.")
 
-    @bot.callback_query_handler(func=lambda call: True)
-    def callback_handler(call):
+    @bot_instance.callback_query_handler(func=lambda call: True)
+    def handle_query(call):
         try:
             if call.data == "help":
-                bot.answer_callback_query(call.id)
-                bot.reply_to(call.message, "🔹 راهنمای استفاده از ربات:\n• برای دانلود ویدیو، لینک را ارسال کنید\n• برای تنظیم کیفیت، از منوی کیفیت ویدیو استفاده کنید")
-            elif call.data == "quality":
-                bot.answer_callback_query(call.id)
-                bot.reply_to(call.message, "📊 کیفیت‌های موجود: 144p, 240p, 360p, 480p, 720p, 1080p")
+                bot_instance.answer_callback_query(call.id)
+                bot_instance.reply_to(call.message, "🔹 راهنمای استفاده از ربات:\n• برای دانلود ویدیو، لینک را ارسال کنید")
             elif call.data == "status":
-                bot.answer_callback_query(call.id)
-                bot.reply_to(call.message, "📈 سرور در حال اجرا است")
+                bot_instance.answer_callback_query(call.id)
+                bot_instance.reply_to(call.message, "📈 سرور در حال اجرا است")
         except Exception as e:
-            logger.error(f"خطا در پردازش callback: {e}")
-            try:
-                bot.answer_callback_query(call.id, "⚠️ خطایی رخ داد")
-            except:
-                pass
+            logger.error(f"Error in callback handler: {str(e)}")
+
+def signal_handler(signum, frame):
+    """Handle termination signals"""
+    logger.info(f"Received signal {signum}")
+    clean_up()
+    sys.exit(0)
 
 def main():
-    """تابع اصلی با مدیریت خطای بهتر"""
+    """Main function with improved error handling"""
     try:
-        # تنظیم مدیریت سیگنال‌ها
-        signal.signal(signal.SIGINT, handle_termination)
-        signal.signal(signal.SIGTERM, handle_termination)
-        
-        logger.info("شروع راه‌اندازی ربات...")
-        
-        # توقف نمونه‌های قبلی
-        killed_processes = find_and_kill_bot_processes()
-        if killed_processes:
-            logger.info(f"تعداد {len(killed_processes)} پروسه قبلی متوقف شد")
-            time.sleep(2)  # انتظار برای اطمینان از توقف کامل
-        
-        # ایجاد فایل قفل
-        if not create_process_lock():
-            logger.error("خطا در ایجاد فایل قفل")
+        # Set up signal handlers
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+
+        logger.info("Starting bot initialization...")
+
+        # Kill existing bot instances
+        killed = kill_existing_bots()
+        if killed:
+            logger.info(f"Killed {len(killed)} existing bot processes")
+            time.sleep(1)
+
+        # Create lock file
+        if not create_lock_file():
+            logger.error("Failed to create lock file")
             sys.exit(1)
-        
-        # راه‌اندازی ربات
+
+        # Initialize bot
         if not initialize_bot():
-            logger.error("خطا در راه‌اندازی ربات")
-            cleanup_resources()
+            logger.error("Failed to initialize bot")
+            clean_up()
             sys.exit(1)
-        
-        # تنظیم هندلرهای ربات
-        setup_bot_handlers()
-        
-        # حذف وب‌هوک قبلی
+
+        # Set up handlers
+        setup_handlers(bot)
+
+        # Remove webhook and start polling
         try:
             bot.remove_webhook()
             time.sleep(0.5)
+            logger.info("Starting bot polling...")
+            bot.infinity_polling(timeout=60, long_polling_timeout=30)
         except Exception as e:
-            logger.warning(f"خطا در حذف وب‌هوک: {e}")
-        
-        # شروع پولینگ
-        logger.info("شروع پولینگ ربات...")
-        bot.infinity_polling(timeout=60, long_polling_timeout=30)
-        
+            logger.error(f"Error in bot polling: {str(e)}")
+            clean_up()
+            sys.exit(1)
+
     except Exception as e:
-        logger.error(f"خطای بحرانی در تابع اصلی: {e}")
-        cleanup_resources()
+        logger.error(f"Critical error in main function: {str(e)}")
+        clean_up()
         sys.exit(1)
     finally:
-        cleanup_resources()
+        clean_up()
 
 if __name__ == "__main__":
     main()
