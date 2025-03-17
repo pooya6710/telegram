@@ -3036,3 +3036,47 @@
   }
 }
 ==================================================
+{
+  "timestamp": "2025-03-17 02:56:29",
+  "level": "WARNING",
+  "message": "ساختار نادرست در فایل کش",
+  "location": {
+    "file": "server_status.py",
+    "function": "get_cached_server_status",
+    "line": 56
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-17 02:57:29",
+  "level": "WARNING",
+  "message": "یک نمونه از ربات در حال اجراست",
+  "location": {
+    "file": "bot.py",
+    "function": "start_bot",
+    "line": 467
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-17 02:57:30",
+  "level": "WARNING",
+  "message": "ساختار نادرست در فایل کش",
+  "location": {
+    "file": "server_status.py",
+    "function": "get_cached_server_status",
+    "line": 56
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-17 02:57:32",
+  "level": "WARNING",
+  "message": "ساختار نادرست در فایل کش",
+  "location": {
+    "file": "server_status.py",
+    "function": "get_cached_server_status",
+    "line": 56
+  }
+}
+==================================================
