@@ -6,6 +6,7 @@ import time
 import signal
 import json
 from datetime import datetime
+import psutil
 
 # تنظیم سیستم لاگینگ
 logging.basicConfig(
@@ -21,10 +22,33 @@ logger = logging.getLogger(__name__)
 TOKEN = "7338644071:AAEex9j0nMualdoywHSGFiBoMAzRpkFypPk"
 bot = None
 
+def kill_other_bot_instances():
+    """حذف سایر نمونه‌های در حال اجرای ربات"""
+    current_pid = os.getpid()
+    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+        try:
+            if proc.info['pid'] != current_pid:
+                cmdline = proc.info['cmdline']
+                if cmdline and 'python' in cmdline[0] and 'run_bot.py' in ' '.join(cmdline):
+                    proc.terminate()
+                    logger.info(f"نمونه قبلی ربات با PID {proc.info['pid']} متوقف شد")
+                    time.sleep(1)
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+
 def initialize_bot():
     """راه‌اندازی نمونه ربات با مدیریت خطا"""
     global bot
     try:
+        # حذف سایر نمونه‌های ربات
+        kill_other_bot_instances()
+
+        # حذف وب‌هوک‌های قبلی
+        temp_bot = telebot.TeleBot(TOKEN)
+        temp_bot.remove_webhook()
+        time.sleep(0.5)
+
+        # ایجاد نمونه جدید ربات
         bot = telebot.TeleBot(TOKEN)
         logger.info("ربات با موفقیت راه‌اندازی شد")
         return True
@@ -77,7 +101,6 @@ def create_process_lock():
 
 def setup_bot_handlers():
     """تنظیم هندلرهای ربات"""
-
     @bot.message_handler(commands=['start'])
     def handle_start(message):
         try:
@@ -117,6 +140,7 @@ def setup_bot_handlers():
                 bot.answer_callback_query(call.id)
                 bot.reply_to(call.message, "📊 کیفیت‌های موجود: 144p, 240p, 360p, 480p, 720p, 1080p")
             elif call.data == "status":
+                from server_status import generate_server_status
                 try:
                     bot.answer_callback_query(call.id)
                     status_text = generate_server_status()
@@ -151,26 +175,13 @@ def main():
 
         logger.info("شروع راه‌اندازی ربات...")
 
-        # ایجاد فایل قفل
-        if not create_process_lock():
-            logger.error("خطا در ایجاد فایل قفل")
-            sys.exit(1)
-
         # راه‌اندازی ربات
         if not initialize_bot():
             logger.error("خطا در راه‌اندازی ربات")
-            cleanup_resources()
             sys.exit(1)
 
         # تنظیم هندلرهای ربات
         setup_bot_handlers()
-
-        # حذف وب‌هوک قبلی
-        try:
-            bot.remove_webhook()
-            time.sleep(0.5)
-        except Exception as e:
-            logger.warning(f"خطا در حذف وب‌هوک: {e}")
 
         # شروع پولینگ
         logger.info("شروع پولینگ ربات...")
@@ -178,10 +189,7 @@ def main():
 
     except Exception as e:
         logger.error(f"خطای بحرانی در تابع اصلی: {e}")
-        cleanup_resources()
         sys.exit(1)
-    finally:
-        cleanup_resources()
 
 if __name__ == "__main__":
     main()
