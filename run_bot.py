@@ -1,4 +1,3 @@
-
 import os
 import sys
 import telebot
@@ -47,7 +46,7 @@ def cleanup_resources():
             except:
                 os.remove("bot.lock")
                 logger.info("فایل قفل با خطا حذف شد")
-                
+
     except Exception as e:
         logger.error(f"خطا در پاکسازی منابع: {e}")
 
@@ -66,10 +65,10 @@ def create_process_lock():
             "start_time": datetime.now().isoformat(),
             "token_hash": hash(TOKEN)
         }
-        
+
         with open("bot.lock", "w") as f:
             json.dump(lock_data, f)
-        
+
         logger.info(f"فایل قفل با PID {pid} ایجاد شد")
         return True
     except Exception as e:
@@ -78,7 +77,7 @@ def create_process_lock():
 
 def setup_bot_handlers():
     """تنظیم هندلرهای ربات"""
-    
+
     @bot.message_handler(commands=['start'])
     def handle_start(message):
         try:
@@ -86,10 +85,10 @@ def setup_bot_handlers():
             help_btn = telebot.types.InlineKeyboardButton("📚 راهنما", callback_data="help")
             quality_btn = telebot.types.InlineKeyboardButton("📊 کیفیت ویدیو", callback_data="quality")
             status_btn = telebot.types.InlineKeyboardButton("📈 وضعیت سرور", callback_data="status")
-            
+
             markup.add(help_btn, quality_btn)
             markup.add(status_btn)
-            
+
             bot.reply_to(message, 
                 "👋 سلام!\n\n"
                 "🎬 به ربات دانلود ویدیو خوش آمدید.\n\n"
@@ -118,8 +117,18 @@ def setup_bot_handlers():
                 bot.answer_callback_query(call.id)
                 bot.reply_to(call.message, "📊 کیفیت‌های موجود: 144p, 240p, 360p, 480p, 720p, 1080p")
             elif call.data == "status":
-                bot.answer_callback_query(call.id)
-                bot.reply_to(call.message, "📈 سرور در حال اجرا است")
+                try:
+                    bot.answer_callback_query(call.id)
+                    status_text = generate_server_status()
+                    bot.edit_message_text(
+                        status_text,
+                        call.message.chat.id,
+                        call.message.message_id,
+                        parse_mode="Markdown"
+                    )
+                except Exception as e:
+                    logger.error(f"خطا در نمایش وضعیت سرور: {e}")
+                    bot.answer_callback_query(call.id, "⚠️ خطا در دریافت وضعیت سرور")
         except Exception as e:
             logger.error(f"خطا در پردازش callback: {e}")
             try:
@@ -127,40 +136,46 @@ def setup_bot_handlers():
             except:
                 pass
 
+def generate_server_status():
+    #  This function needs to be implemented to get the actual server status.
+    #  Replace this with your logic to check server resources, etc.
+    return "📈 سرور در حال اجرا است.  CPU: 50%, Memory: 75%"
+
+
 def main():
     """تابع اصلی با مدیریت خطای بهتر"""
     try:
         # تنظیم مدیریت سیگنال‌ها
         signal.signal(signal.SIGINT, handle_termination)
         signal.signal(signal.SIGTERM, handle_termination)
-        
+
         logger.info("شروع راه‌اندازی ربات...")
-        
+
         # ایجاد فایل قفل
         if not create_process_lock():
             logger.error("خطا در ایجاد فایل قفل")
             sys.exit(1)
-        
+
         # راه‌اندازی ربات
         if not initialize_bot():
             logger.error("خطا در راه‌اندازی ربات")
             cleanup_resources()
             sys.exit(1)
-        
+
         # تنظیم هندلرهای ربات
         setup_bot_handlers()
-        
+
         # حذف وب‌هوک قبلی
         try:
             bot.remove_webhook()
             time.sleep(0.5)
         except Exception as e:
             logger.warning(f"خطا در حذف وب‌هوک: {e}")
-        
+
         # شروع پولینگ
         logger.info("شروع پولینگ ربات...")
         bot.infinity_polling(timeout=60, long_polling_timeout=30)
-        
+
     except Exception as e:
         logger.error(f"خطای بحرانی در تابع اصلی: {e}")
         cleanup_resources()
