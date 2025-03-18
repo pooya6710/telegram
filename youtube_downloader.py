@@ -310,8 +310,9 @@ def download_video(url: str, download_id: int, user_id: int, quality: str = "bes
 
     if 'instagram.com' in url:
         ydl_opts.update({
-            'username': os.getenv('INSTAGRAM_USERNAME'),
-            'password': os.getenv('INSTAGRAM_PASSWORD')
+            'extract_flat': True,
+            'quiet': True,
+            'no_warnings': True
         })
     """
     دانلود ویدیو
