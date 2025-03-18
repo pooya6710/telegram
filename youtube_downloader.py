@@ -12,6 +12,19 @@ if not os.path.exists(DOWNLOAD_PATH):
 
 def download_video(url, download_id, user_id):
     """
+
+class DebugLogger:
+    def debug(self, msg):
+        debug_log(f"DEBUG: {msg}", "DEBUG")
+        
+    def warning(self, msg):
+        debug_log(f"WARNING: {msg}", "WARNING")
+        
+    def error(self, msg):
+        debug_log(f"ERROR: {msg}", "ERROR")
+        with open('download_errors.log', 'a', encoding='utf-8') as f:
+            f.write(f"{datetime.datetime.now()} - ERROR: {msg}\n")
+
     دانلود ویدیو با خطایابی پیشرفته
     """
     try:
@@ -309,19 +322,23 @@ def download_video(url: str, download_id: int, user_id: int, quality: str = "bes
     }
 
     if 'instagram.com' in url:
+        debug_log(f"شروع دانلود از اینستاگرام: {url}", "INFO")
         ydl_opts.update({
             'format': 'best',
             'extract_flat': False,
-            'quiet': True,
-            'no_warnings': True,
-            'ignoreerrors': True,
+            'quiet': False,
+            'no_warnings': False,
+            'ignoreerrors': False,
+            'verbose': True,
             'no_check_certificate': True,
             'http_headers': {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
                 'Accept': '*/*',
                 'Accept-Encoding': 'gzip, deflate, br',
                 'Accept-Language': 'en-US,en;q=0.9',
-            }
+            },
+            'progress_hooks': [lambda d: debug_log(f"وضعیت دانلود: {d}", "DEBUG")],
+            'logger': DebugLogger()
         })
     """
     دانلود ویدیو
