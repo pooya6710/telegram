@@ -3135,3 +3135,59 @@
   }
 }
 ==================================================
+{
+  "timestamp": "2025-03-18 16:36:19",
+  "level": "INFO",
+  "message": "پاکسازی دانلودهای قدیمی (حداکثر 1 روز)",
+  "location": {
+    "file": "youtube_downloader.py",
+    "function": "clean_old_downloads",
+    "line": 692
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-18 16:36:19",
+  "level": "DEBUG",
+  "message": "اجرای clean_old_downloads",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 136
+  },
+  "context": {
+    "execution_time": "0.0036s",
+    "result": "0"
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-18 16:36:19",
+  "level": "DEBUG",
+  "message": "اجرای validate_youtube_url",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 136
+  },
+  "context": {
+    "execution_time": "0.0000s",
+    "result": "True"
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-18 16:36:22",
+  "level": "DEBUG",
+  "message": "اجرای extract_video_info",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 136
+  },
+  "context": {
+    "execution_time": "2.3609s",
+    "result": "{'id': 'QoadCqPsp1w', 'title': 'واقعا داره میگه کباب میخوام😂😂❤️                                     "
+  }
+}
+==================================================
