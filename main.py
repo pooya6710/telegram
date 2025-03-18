@@ -290,20 +290,34 @@ def ping():
 
 # اجرای ربات در یک ترد جداگانه
 def run_bot():
-    try:
-        bot_status["running"] = True
-        # ذخیره وضعیت در فایل
-        with open(SERVER_STATUS_FILE, 'w', encoding='utf-8') as f:
-            json.dump({"is_bot_running": True}, f)
-        
-        if not start_bot():
-            bot_status["running"] = False
-            logger.error("⚠️ خطا در راه‌اندازی ربات")
+    max_retries = 5
+    retry_delay = 10  # seconds
+    retry_count = 0
 
-        logger.info("🚀 ربات تلگرام با موفقیت راه‌اندازی شد!")
-    except Exception as e:
-        logger.error(f"⚠️ خطا در راه‌اندازی ربات: {e}")
-        bot_status["running"] = False
+    while retry_count < max_retries:
+        try:
+            bot_status["running"] = True
+            with open(SERVER_STATUS_FILE, 'w', encoding='utf-8') as f:
+                json.dump({"is_bot_running": True}, f)
+            
+            if start_bot():
+                logger.info("🚀 ربات تلگرام با موفقیت راه‌اندازی شد!")
+                return True
+            else:
+                raise Exception("خطا در راه‌اندازی اولیه ربات")
+
+        except Exception as e:
+            retry_count += 1
+            logger.error(f"⚠️ خطا در راه‌اندازی ربات (تلاش {retry_count}/{max_retries}): {e}")
+            bot_status["running"] = False
+            
+            if retry_count < max_retries:
+                logger.info(f"🔄 تلاش مجدد در {retry_delay} ثانیه...")
+                time.sleep(retry_delay)
+                retry_delay *= 1.5  # Increase delay for next retry
+            else:
+                logger.error("❌ تمام تلاش‌ها برای راه‌اندازی ربات ناموفق بود")
+                return False
 
 # راه‌اندازی ربات با استفاده از with app.app_context()
 # توجه: در نسخه‌های جدید Flask، before_first_request حذف شده است
