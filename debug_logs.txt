@@ -3191,3 +3191,204 @@
   }
 }
 ==================================================
+{
+  "timestamp": "2025-03-18 16:37:34",
+  "level": "INFO",
+  "message": "پاکسازی دانلودهای قدیمی (حداکثر 1 روز)",
+  "location": {
+    "file": "youtube_downloader.py",
+    "function": "clean_old_downloads",
+    "line": 692
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-18 16:37:34",
+  "level": "DEBUG",
+  "message": "اجرای clean_old_downloads",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 136
+  },
+  "context": {
+    "execution_time": "0.0004s",
+    "result": "0"
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-18 16:37:34",
+  "level": "DEBUG",
+  "message": "اجرای validate_youtube_url",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 136
+  },
+  "context": {
+    "execution_time": "0.0000s",
+    "result": "True"
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-18 16:37:37",
+  "level": "DEBUG",
+  "message": "اجرای extract_video_info",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 136
+  },
+  "context": {
+    "execution_time": "2.4446s",
+    "result": "{'id': 'QoadCqPsp1w', 'title': 'واقعا داره میگه کباب میخوام😂😂❤️                                     "
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-18 16:37:37",
+  "level": "DEBUG",
+  "message": "اجرای validate_youtube_url",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 136
+  },
+  "context": {
+    "execution_time": "0.0000s",
+    "result": "True"
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-18 16:37:37",
+  "level": "DEBUG",
+  "message": "اجرای get_db_connection",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 136
+  },
+  "context": {
+    "execution_time": "0.0002s",
+    "result": "<sqlite3.Connection object at 0x7f48b26c3b50>"
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-18 16:37:37",
+  "level": "ERROR",
+  "message": "خطا در به‌روزرسانی وضعیت دانلود: no such table: downloads",
+  "location": {
+    "file": "database.py",
+    "function": "update_download_status",
+    "line": 365
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-18 16:37:37",
+  "level": "DEBUG",
+  "message": "اجرای update_download_status",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 136
+  },
+  "context": {
+    "execution_time": "0.0009s",
+    "result": "False"
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-18 16:37:37",
+  "level": "INFO",
+  "message": "شروع استخراج اطلاعات ویدیو با ID دانلود 1742315857",
+  "location": {
+    "file": "youtube_downloader.py",
+    "function": "download_video",
+    "line": 401
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-18 16:37:39",
+  "level": "INFO",
+  "message": "شروع دانلود ویدیو با ID دانلود 1742315857",
+  "location": {
+    "file": "youtube_downloader.py",
+    "function": "download_video",
+    "line": 447
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-18 16:37:41",
+  "level": "DEBUG",
+  "message": "اجرای get_best_thumbnail",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 136
+  },
+  "context": {
+    "execution_time": "0.0000s",
+    "result": "https://i.ytimg.com/vi/QoadCqPsp1w/maxres2.jpg?sqp=-oaymwEoCIAKENAF8quKqQMcGADwAQH4AbYIgAKAD4oCDAgAE"
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-18 16:37:41",
+  "level": "DEBUG",
+  "message": "اجرای get_db_connection",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 136
+  },
+  "context": {
+    "execution_time": "0.0001s",
+    "result": "<sqlite3.Connection object at 0x7f48b2144130>"
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-18 16:37:41",
+  "level": "ERROR",
+  "message": "خطا در به‌روزرسانی وضعیت دانلود: no such table: downloads",
+  "location": {
+    "file": "database.py",
+    "function": "update_download_status",
+    "line": 365
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-18 16:37:41",
+  "level": "DEBUG",
+  "message": "اجرای update_download_status",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 136
+  },
+  "context": {
+    "execution_time": "0.0008s",
+    "result": "False"
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-18 16:37:41",
+  "level": "INFO",
+  "message": "دانلود ویدیو با ID 1742315857 با موفقیت انجام شد",
+  "location": {
+    "file": "youtube_downloader.py",
+    "function": "download_video",
+    "line": 513
+  }
+}
+==================================================
