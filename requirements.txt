@@ -57,3 +57,11 @@ yt-dlp
 python-telegram-bot
 requests
 yt-dlp
+flask
+gunicorn
+psutil
+pyTelegramBotAPI
+python-telegram-bot
+requests
+telebot
+yt-dlp
