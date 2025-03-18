@@ -60,6 +60,16 @@ class AdvancedDebugger:
 
     def log_step(self, step_id: int, step_name: str, context: Dict[str, Any]) -> None:
         debug_log(f"گام {step_id}: {step_name}", "INFO", context)
+        
+    def log_download_start(self, download_id: int, url: str, user_id: int) -> None:
+        """ثبت شروع دانلود"""
+        context = {
+            "download_id": download_id,
+            "url": url,
+            "user_id": user_id,
+            "start_time": datetime.datetime.now().isoformat()
+        }
+        debug_log(f"شروع دانلود {download_id}", "INFO", context)
 
 debugger = AdvancedDebugger()
 
