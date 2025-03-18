@@ -16,10 +16,10 @@ def download_video(url, download_id, user_id):
 class DebugLogger:
     def debug(self, msg):
         debug_log(f"DEBUG: {msg}", "DEBUG")
-        
+
     def warning(self, msg):
         debug_log(f"WARNING: {msg}", "WARNING")
-        
+
     def error(self, msg):
         debug_log(f"ERROR: {msg}", "ERROR")
         with open('download_errors.log', 'a', encoding='utf-8') as f:
@@ -322,24 +322,29 @@ def download_video(url: str, download_id: int, user_id: int, quality: str = "bes
     }
 
     if 'instagram.com' in url:
-        debug_log(f"شروع دانلود از اینستاگرام: {url}", "INFO")
         ydl_opts.update({
             'format': 'best',
             'extract_flat': False,
             'quiet': False,
             'no_warnings': False,
-            'ignoreerrors': False,
             'verbose': True,
-            'no_check_certificate': True,
+            'force_generic_extractor': False,
+            'extract_flat': False,
             'http_headers': {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                'Accept': '*/*',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
                 'Accept-Encoding': 'gzip, deflate, br',
-                'Accept-Language': 'en-US,en;q=0.9',
-            },
-            'progress_hooks': [lambda d: debug_log(f"وضعیت دانلود: {d}", "DEBUG")],
-            'logger': DebugLogger()
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none',
+                'Sec-Fetch-User': '?1',
+                'TE': 'trailers'
+            }
         })
+        debug_log(f"شروع دانلود از اینستاگرام با تنظیمات جدید: {url}", "INFO")
     """
     دانلود ویدیو
     Args:
