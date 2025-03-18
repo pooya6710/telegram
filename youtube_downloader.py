@@ -310,9 +310,18 @@ def download_video(url: str, download_id: int, user_id: int, quality: str = "bes
 
     if 'instagram.com' in url:
         ydl_opts.update({
-            'extract_flat': True,
+            'format': 'best',
+            'extract_flat': False,
             'quiet': True,
-            'no_warnings': True
+            'no_warnings': True,
+            'ignoreerrors': True,
+            'no_check_certificate': True,
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': '*/*',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Accept-Language': 'en-US,en;q=0.9',
+            }
         })
     """
     دانلود ویدیو
