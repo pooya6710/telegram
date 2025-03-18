@@ -322,7 +322,10 @@ def download_video(url: str, download_id: int, user_id: int, quality: str = "bes
     }
 
     if 'instagram.com' in url:
-        ydl_opts.update({
+        debug_log(f"شروع پردازش لینک اینستاگرام: {url}", "INFO")
+        
+        # تنظیمات مخصوص اینستاگرام
+        instagram_opts = {
             'format': 'best',
             'extract_flat': False,
             'quiet': False,
@@ -330,21 +333,53 @@ def download_video(url: str, download_id: int, user_id: int, quality: str = "bes
             'verbose': True,
             'force_generic_extractor': False,
             'extract_flat': False,
+            'nocheckcertificate': True,
+            'ignoreerrors': False,
             'http_headers': {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.5',
+                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.5 Mobile/15E148 Safari/604.1',
+                'Accept': '*/*',
+                'Accept-Language': 'en-US,en;q=0.9',
                 'Accept-Encoding': 'gzip, deflate, br',
+                'Origin': 'https://www.instagram.com',
                 'Connection': 'keep-alive',
-                'Upgrade-Insecure-Requests': '1',
-                'Sec-Fetch-Dest': 'document',
-                'Sec-Fetch-Mode': 'navigate',
-                'Sec-Fetch-Site': 'none',
-                'Sec-Fetch-User': '?1',
-                'TE': 'trailers'
-            }
-        })
-        debug_log(f"شروع دانلود از اینستاگرام با تنظیمات جدید: {url}", "INFO")
+                'Referer': 'https://www.instagram.com/',
+                'Sec-Fetch-Dest': 'empty',
+                'Sec-Fetch-Mode': 'cors',
+                'Sec-Fetch-Site': 'same-origin',
+                'X-IG-App-ID': '936619743392459',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            'cookiesfrombrowser': ('chrome',),  # استفاده از کوکی‌های مرورگر
+            'socket_timeout': 30,
+            'retries': 3
+        }
+        
+        ydl_opts.update(instagram_opts)
+        
+        try:
+            # تلاش برای استخراج اطلاعات پست
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                debug_log("در حال استخراج اطلاعات پست اینستاگرام...", "INFO")
+                info = ydl.extract_info(url, download=False)
+                
+                if not info:
+                    debug_log("خطا: اطلاعات پست استخراج نشد", "ERROR")
+                    return False, None, {"error": "خطا در استخراج اطلاعات پست اینستاگرام"}
+                
+                # بررسی نوع محتوا
+                if info.get('_type') == 'playlist':
+                    debug_log("این یک پست چند رسانه‌ای است", "INFO")
+                    # برای پست‌های چندتایی، اولین محتوا را دانلود می‌کنیم
+                    if info.get('entries'):
+                        info = info['entries'][0]
+                
+                debug_log(f"اطلاعات پست با موفقیت استخراج شد: {info.get('title', 'بدون عنوان')}", "INFO")
+                
+        except Exception as e:
+            debug_log(f"خطا در پردازش پست اینستاگرام: {str(e)}", "ERROR")
+            return False, None, {"error": f"خطا در پردازش پست اینستاگرام: {str(e)}"}
+            
+        debug_log("شروع دانلود پست اینستاگرام...", "INFO")
     """
     دانلود ویدیو
     Args:
