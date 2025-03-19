@@ -174,6 +174,32 @@ class InstagramDownloader:
             
             if not media_files:
                 raise Exception("No media found in the Instagram post")
+
+            # بررسی اعتبار فایل‌ها
+            valid_files = []
+            for file in media_files:
+                file_path = os.path.join(download_dir, file)
+                try:
+                    # بررسی سایز فایل
+                    if os.path.getsize(file_path) < 100:  # فایل خیلی کوچک است
+                        continue
+                        
+                    # بررسی قابل خواندن بودن فایل
+                    with open(file_path, 'rb') as f:
+                        header = f.read(8)  # خواندن هدر فایل
+                        if any(header.startswith(sig) for sig in [b'\xFF\xD8',  # JPEG
+                                                                b'\x00\x00\x00',  # MP4
+                                                                b'\x00\x00\x00\x14']):  # MOV
+                            valid_files.append(file)
+                except Exception as e:
+                    logger.error(f"Error validating file {file}: {str(e)}")
+                    continue
+            
+            if not valid_files:
+                raise Exception("No valid media files found in the Instagram post")
+                
+            # استفاده از اولین فایل معتبر
+            file_path = os.path.join(download_dir, valid_files[0])
             
             # ترجیح دادن فایل‌های ویدیویی به تصاویر
             video_files = [f for f in media_files if f.endswith(('.mp4', '.mov'))]
