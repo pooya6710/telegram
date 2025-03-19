@@ -4032,3 +4032,215 @@
   }
 }
 ==================================================
+{
+  "timestamp": "2025-03-19 04:10:47",
+  "level": "INFO",
+  "message": "پاکسازی دانلودهای قدیمی (حداکثر 1 روز)",
+  "location": {
+    "file": "youtube_downloader.py",
+    "function": "clean_old_downloads",
+    "line": 795
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-19 04:10:47",
+  "level": "DEBUG",
+  "message": "اجرای clean_old_downloads",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 136
+  },
+  "context": {
+    "execution_time": "0.0090s",
+    "result": "0"
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-19 04:10:47",
+  "level": "DEBUG",
+  "message": "اجرای validate_youtube_url",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 136
+  },
+  "context": {
+    "execution_time": "0.0000s",
+    "result": "True"
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-19 04:10:50",
+  "level": "DEBUG",
+  "message": "اجرای extract_video_info",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 136
+  },
+  "context": {
+    "execution_time": "2.7796s",
+    "result": "{'id': 'imZkuPNfKas', 'title': 'Aaj To Bach Gaya Beta‼️🤬#goldenstatueboy #golden #goldenstatueboy11 "
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-19 04:10:50",
+  "level": "DEBUG",
+  "message": "اجرای validate_youtube_url",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 136
+  },
+  "context": {
+    "execution_time": "0.0000s",
+    "result": "True"
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-19 04:10:50",
+  "level": "INFO",
+  "message": "شروع استخراج اطلاعات ویدیو با ID دانلود 1742357450",
+  "location": {
+    "file": "youtube_downloader.py",
+    "function": "download_video",
+    "line": 504
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-19 04:10:50",
+  "level": "DEBUG",
+  "message": "اجرای validate_youtube_url",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 136
+  },
+  "context": {
+    "execution_time": "0.0000s",
+    "result": "True"
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-19 04:10:55",
+  "level": "INFO",
+  "message": "شروع دانلود ویدیو با ID دانلود 1742357450",
+  "location": {
+    "file": "youtube_downloader.py",
+    "function": "download_video",
+    "line": 550
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-19 04:10:56",
+  "level": "DEBUG",
+  "message": "اجرای extract_video_info",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 136
+  },
+  "context": {
+    "execution_time": "5.7166s",
+    "result": "{'id': 'imZkuPNfKas', 'title': 'Aaj To Bach Gaya Beta‼️🤬#goldenstatueboy #golden #goldenstatueboy11 "
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-19 04:10:56",
+  "level": "DEBUG",
+  "message": "اجرای validate_youtube_url",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 136
+  },
+  "context": {
+    "execution_time": "0.0000s",
+    "result": "True"
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-19 04:10:56",
+  "level": "INFO",
+  "message": "شروع استخراج اطلاعات ویدیو با ID دانلود 1742357456",
+  "location": {
+    "file": "youtube_downloader.py",
+    "function": "download_video",
+    "line": 504
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-19 04:11:01",
+  "level": "DEBUG",
+  "message": "اجرای get_best_thumbnail",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 136
+  },
+  "context": {
+    "execution_time": "0.0000s",
+    "result": "https://i.ytimg.com/vi/imZkuPNfKas/maxresdefault.jpg"
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-19 04:11:01",
+  "level": "INFO",
+  "message": "دانلود ویدیو با ID 1742357450 با موفقیت انجام شد",
+  "location": {
+    "file": "youtube_downloader.py",
+    "function": "download_video",
+    "line": 616
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-19 04:11:02",
+  "level": "INFO",
+  "message": "شروع دانلود ویدیو با ID دانلود 1742357456",
+  "location": {
+    "file": "youtube_downloader.py",
+    "function": "download_video",
+    "line": 550
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-19 04:11:07",
+  "level": "DEBUG",
+  "message": "اجرای get_best_thumbnail",
+  "location": {
+    "file": "debug_logger.py",
+    "function": "wrapper",
+    "line": 136
+  },
+  "context": {
+    "execution_time": "0.0000s",
+    "result": "https://i.ytimg.com/vi/imZkuPNfKas/maxresdefault.jpg"
+  }
+}
+==================================================
+{
+  "timestamp": "2025-03-19 04:11:07",
+  "level": "INFO",
+  "message": "دانلود ویدیو با ID 1742357456 با موفقیت انجام شد",
+  "location": {
+    "file": "youtube_downloader.py",
+    "function": "download_video",
+    "line": 616
+  }
+}
+==================================================
