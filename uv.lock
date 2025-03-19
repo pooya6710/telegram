@@ -2,6 +2,7 @@ version = 1
 requires-python = ">=3.11"
 
 [[package]]
+<<<<<<< HEAD
 name = "aiolimiter"
 version = "1.1.1"
 source = { registry = "https://pypi.org/simple" }
@@ -39,6 +40,8 @@ wheels = [
 ]
 
 [[package]]
+=======
+>>>>>>> 3b6692783d80f74482bf7577f1da04a3c3e8231f
 name = "blinker"
 version = "1.9.0"
 source = { registry = "https://pypi.org/simple" }
@@ -48,6 +51,7 @@ wheels = [
 ]
 
 [[package]]
+<<<<<<< HEAD
 name = "cachetools"
 version = "5.3.3"
 source = { registry = "https://pypi.org/simple" }
@@ -57,6 +61,8 @@ wheels = [
 ]
 
 [[package]]
+=======
+>>>>>>> 3b6692783d80f74482bf7577f1da04a3c3e8231f
 name = "certifi"
 version = "2025.1.31"
 source = { registry = "https://pypi.org/simple" }
@@ -66,6 +72,7 @@ wheels = [
 ]
 
 [[package]]
+<<<<<<< HEAD
 name = "cffi"
 version = "1.17.1"
 source = { registry = "https://pypi.org/simple" }
@@ -111,6 +118,8 @@ wheels = [
 ]
 
 [[package]]
+=======
+>>>>>>> 3b6692783d80f74482bf7577f1da04a3c3e8231f
 name = "charset-normalizer"
 version = "3.4.1"
 source = { registry = "https://pypi.org/simple" }
@@ -180,6 +189,7 @@ wheels = [
 ]
 
 [[package]]
+<<<<<<< HEAD
 name = "cryptography"
 version = "44.0.2"
 source = { registry = "https://pypi.org/simple" }
@@ -219,6 +229,8 @@ wheels = [
 ]
 
 [[package]]
+=======
+>>>>>>> 3b6692783d80f74482bf7577f1da04a3c3e8231f
 name = "dnspython"
 version = "2.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -324,6 +336,7 @@ wheels = [
 ]
 
 [[package]]
+<<<<<<< HEAD
 name = "h11"
 version = "0.14.0"
 source = { registry = "https://pypi.org/simple" }
@@ -401,6 +414,8 @@ wheels = [
 ]
 
 [[package]]
+=======
+>>>>>>> 3b6692783d80f74482bf7577f1da04a3c3e8231f
 name = "idna"
 version = "3.10"
 source = { registry = "https://pypi.org/simple" }
@@ -410,6 +425,7 @@ wheels = [
 ]
 
 [[package]]
+<<<<<<< HEAD
 name = "instaloader"
 version = "4.14.1"
 source = { registry = "https://pypi.org/simple" }
@@ -422,6 +438,8 @@ wheels = [
 ]
 
 [[package]]
+=======
+>>>>>>> 3b6692783d80f74482bf7577f1da04a3c3e8231f
 name = "itsdangerous"
 version = "2.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -558,6 +576,7 @@ wheels = [
 ]
 
 [[package]]
+<<<<<<< HEAD
 name = "pycparser"
 version = "2.22"
 source = { registry = "https://pypi.org/simple" }
@@ -567,6 +586,8 @@ wheels = [
 ]
 
 [[package]]
+=======
+>>>>>>> 3b6692783d80f74482bf7577f1da04a3c3e8231f
 name = "pytelegrambotapi"
 version = "4.26.0"
 source = { registry = "https://pypi.org/simple" }
@@ -579,6 +600,7 @@ wheels = [
 ]
 
 [[package]]
+<<<<<<< HEAD
 name = "python-telegram-bot"
 version = "20.6"
 source = { registry = "https://pypi.org/simple" }
@@ -611,6 +633,8 @@ wheels = [
 ]
 
 [[package]]
+=======
+>>>>>>> 3b6692783d80f74482bf7577f1da04a3c3e8231f
 name = "repl-nix-workspace"
 version = "0.1.0"
 source = { virtual = "." }
@@ -619,6 +643,7 @@ dependencies = [
     { name = "flask" },
     { name = "flask-sqlalchemy" },
     { name = "gunicorn" },
+<<<<<<< HEAD
     { name = "instaloader" },
     { name = "psutil" },
     { name = "psycopg2-binary" },
@@ -626,6 +651,13 @@ dependencies = [
     { name = "python-telegram-bot", extra = ["all"] },
     { name = "telebot" },
     { name = "telegram" },
+=======
+    { name = "psutil" },
+    { name = "psycopg2-binary" },
+    { name = "pytelegrambotapi" },
+    { name = "requests" },
+    { name = "telebot" },
+>>>>>>> 3b6692783d80f74482bf7577f1da04a3c3e8231f
     { name = "yt-dlp" },
 ]
 
@@ -635,6 +667,7 @@ requires-dist = [
     { name = "flask", specifier = ">=3.1.0" },
     { name = "flask-sqlalchemy", specifier = ">=3.1.1" },
     { name = "gunicorn", specifier = ">=23.0.0" },
+<<<<<<< HEAD
     { name = "instaloader", specifier = ">=4.14.1" },
     { name = "psutil", specifier = ">=7.0.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.10" },
@@ -642,6 +675,13 @@ requires-dist = [
     { name = "python-telegram-bot", extras = ["all"], specifier = "==20.6" },
     { name = "telebot", specifier = ">=0.0.5" },
     { name = "telegram", specifier = ">=0.0.1" },
+=======
+    { name = "psutil", specifier = ">=7.0.0" },
+    { name = "psycopg2-binary", specifier = ">=2.9.10" },
+    { name = "pytelegrambotapi", specifier = ">=4.26.0" },
+    { name = "requests", specifier = ">=2.32.3" },
+    { name = "telebot", specifier = ">=0.0.5" },
+>>>>>>> 3b6692783d80f74482bf7577f1da04a3c3e8231f
     { name = "yt-dlp", specifier = ">=2025.2.19" },
 ]
 
@@ -661,6 +701,7 @@ wheels = [
 ]
 
 [[package]]
+<<<<<<< HEAD
 name = "six"
 version = "1.17.0"
 source = { registry = "https://pypi.org/simple" }
@@ -688,6 +729,8 @@ wheels = [
 ]
 
 [[package]]
+=======
+>>>>>>> 3b6692783d80f74482bf7577f1da04a3c3e8231f
 name = "sqlalchemy"
 version = "2.0.39"
 source = { registry = "https://pypi.org/simple" }
@@ -738,6 +781,7 @@ wheels = [
 ]
 
 [[package]]
+<<<<<<< HEAD
 name = "telegram"
 version = "0.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -762,6 +806,8 @@ wheels = [
 ]
 
 [[package]]
+=======
+>>>>>>> 3b6692783d80f74482bf7577f1da04a3c3e8231f
 name = "typing-extensions"
 version = "4.12.2"
 source = { registry = "https://pypi.org/simple" }
@@ -771,6 +817,7 @@ wheels = [
 ]
 
 [[package]]
+<<<<<<< HEAD
 name = "tzdata"
 version = "2025.1"
 source = { registry = "https://pypi.org/simple" }
@@ -792,6 +839,8 @@ wheels = [
 ]
 
 [[package]]
+=======
+>>>>>>> 3b6692783d80f74482bf7577f1da04a3c3e8231f
 name = "urllib3"
 version = "2.3.0"
 source = { registry = "https://pypi.org/simple" }

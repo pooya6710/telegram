@@ -29,9 +29,7 @@ def is_instagram_url(url):
 
 def clean_filename(filename):
     """Clean filename from invalid characters"""
-    # Remove invalid characters
     clean_name = re.sub(r'[\\/*?:"<>|]', "", filename)
-    # Replace spaces with underscores
     clean_name = clean_name.replace(' ', '_')
     return clean_name
 
@@ -61,25 +59,15 @@ def cleanup_temp_dir(temp_dir):
     """Clean up temporary directory"""
     try:
         if os.path.exists(temp_dir):
-            # اگر دایرکتوری بود، همه فایل‌ها را پاک کنیم
-            if os.path.isdir(temp_dir):
-                for file in os.listdir(temp_dir):
-                    file_path = os.path.join(temp_dir, file)
-                    try:
-                        if os.path.isfile(file_path):
-                            os.remove(file_path)
-                    except Exception as e:
-                        logging.error(f"Error removing file {file_path}: {e}")
-                try:
-                    os.rmdir(temp_dir)
-                except Exception as e:
-                    logging.error(f"Error removing directory {temp_dir}: {e}")
-            # اگر فایل بود، مستقیم پاک کنیم
-            elif os.path.isfile(temp_dir):
-                os.remove(temp_dir)
+            for root, dirs, files in os.walk(temp_dir, topdown=False):
+                for name in files:
+                    os.remove(os.path.join(root, name))
+                for name in dirs:
+                    os.rmdir(os.path.join(root, name))
+            os.rmdir(temp_dir)
             return True
     except Exception as e:
-        logging.error(f"Error cleaning up directory {temp_dir}: {e}")
+        logging.error(f"Error cleaning directory {temp_dir}: {e}")
     return False
 
 def format_size(size):

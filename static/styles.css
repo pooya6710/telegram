@@ -1,0 +1,83 @@
+/* استایل‌های سفارشی برای داشبورد ربات تلگرام */
+
+/* استفاده از فونت Vazir برای تمام متن‌ها */
+body, h1, h2, h3, h4, h5, h6, p, span, div, a, button, input, select, textarea {
+    font-family: 'Vazir', tahoma, Arial, sans-serif !important;
+}
+
+/* استایل برای کارت‌ها */
+.card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+/* استایل برای بارهای پیشرفت */
+.progress {
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.progress-bar {
+    transition: width 0.5s ease;
+    border-radius: 10px;
+}
+
+/* استایل برای سربرگ صفحه */
+header h1 {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* استایل‌های مرتبط با رنگ‌ها در حالت تیره */
+[data-bs-theme=dark] .card {
+    background-color: rgba(33, 37, 41, 0.9);
+}
+
+[data-bs-theme=dark] .bg-dark-subtle {
+    background-color: rgba(66, 70, 74, 0.5) !important;
+}
+
+/* استایل برای لیست‌های گروهی */
+.list-group-item {
+    transition: background-color 0.2s ease;
+}
+
+.list-group-item:hover {
+    background-color: rgba(var(--bs-info-rgb), 0.1);
+}
+
+/* استایل برای کد */
+code {
+    background-color: rgba(var(--bs-info-rgb), 0.1);
+    padding: 2px 5px;
+    border-radius: 3px;
+}
+
+/* استایل‌های واکنش‌گرا برای دستگاه‌های کوچک */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+}
+
+/* انیمیشن چرخش برای آیکون بروزرسانی */
+.rotate {
+    animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}

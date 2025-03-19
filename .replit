@@ -1,14 +1,26 @@
+<<<<<<< HEAD
 modules = ["python-3.11"]
+=======
+modules = ["python-3.11", "web", "nix"]
+run = "python main.py"
+>>>>>>> 3b6692783d80f74482bf7577f1da04a3c3e8231f
 
 [nix]
 channel = "stable-24_05"
 
 [deployment]
 deploymentTarget = "autoscale"
+<<<<<<< HEAD
 run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
 
 [workflows]
 runButton = "Telegram Bot"
+=======
+run = ["sh", "-c", "python main.py"]
+
+[workflows]
+runButton = "Run Bot"
+>>>>>>> 3b6692783d80f74482bf7577f1da04a3c3e8231f
 
 [[workflows.workflow]]
 name = "Project"
@@ -19,10 +31,13 @@ author = "agent"
 task = "workflow.run"
 args = "Start application"
 
+<<<<<<< HEAD
 [[workflows.workflow.tasks]]
 task = "workflow.run"
 args = "telegram_bot"
 
+=======
+>>>>>>> 3b6692783d80f74482bf7577f1da04a3c3e8231f
 [[workflows.workflow]]
 name = "Start application"
 author = "agent"
@@ -39,6 +54,7 @@ args = "gunicorn --bind 0.0.0.0:5000 --reuse-port --reload main:app"
 waitForPort = 5000
 
 [[workflows.workflow]]
+<<<<<<< HEAD
 name = "telegram_bot"
 author = "agent"
 
@@ -55,11 +71,55 @@ args = "python bot.py"
 [[workflows.workflow]]
 name = "Telegram Bot"
 author = 40644560
+=======
+name = "Run Bot"
+author = 40543501
 mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
+args = "python run_bot.py"
+
+[[workflows.workflow]]
+name = "Start Bot"
+author = 40543501
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python main.py"
+
+[[workflows.workflow]]
+name = "Simple Bot"
+author = 40573513
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python run_bot.py"
+
+[[workflows.workflow]]
+name = "New Bot Instance"
+author = 40574310
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python main.py"
+
+[[workflows.workflow]]
+name = "Debug Test"
+author = 40630364
+>>>>>>> 3b6692783d80f74482bf7577f1da04a3c3e8231f
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+<<<<<<< HEAD
 args = "python bot.py"
+=======
+args = "python debug_test.py"
+>>>>>>> 3b6692783d80f74482bf7577f1da04a3c3e8231f
 
 [[ports]]
 localPort = 5000
