@@ -255,26 +255,36 @@ async def error_handler(update, context):
 
 def main():
     """Start the bot."""
-    # Create the Application instance
-    application = Application.builder().token(BOT_TOKEN).build()
+    # Check if we should use the main bot or the one in telegram-main
+    import os
+    if os.environ.get("USE_LEGACY_BOT") == "1":
+        # Create the Application instance - Legacy bot mode
+        application = Application.builder().token(BOT_TOKEN).build()
 
-    # Add command handlers
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("help", help_command))
-    application.add_handler(CommandHandler("quality", quality_command))
-    
-    # Add quality setting handlers
-    for quality in YT_QUALITIES.keys():
-        application.add_handler(CommandHandler(quality, set_quality))
+        # Add command handlers
+        application.add_handler(CommandHandler("start", start))
+        application.add_handler(CommandHandler("help", help_command))
+        application.add_handler(CommandHandler("quality", quality_command))
+        
+        # Add quality setting handlers
+        for quality in YT_QUALITIES.keys():
+            application.add_handler(CommandHandler(quality, set_quality))
 
-    # Add URL handler - needs to be last to not override commands
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_url))
-    
-    # Add error handler
-    application.add_error_handler(error_handler)
+        # Add URL handler - needs to be last to not override commands
+        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_url))
+        
+        # Add error handler
+        application.add_error_handler(error_handler)
 
-    # Start the Bot
-    application.run_polling()
+        # Start the Bot
+        application.run_polling()
+    else:
+        # Use the telegram-main implementation
+        print("Using telegram-main/run_bot.py implementation...")
+        import sys
+        sys.path.append("telegram-main")
+        import run_bot
+        run_bot.main()
 
 if __name__ == '__main__':
     main()
