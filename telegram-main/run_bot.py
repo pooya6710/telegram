@@ -103,12 +103,12 @@ def create_process_lock():
         logger.error(f"خطا در ایجاد فایل قفل: {e}")
         return False
 
-def is_instagram_url(url: str) -> bool:
-    """بررسی اینکه آیا آدرس مربوط به اینستاگرام است یا خیر"""
+def check_instagram_url_direct(url: str) -> bool:
+    """بررسی اینکه آیا آدرس مربوط به اینستاگرام است یا خیر (روش قدیمی)"""
     return 'instagram.com' in url and ('/p/' in url or '/reel/' in url or '/tv/' in url)
 
 def process_instagram_download(message, url: str):
-    """دانلود محتوا از اینستاگرام"""
+    """دانلود محتوا از اینستاگرام (روش قدیمی با instaloader مستقیم)"""
     try:
         # ارسال پیام در حال پردازش
         debug_msg = bot.reply_to(message, "🔄 در حال پردازش لینک اینستاگرام...")

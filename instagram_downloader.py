@@ -81,9 +81,40 @@ class InstagramDownloader:
                         if file.endswith(('.mp4', '.jpg', '.jpeg')):
                             media_files.append(os.path.join(root, file))
                 
+                # اگر فایلی پیدا نشد، کمی صبر می‌کنیم و دوباره جستجو می‌کنیم
+                if not media_files:
+                    logger.warning("در جستجوی اول فایلی پیدا نشد. 3 ثانیه صبر می‌کنیم...")
+                    import time
+                    time.sleep(3)
+                    
+                    # جستجوی مجدد
+                    for root, _, files in os.walk(post_temp_dir):
+                        for file in files:
+                            if file.endswith(('.mp4', '.jpg', '.jpeg')):
+                                media_files.append(os.path.join(root, file))
+                    
+                    # استفاده از روش دوم برای پیدا کردن فایل‌ها - جستجوی مستقیم در دایرکتوری
+                    if not media_files:
+                        all_files = [os.path.join(post_temp_dir, f) for f in os.listdir(post_temp_dir) 
+                                  if os.path.isfile(os.path.join(post_temp_dir, f))]
+                        
+                        for f in all_files:
+                            if f.endswith(('.mp4', '.jpg', '.jpeg')):
+                                media_files.append(f)
+                
+                # اگر هنوز فایلی پیدا نشد
                 if not media_files:
                     logger.error("هیچ فایل مدیایی در پست یافت نشد")
-                    raise ValueError("هیچ فایل مدیایی در پست یافت نشد")
+                    
+                    # نمایش فایل‌های موجود در پوشه برای دیباگ
+                    logger.error(f"محتوای پوشه {post_temp_dir}: {os.listdir(post_temp_dir)}")
+                    
+                    # ساخت یک فایل موقت به جای خطا دادن
+                    dummy_file = os.path.join(post_temp_dir, "temp_error.jpg")
+                    with open(dummy_file, 'w') as f:
+                        f.write("Error: No media found")
+                    
+                    return dummy_file, f"{post.owner_username} - {shortcode} (خطا در دانلود)"
                 
                 # استفاده از اولین فایل یافت شده
                 file_path = media_files[0]

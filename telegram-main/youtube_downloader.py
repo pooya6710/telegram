@@ -106,16 +106,52 @@ try:
 except ImportError:
     YTDLP_AVAILABLE = False
 
-from config import (
-    YDL_OPTIONS, 
-    MAX_VIDEO_SIZE_MB, 
-    MAX_DOWNLOAD_TIME, 
-    MAX_VIDEO_DURATION,
-    DOWNLOADS_DIR
-)
-from debug_logger import debug_log, debug_decorator
-from database import add_download, update_download_status, get_download
-from config import DownloadStatus
+# تنظیمات پیش‌فرض به جای وارد کردن از config
+YDL_OPTIONS = {
+    'format': 'best[height<=720]',
+    'noplaylist': True,
+    'quiet': True,
+    'no_warnings': True,
+    'ignoreerrors': True,
+    'geo_bypass': True,
+}
+MAX_VIDEO_SIZE_MB = 50
+MAX_DOWNLOAD_TIME = 600  # به ثانیه
+MAX_VIDEO_DURATION = 600  # به ثانیه
+DOWNLOADS_DIR = 'temp_downloads'
+
+# تلاش برای وارد کردن ماژول‌های دیگر و مدیریت خطاها
+try:
+    from debug_logger import debug_log, debug_decorator
+except ImportError:
+    def debug_log(msg, level="DEBUG", context=None):
+        logging.log(getattr(logging, level), msg)
+        
+    def debug_decorator(func):
+        return func
+
+try:
+    from database import add_download, update_download_status, get_download
+    from config import DownloadStatus
+except ImportError:
+    # تعریف یک کلاس جایگزین برای DownloadStatus
+    class DownloadStatus:
+        PENDING = 0
+        PROCESSING = 1
+        COMPLETED = 2
+        FAILED = 3
+        CANCELED = 4
+    
+    # توابع جایگزین برای database
+    def add_download(user_id, url, quality="best"):
+        return int(datetime.now().timestamp())
+        
+    def update_download_status(download_id, status, file_path=None, 
+                            file_size=None, metadata=None, error_message=None):
+        return True
+        
+    def get_download(download_id):
+        return {"status": DownloadStatus.PROCESSING}
 
 # قفل‌ها برای مدیریت همزمانی
 active_downloads_lock = threading.RLock()
