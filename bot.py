@@ -89,13 +89,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Send welcome message when the command /start is issued."""
     user_id = update.effective_user.id
     logger.info(f"User {user_id} started the bot")
-
+    
     # Initialize user preferences if not exists
     if user_id not in user_preferences:
         user_preferences[user_id] = {
             'quality': 'medium'  # Default quality
         }
-
+    
     await update.message.reply_text(WELCOME_MESSAGE)
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -106,16 +106,16 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def quality_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show quality options for YouTube downloads."""
     user_id = update.effective_user.id
-
+    
     # Initialize user preferences if not exists
     if user_id not in user_preferences:
         user_preferences[user_id] = {
             'quality': 'medium'  # Default quality
         }
-
+    
     current_quality = user_preferences[user_id]['quality']
     logger.info(f"User {user_id} requested quality settings. Current quality: {current_quality}")
-
+    
     await update.message.reply_text(
         QUALITY_MESSAGE.format(quality=YT_QUALITIES[current_quality])
     )
@@ -124,15 +124,15 @@ async def set_quality(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Set the quality for YouTube downloads."""
     user_id = update.effective_user.id
     command = update.message.text[1:]  # Remove the '/' from command
-
+    
     if command in YT_QUALITIES:
         # Update user preference
         if user_id not in user_preferences:
             user_preferences[user_id] = {}
-
+        
         user_preferences[user_id]['quality'] = command
         youtube_downloader.set_quality(command)
-
+        
         logger.info(f"User {user_id} set quality to {command} ({YT_QUALITIES[command]})")
         await update.message.reply_text(f"✅ کیفیت دانلود به {YT_QUALITIES[command]} تغییر یافت.")
     else:
@@ -149,7 +149,7 @@ async def handle_url(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Ensure temp directory exists
     ensure_temp_dir(TEMP_DIR)
-
+    
     # Set quality according to user preference
     if user_id in user_preferences and 'quality' in user_preferences[user_id]:
         quality = user_preferences[user_id]['quality']
@@ -170,7 +170,7 @@ async def handle_url(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.info(f"Uploading YouTube video: {title}")
             await progress_message.edit_text("📤 در حال آپلود به تلگرام...")
             file_size = os.path.getsize(file_path)
-
+            
             if file_size > 0:
                 with open(file_path, 'rb') as video_file:
                     await context.bot.send_video(
@@ -226,7 +226,7 @@ async def handle_url(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         logger.error(f"Error processing URL {url}: {str(e)}")
         error_message = str(e)
-
+        
         # Handle common errors with user-friendly messages
         if "Private profile" in error_message:
             error_message = "⛔ این پروفایل خصوصی است و قابل دانلود نیست."
@@ -236,7 +236,7 @@ async def handle_url(update: Update, context: ContextTypes.DEFAULT_TYPE):
             error_message = "⚠️ این ویدیو دارای محدودیت سنی است و قابل دانلود نیست."
         elif "copyright" in error_message.lower():
             error_message = "⚠️ این محتوا به دلیل مسائل کپی‌رایت قابل دانلود نیست."
-
+            
         # Update the progress message with error information
         if progress_message:
             await progress_message.edit_text(f"❌ خطا در دانلود: {error_message}")
@@ -246,7 +246,7 @@ async def handle_url(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def error_handler(update, context):
     """Log errors caused by updates."""
     logger.error('Update "%s" caused error "%s"', update, context.error)
-
+    
     # Send error message to user if possible
     if update and update.effective_message:
         await update.effective_message.reply_text(
@@ -265,14 +265,14 @@ def main():
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("help", help_command))
         application.add_handler(CommandHandler("quality", quality_command))
-
+        
         # Add quality setting handlers
         for quality in YT_QUALITIES.keys():
             application.add_handler(CommandHandler(quality, set_quality))
 
         # Add URL handler - needs to be last to not override commands
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_url))
-
+        
         # Add error handler
         application.add_error_handler(error_handler)
 
