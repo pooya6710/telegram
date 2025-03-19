@@ -301,49 +301,62 @@ def setup_bot_handlers():
     @bot.message_handler(func=lambda message: 'youtube.com' in message.text or 'youtu.be' in message.text)
     def youtube_link_handler(message):
         try:
-            from youtube_downloader import download_video, validate_youtube_url, extract_video_info
-            debug_msg = bot.reply_to(message, "🔄 در حال پردازش لینک یوتیوب...")
+            debug_msg = None  # تعریف متغیر قبل از استفاده برای جلوگیری از خطا
+            
+            try:
+                # ابتدا سعی می‌کنیم از ماژول youtube_downloader در همان پوشه استفاده کنیم
+                import sys
+                sys.path.append('.')  # اطمینان از وجود مسیر فعلی در sys.path
+                from youtube_downloader import download_video, validate_youtube_url, extract_video_info
+                
+                # ارسال پیام در حال پردازش
+                debug_msg = bot.reply_to(message, "🔄 در حال پردازش لینک یوتیوب...")
+                
+                url = message.text.strip()
+                if not validate_youtube_url(url):
+                    bot.edit_message_text("❌ لینک یوتیوب نامعتبر است", message.chat.id, debug_msg.message_id)
+                    return
 
-            url = message.text.strip()
-            if not validate_youtube_url(url):
-                bot.edit_message_text("❌ لینک یوتیوب نامعتبر است", message.chat.id, debug_msg.message_id)
-                return
+                video_info = extract_video_info(url)
+                if not video_info:
+                    bot.edit_message_text("❌ خطا در دریافت اطلاعات ویدیو", message.chat.id, debug_msg.message_id)
+                    return
 
-            video_info = extract_video_info(url)
-            if not video_info:
-                bot.edit_message_text("❌ خطا در دریافت اطلاعات ویدیو", message.chat.id, debug_msg.message_id)
-                return
+                bot.edit_message_text("⏳ در حال دانلود ویدیو...", message.chat.id, debug_msg.message_id)
+                success, file_path, error = download_video(url, int(time.time()), message.from_user.id)
 
-            bot.edit_message_text("⏳ در حال دانلود ویدیو...", message.chat.id, debug_msg.message_id)
-            success, file_path, error = download_video(url, int(time.time()), message.from_user.id)
-
-            if success and file_path:
-                with open(file_path, 'rb') as video_file:
-                    bot.send_video(message.chat.id, video_file, caption=f"✅ دانلود شد\n🎥 {video_info.get('title', '')}")
-                os.remove(file_path)  # پاک کردن فایل پس از ارسال
-            else:
-                error_msg = error.get('error', 'خطای نامشخص') if error else 'خطای نامشخص'
-                bot.edit_message_text(f"❌ {error_msg}", message.chat.id, debug_msg.message_id)
+                if success and file_path:
+                    with open(file_path, 'rb') as video_file:
+                        bot.send_video(message.chat.id, video_file, caption=f"✅ دانلود شد\n🎥 {video_info.get('title', '')}")
+                    os.remove(file_path)  # پاک کردن فایل پس از ارسال
+                else:
+                    error_msg = error.get('error', 'خطای نامشخص') if error else 'خطای نامشخص'
+                    bot.edit_message_text(f"❌ {error_msg}", message.chat.id, debug_msg.message_id)
+                    
+            except ImportError as import_error:
+                # اگر نتوانستیم ماژول را وارد کنیم، یک پیام ساده برمی‌گردانیم
+                logger.error(f"خطا در وارد کردن ماژول youtube_downloader: {str(import_error)}")
+                if debug_msg:
+                    bot.edit_message_text("⚠️ این قابلیت در حال حاضر در دسترس نیست.", message.chat.id, debug_msg.message_id)
+                else:
+                    debug_msg = bot.reply_to(message, "⚠️ این قابلیت در حال حاضر در دسترس نیست.")
 
         except Exception as e:
             error_msg = str(e)
             detailed_error = traceback.format_exc()
             logger.error(f"Error processing YouTube link: {detailed_error}")
 
-            if "Invalid URL" in error_msg:
-                error_response = "❌ لینک نامعتبر است. لطفاً یک لینک معتبر یوتیوب ارسال کنید."
-            elif "Video unavailable" in error_msg:
-                error_response = "❌ این ویدیو در دسترس نیست یا خصوصی است."
-            elif "Sign in" in error_msg:
-                error_response = "❌ این ویدیو نیاز به ورود به حساب کاربری دارد."
+            error_response = "❌ خطا در پردازش لینک یوتیوب. لطفا دوباره تلاش کنید."
+            
+            # اگر پیام در حال پردازش داریم، آن را ویرایش می‌کنیم
+            if debug_msg:
+                try:
+                    bot.edit_message_text(error_response, message.chat.id, debug_msg.message_id)
+                except:
+                    bot.reply_to(message, error_response)
             else:
-                error_response = f"⚠️ خطا در پردازش لینک:\n{error_msg}"
-
-            bot.edit_message_text(
-                error_response,
-                message.chat.id,
-                debug_msg.message_id
-            )
+                # اگر نداریم، یک پیام جدید می‌فرستیم
+                bot.reply_to(message, error_response)
 
     @bot.message_handler(commands=['start'])
     def handle_start(message):
@@ -410,7 +423,21 @@ def generate_server_status():
     return "📈 سرور در حال اجرا است.  CPU: 50%, Memory: 75%"
 
 
-from debug_handler import debugger
+# انتقال از debug_handler که ممکن است وجود نداشته باشد
+try:
+    from debug_handler import debugger
+except ImportError:
+    # اگر ماژول وجود نداشت، یک شیء ساده برای جلوگیری از خطا ایجاد می‌کنیم
+    class SimpleDebugger:
+        def debug(self, msg): 
+            logger.debug(msg)
+        def info(self, msg): 
+            logger.info(msg)
+        def warning(self, msg): 
+            logger.warning(msg)
+        def error(self, msg): 
+            logger.error(msg)
+    debugger = SimpleDebugger()
 
 def main():
     """تابع اصلی اجرای ربات"""
