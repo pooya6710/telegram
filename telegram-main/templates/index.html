@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ربات هوشمند چندمنظوره تلگرام</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.css">
+</head>
+<body>
+    <div class="container py-5">
+        <header class="text-center mb-5">
+            <h1 class="display-4 fw-bold">🤖 ربات هوشمند چندمنظوره تلگرام</h1>
+            <p class="lead">دانلود از یوتیوب و اینستاگرام، مدیریت کاربران، جستجوی هشتگ و پایش سیستم</p>
+        </header>
+
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card h-100 border-0 bg-dark shadow-sm">
+                    <div class="card-body">
+                        <h2 class="card-title h4 mb-4">📱 درباره ربات</h2>
+                        <p>این ربات هوشمند چندمنظوره دارای قابلیت‌های متنوعی است که به شما امکان دانلود از منابع مختلف، جستجوی هشتگ، مدیریت کاربران و پایش سیستم را می‌دهد.</p>
+                        
+                        <h5 class="mt-4">امکانات:</h5>
+                        <ul class="feature-list">
+                            <li><i data-feather="hash"></i> جستجو و ردیابی هشتگ‌ها در کانال‌های تلگرام</li>
+                            <li><i data-feather="users"></i> مدیریت کاربران (عادی، ویژه و ادمین)</li>
+                            <li><i data-feather="list"></i> مدیریت و پیگیری دانلودها</li>
+                            <li><i data-feather="activity"></i> پایش و نمایش وضعیت سیستم</li>
+                            <li><i data-feather="database"></i> ذخیره‌سازی و مدیریت داده‌ها</li>
+                            <li><i data-feather="message-square"></i> پشتیبانی از دستورات متنوع</li>
+                        </ul>
+                        
+                        <div class="mt-4">
+                            <a href="https://t.me/{{ bot_username }}" target="_blank" class="btn btn-primary">
+                                <i data-feather="send"></i> مشاهده ربات در تلگرام
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card h-100 border-0 bg-dark shadow-sm">
+                    <div class="card-body">
+                        <h2 class="card-title h4 mb-4">📋 راهنمای استفاده</h2>
+                        <ol class="guide-list">
+                            <li>ربات را در تلگرام جستجو کنید</li>
+                            <li>دستور <code>/start</code> را ارسال کنید</li>
+                            <li>لینک ویدیو یوتیوب را برای ربات ارسال کنید</li>
+                            <li>کیفیت مورد نظر را انتخاب کنید</li>
+                            <li>منتظر دانلود بمانید</li>
+                            <li>ویدیو دانلود شده را دریافت کنید</li>
+                        </ol>
+                        
+                        <h5 class="mt-4">دستورات اصلی:</h5>
+                        <div class="commands-list">
+                            <div class="command-item">
+                                <code>/start</code>
+                                <span>شروع ربات</span>
+                            </div>
+                            <div class="command-item">
+                                <code>/help</code>
+                                <span>راهنمای استفاده</span>
+                            </div>
+                            <div class="command-item">
+                                <code>/download [URL]</code>
+                                <span>دانلود ویدیو</span>
+                            </div>
+                            <div class="command-item">
+                                <code>/status</code>
+                                <span>وضعیت سیستم</span>
+                            </div>
+                            <div class="command-item">
+                                <code>/mydownloads</code>
+                                <span>مشاهده دانلودهای من</span>
+                            </div>
+                            <div class="command-item">
+                                <code>/add_hashtag [هشتگ]</code>
+                                <span>افزودن هشتگ</span>
+                            </div>
+                            <div class="command-item">
+                                <code>/remove_hashtag [هشتگ]</code>
+                                <span>حذف هشتگ</span>
+                            </div>
+                            <div class="command-item">
+                                <code>/list_hashtags</code>
+                                <span>لیست هشتگ‌ها</span>
+                            </div>
+                            <div class="command-item">
+                                <code>/search_hashtag [هشتگ]</code>
+                                <span>جستجوی هشتگ</span>
+                            </div>
+                            <div class="command-item">
+                                <code>/add_channel [کانال]</code>
+                                <span>افزودن کانال</span>
+                            </div>
+                            <div class="command-item">
+                                <code>/list_channels</code>
+                                <span>لیست کانال‌ها</span>
+                            </div>
+                            <div class="command-item">
+                                <code>/sysinfo</code>
+                                <span>اطلاعات سیستم</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card border-0 bg-dark shadow-sm">
+                    <div class="card-body">
+                        <h2 class="card-title h4 mb-4">📊 وضعیت سیستم</h2>
+                        <div class="text-center mb-3">
+                            <a href="{{ url_for('status') }}" class="btn btn-outline-info">
+                                <i data-feather="eye"></i> مشاهده وضعیت کامل سیستم
+                            </a>
+                        </div>
+                        <div id="status-container" class="system-status">
+                            <div class="d-flex justify-content-center">
+                                <div class="spinner-border text-info" role="status">
+                                    <span class="visually-hidden">در حال بارگذاری...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer class="mt-5 text-center text-muted">
+            <p>ربات هوشمند چندمنظوره تلگرام &copy; {{ current_year }}</p>
+            <p class="small">ساخته شده با <i data-feather="heart" class="text-danger" style="width: 16px; height: 16px;"></i> و Python</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script>
+        // فعال کردن آیکون‌ها
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+            
+            // دریافت وضعیت سیستم
+            fetch('/status')
+                .then(response => response.text())
+                .then(data => {
+                    // استخراج بخش وضعیت از HTML کامل
+                    const parser = new DOMParser();
+                    const htmlDoc = parser.parseFromString(data, 'text/html');
+                    const statusContent = htmlDoc.querySelector('.status-summary');
+                    
+                    if (statusContent) {
+                        document.getElementById('status-container').innerHTML = statusContent.outerHTML;
+                    } else {
+                        document.getElementById('status-container').innerHTML = '<div class="alert alert-info">اطلاعات وضعیت در دسترس نیست.</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching status:', error);
+                    document.getElementById('status-container').innerHTML = '<div class="alert alert-danger">خطا در دریافت وضعیت سیستم</div>';
+                });
+        });
+    </script>
+</body>
+</html>

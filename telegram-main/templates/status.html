@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>وضعیت سیستم | ربات دانلود ویدیو یوتیوب</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.css">
+</head>
+<body>
+    <div class="container py-4">
+        <header class="mb-5">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h2 fw-bold mb-0">📊 وضعیت سیستم</h1>
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-sm">
+                    <i data-feather="home"></i> بازگشت به صفحه اصلی
+                </a>
+            </div>
+            <hr>
+        </header>
+
+        <div class="status-summary mb-4">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title text-info">
+                                <i data-feather="cpu"></i> CPU
+                            </h5>
+                            <div class="d-flex align-items-center mt-3">
+                                <div class="progress flex-grow-1" style="height: 10px;">
+                                    <div class="progress-bar bg-info" role="progressbar" 
+                                        style="width: {{ system.cpu.usage_percent }}%;" 
+                                        aria-valuenow="{{ system.cpu.usage_percent }}" 
+                                        aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                                <span class="ms-2 fw-bold">{{ system.cpu.usage_percent }}%</span>
+                            </div>
+                            <div class="text-muted small mt-2">
+                                {{ system.cpu.cores }} هسته
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title text-success">
+                                <i data-feather="server"></i> حافظه
+                            </h5>
+                            <div class="d-flex align-items-center mt-3">
+                                <div class="progress flex-grow-1" style="height: 10px;">
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                        style="width: {{ system.memory.percent_used }}%;" 
+                                        aria-valuenow="{{ system.memory.percent_used }}" 
+                                        aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                                <span class="ms-2 fw-bold">{{ system.memory.percent_used }}%</span>
+                            </div>
+                            <div class="text-muted small mt-2">
+                                {{ system.memory.used_human }} / {{ system.memory.total_human }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title text-warning">
+                                <i data-feather="hard-drive"></i> دیسک
+                            </h5>
+                            <div class="d-flex align-items-center mt-3">
+                                <div class="progress flex-grow-1" style="height: 10px;">
+                                    <div class="progress-bar bg-warning" role="progressbar" 
+                                        style="width: {{ system.disk.percent_used }}%;" 
+                                        aria-valuenow="{{ system.disk.percent_used }}" 
+                                        aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                                <span class="ms-2 fw-bold">{{ system.disk.percent_used }}%</span>
+                            </div>
+                            <div class="text-muted small mt-2">
+                                {{ system.disk.free_human }} آزاد از {{ system.disk.total_human }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title text-danger">
+                                <i data-feather="activity"></i> فعالیت
+                            </h5>
+                            <div class="mt-3">
+                                <span class="badge bg-primary rounded-pill">{{ active_downloads|length }} دانلود فعال</span>
+                            </div>
+                            <div class="text-muted small mt-2">
+                                {{ system.uptime.uptime_human }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-transparent">
+                        <h5 class="mb-0">
+                            <i data-feather="download"></i> دانلودهای فعال
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if active_downloads %}
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">#</th>
+                                            <th scope="col">کاربر</th>
+                                            <th scope="col">پیشرفت</th>
+                                            <th scope="col">وضعیت</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for id, download in active_downloads.items() %}
+                                        <tr>
+                                            <td>{{ id }}</td>
+                                            <td>{{ download.user_id }}</td>
+                                            <td>
+                                                <div class="progress" style="height: 6px;">
+                                                    <div class="progress-bar" role="progressbar" 
+                                                        style="width: {{ download.progress }}%;" 
+                                                        aria-valuenow="{{ download.progress }}" 
+                                                        aria-valuemin="0" aria-valuemax="100">
+                                                    </div>
+                                                </div>
+                                                <small>{{ download.progress }}%</small>
+                                            </td>
+                                            <td><small>{{ download.status }}</small></td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center p-4 text-muted">
+                                <i data-feather="info" class="mb-3" style="width: 48px; height: 48px;"></i>
+                                <p>در حال حاضر دانلود فعالی وجود ندارد.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-transparent">
+                        <h5 class="mb-0">
+                            <i data-feather="hard-drive"></i> اطلاعات سیستم
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="system-info-item">
+                            <span>سیستم عامل:</span>
+                            <span>{{ system.os.system }} {{ system.os.release }}</span>
+                        </div>
+                        <div class="system-info-item">
+                            <span>معماری:</span>
+                            <span>{{ system.os.architecture }}</span>
+                        </div>
+                        <div class="system-info-item">
+                            <span>نسخه پایتون:</span>
+                            <span>{{ system.os.python_version }}</span>
+                        </div>
+                        <div class="system-info-item">
+                            <span>زمان کارکرد:</span>
+                            <span>{{ system.uptime.uptime_human }}</span>
+                        </div>
+                        <div class="system-info-item">
+                            <span>زمان شروع سیستم:</span>
+                            <span>{{ system.uptime.boot_time }}</span>
+                        </div>
+                        <div class="system-info-item">
+                            <span>تعداد هسته‌های CPU:</span>
+                            <span>{{ system.cpu.cores }}</span>
+                        </div>
+                        <div class="system-info-item">
+                            <span>مصرف حافظه فرایند:</span>
+                            <span>{{ system.process.this_process.memory_usage }}</span>
+                        </div>
+                        <div class="system-info-item">
+                            <span>تعداد ترد‌های فرایند:</span>
+                            <span>{{ system.process.this_process.threads_count }}</span>
+                        </div>
+                        {% if system.network %}
+                        <div class="system-info-item">
+                            <span>تعداد اتصالات شبکه:</span>
+                            <span>{{ system.network.connections }}</span>
+                        </div>
+                        <div class="system-info-item">
+                            <span>دریافت شبکه:</span>
+                            <span>{{ system.network.bytes_recv }}</span>
+                        </div>
+                        <div class="system-info-item">
+                            <span>ارسال شبکه:</span>
+                            <span>{{ system.network.bytes_sent }}</span>
+                        </div>
+                        {% endif %}
+                        {% if system.server %}
+                        <div class="system-info-item">
+                            <span>نام میزبان:</span>
+                            <span>{{ system.server.hostname }}</span>
+                        </div>
+                        <div class="system-info-item">
+                            <span>منطقه زمانی:</span>
+                            <span>{{ system.server.timezone }}</span>
+                        </div>
+                        <div class="system-info-item">
+                            <span>تعداد ترد‌های فعال:</span>
+                            <span>{{ system.server.active_threads }}</span>
+                        </div>
+                        <div class="system-info-item">
+                            <span>زمان سرور:</span>
+                            <span>{{ system.server.current_time }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-transparent">
+                        <h5 class="mb-0">
+                            <i data-feather="users"></i> کاربران اخیر
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if users %}
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">شناسه</th>
+                                            <th scope="col">نام کاربری</th>
+                                            <th scope="col">نام</th>
+                                            <th scope="col">نقش</th>
+                                            <th scope="col">دانلود‌ها</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for user in users %}
+                                        <tr>
+                                            <td>{{ user.id }}</td>
+                                            <td>{{ user.username or "-" }}</td>
+                                            <td>{{ user.first_name or "-" }}</td>
+                                            <td>
+                                                {% if user.role == -1 %}
+                                                    <span class="badge bg-danger">مسدود</span>
+                                                {% elif user.role == 0 %}
+                                                    <span class="badge bg-secondary">عادی</span>
+                                                {% elif user.role == 1 %}
+                                                    <span class="badge bg-primary">ویژه</span>
+                                                {% elif user.role >= 2 %}
+                                                    <span class="badge bg-warning">ادمین</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ user.download_count }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center p-4 text-muted">
+                                <i data-feather="users" class="mb-3" style="width: 48px; height: 48px;"></i>
+                                <p>هیچ کاربری یافت نشد.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer text-muted bg-transparent">
+                        <small>تعداد کل کاربران: {{ user_count }}</small>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-transparent">
+                        <h5 class="mb-0">
+                            <i data-feather="download-cloud"></i> دانلودهای اخیر
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if downloads %}
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">#</th>
+                                            <th scope="col">کاربر</th>
+                                            <th scope="col">عنوان</th>
+                                            <th scope="col">وضعیت</th>
+                                            <th scope="col">حجم</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for download in downloads %}
+                                        <tr>
+                                            <td>{{ download.id }}</td>
+                                            <td>{{ download.user_id }}</td>
+                                            <td>
+                                                {% if download.metadata and download.metadata.title %}
+                                                    {{ download.metadata.title|truncate(20) }}
+                                                {% else %}
+                                                    <small class="text-muted">بدون عنوان</small>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if download.status == 0 %}
+                                                    <span class="badge bg-secondary">در انتظار</span>
+                                                {% elif download.status == 1 %}
+                                                    <span class="badge bg-info">در حال پردازش</span>
+                                                {% elif download.status == 2 %}
+                                                    <span class="badge bg-success">تکمیل شده</span>
+                                                {% elif download.status == 3 %}
+                                                    <span class="badge bg-danger">با خطا مواجه شد</span>
+                                                {% elif download.status == 4 %}
+                                                    <span class="badge bg-warning">لغو شده</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if download.file_size %}
+                                                    <small>{{ (download.file_size / (1024*1024))|round(1) }} MB</small>
+                                                {% else %}
+                                                    <small>-</small>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center p-4 text-muted">
+                                <i data-feather="download-cloud" class="mb-3" style="width: 48px; height: 48px;"></i>
+                                <p>هیچ دانلودی یافت نشد.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer text-muted bg-transparent">
+                        <small>تعداد کل دانلودها: {{ download_count }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <a href="{{ url_for('webhook_test') }}" class="btn btn-outline-info me-2">
+                <i data-feather="refresh-cw"></i> بازنشانی وب‌هوک
+            </a>
+            <a href="{{ url_for('ping') }}" class="btn btn-outline-success">
+                <i data-feather="heart"></i> بررسی سلامت سیستم
+            </a>
+        </div>
+
+        <footer class="mt-5 text-center text-muted">
+            <p>ربات هوشمند چندمنظوره تلگرام &copy; {{ system.timestamp.split('T')[0] if system.timestamp else '' }}</p>
+            <p class="small">دانلود از یوتیوب، اینستاگرام، جستجوی هشتگ، مدیریت کاربران و بسیاری قابلیت‌های دیگر</p>
+            <p class="small">آخرین به‌روزرسانی: {{ system.timestamp.replace('T', ' ').split('.')[0] if system.timestamp else '' }}</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+            
+            // به‌روزرسانی خودکار صفحه هر 30 ثانیه
+            setTimeout(function() {
+                location.reload();
+            }, 30000);
+        });
+    </script>
+</body>
+</html>
