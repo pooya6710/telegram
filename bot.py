@@ -69,7 +69,8 @@ YT_QUALITIES = {
 # وارد کردن ماژول‌های مورد نیاز
 from utils import (
     is_youtube_url, is_instagram_url, format_size, 
-    cleanup_temp_file, cleanup_temp_dir, ensure_temp_dir
+    cleanup_temp_file, cleanup_temp_dir, ensure_temp_dir,
+    setup_logging
 )
 from downloaders import YouTubeDownloader, InstagramDownloader
 
