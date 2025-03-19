@@ -244,11 +244,11 @@ def process_instagram_url(message, url):
                     video_file,
                     caption=f"✅ دانلود شد از اینستاگرام\n👤 {caption}"
                 )
-        else:  # ارسال تصویر
-            with open(file_path, 'rb') as photo_file:
-                bot.send_photo(
+        else:  # ارسال تصویر یا ویدیو کوتاه به عنوان ویدیو
+            with open(file_path, 'rb') as media_file:
+                bot.send_video(
                     message.chat.id, 
-                    photo_file,
+                    media_file,
                     caption=f"✅ دانلود شد از اینستاگرام\n👤 {caption}"
                 )
         
