@@ -103,17 +103,118 @@ def create_process_lock():
         logger.error(f"خطا در ایجاد فایل قفل: {e}")
         return False
 
+def is_instagram_url(url: str) -> bool:
+    """بررسی اینکه آیا آدرس مربوط به اینستاگرام است یا خیر"""
+    return 'instagram.com' in url and ('/p/' in url or '/reel/' in url or '/tv/' in url)
+
+def process_instagram_download(message, url: str):
+    """دانلود محتوا از اینستاگرام"""
+    try:
+        # ارسال پیام در حال پردازش
+        debug_msg = bot.reply_to(message, "🔄 در حال پردازش لینک اینستاگرام...")
+        
+        # استفاده از instaloader برای دانلود
+        import instaloader
+        from datetime import datetime
+        
+        # ایجاد یک نمونه از Instaloader
+        L = instaloader.Instaloader(
+            download_videos=True,
+            download_video_thumbnails=False,
+            download_geotags=False,
+            download_comments=False,
+            save_metadata=False
+        )
+        
+        # تلاش برای استخراج کد پست از URL
+        import re
+        shortcode = None
+        match = re.search(r'instagram.com/(?:p|reel|tv)/([^/?]+)', url)
+        if match:
+            shortcode = match.group(1)
+            
+        if not shortcode:
+            bot.edit_message_text("❌ لینک اینستاگرام نامعتبر است", message.chat.id, debug_msg.message_id)
+            return
+            
+        # تغییر پیام وضعیت
+        bot.edit_message_text("⏳ در حال دانلود از اینستاگرام...", message.chat.id, debug_msg.message_id)
+        
+        # ایجاد مسیر ذخیره‌سازی موقت
+        temp_dir = f"temp_downloads/instagram_{shortcode}_{int(datetime.now().timestamp())}"
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        try:
+            # دانلود پست
+            post = instaloader.Post.from_shortcode(L.context, shortcode)
+            L.download_post(post, target=temp_dir)
+            
+            # یافتن فایل‌های دانلود شده
+            media_files = []
+            for file in os.listdir(temp_dir):
+                if file.endswith(('.jpg', '.mp4', '.mov')):
+                    media_files.append(os.path.join(temp_dir, file))
+            
+            if not media_files:
+                bot.edit_message_text("⚠️ هیچ فایل رسانه‌ای در این پست یافت نشد", message.chat.id, debug_msg.message_id)
+                return
+                
+            # بررسی نوع فایل (تصویر یا ویدیو) و ارسال آن
+            bot.edit_message_text("📤 در حال ارسال فایل...", message.chat.id, debug_msg.message_id)
+            
+            for file_path in media_files:
+                if file_path.endswith(('.mp4', '.mov')):
+                    # ارسال ویدیو
+                    with open(file_path, 'rb') as video_file:
+                        bot.send_video(
+                            message.chat.id, 
+                            video_file,
+                            caption=f"✅ دانلود شد از اینستاگرام\n👤 {post.owner_username}"
+                        )
+                else:
+                    # ارسال تصویر
+                    with open(file_path, 'rb') as photo_file:
+                        bot.send_photo(
+                            message.chat.id, 
+                            photo_file,
+                            caption=f"✅ دانلود شد از اینستاگرام\n👤 {post.owner_username}"
+                        )
+            
+            # حذف پیام پردازش
+            bot.delete_message(message.chat.id, debug_msg.message_id)
+            
+        except instaloader.exceptions.ProfileNotExistsException:
+            bot.edit_message_text("❌ پروفایل مورد نظر وجود ندارد", message.chat.id, debug_msg.message_id)
+        except instaloader.exceptions.PrivateProfileNotFollowedException:
+            bot.edit_message_text("❌ این پروفایل خصوصی است و شما آن را دنبال نمی‌کنید", message.chat.id, debug_msg.message_id)
+        except instaloader.exceptions.LoginRequiredException:
+            bot.edit_message_text("❌ برای دانلود این محتوا نیاز به ورود به حساب کاربری است", message.chat.id, debug_msg.message_id)
+        except Exception as e:
+            bot.edit_message_text(f"❌ خطا در دانلود: {str(e)}", message.chat.id, debug_msg.message_id)
+        finally:
+            # پاکسازی فایل‌های موقت
+            import shutil
+            if os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir, ignore_errors=True)
+                
+    except Exception as e:
+        logger.error(f"خطا در پردازش لینک اینستاگرام: {str(e)}\n{traceback.format_exc()}")
+        try:
+            bot.reply_to(message, f"⚠️ خطایی رخ داد: {str(e)}")
+        except:
+            pass
+
 def setup_bot_handlers():
     """تنظیم هندلرهای ربات"""
     @bot.message_handler(func=lambda message: 'youtube.com' in message.text or 'youtu.be' in message.text)
     def youtube_link_handler(message):
         try:
             from youtube_downloader import download_video, validate_youtube_url, extract_video_info
-            debug_msg = bot.reply_to(message, "🔄 در حال پردازش لینک...")
+            debug_msg = bot.reply_to(message, "🔄 در حال پردازش لینک یوتیوب...")
 
             url = message.text.strip()
             if not validate_youtube_url(url):
-                bot.edit_message_text("❌ لینک نامعتبر است", message.chat.id, debug_msg.message_id)
+                bot.edit_message_text("❌ لینک یوتیوب نامعتبر است", message.chat.id, debug_msg.message_id)
                 return
 
             video_info = extract_video_info(url)
