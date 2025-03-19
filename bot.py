@@ -7,14 +7,69 @@ from telegram.ext import (
     filters, ContextTypes, CallbackQueryHandler
 )
 
-from config import (
-    BOT_TOKEN, TEMP_DIR, WELCOME_MESSAGE, 
-    HELP_MESSAGE, QUALITY_MESSAGE, YT_QUALITIES
+# تنظیم لاگینگ
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
 )
+logger = logging.getLogger(__name__)
+
+# دریافت توکن از متغیرهای محیطی
+BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+if not BOT_TOKEN:
+    logger.error("توکن ربات تلگرام یافت نشد. لطفا متغیر محیطی TELEGRAM_BOT_TOKEN را تنظیم کنید.")
+    exit(1)
+
+# تنظیمات پایه
+TEMP_DIR = 'temp_downloads'
+WELCOME_MESSAGE = """
+🎥 به ربات دانلود یوتیوب و اینستاگرام خوش آمدید!
+
+کافیه لینک یوتیوب یا اینستاگرام رو برام بفرستید تا براتون دانلود کنم.
+
+دستورات:
+/start - نمایش این پیام خوش‌آمدگویی
+/help - نمایش راهنما
+/quality - تنظیم کیفیت دانلود ویدیوهای یوتیوب
+"""
+
+HELP_MESSAGE = """
+📝 راهنمای استفاده از ربات:
+
+1. فقط کافیه لینک یوتیوب یا اینستاگرام رو برام بفرستید
+2. صبر کنید تا دانلود تموم بشه
+3. فایل مدیا رو دریافت کنید
+
+لینک‌های پشتیبانی شده:
+- ویدیوهای یوتیوب (با کیفیت قابل تنظیم)
+- پست‌های اینستاگرام
+- ریلز اینستاگرام
+
+برای تغییر کیفیت دانلود از دستور /quality استفاده کنید.
+
+نکته: امکان دانلود پست‌های خصوصی اینستاگرام وجود نداره.
+"""
+
+QUALITY_MESSAGE = """
+🎮 لطفا کیفیت مورد نظر برای دانلود ویدیوهای یوتیوب را انتخاب کنید:
+
+- کیفیت بالا (1080p)
+- کیفیت متوسط (720p) - پیش‌فرض
+- کیفیت پایین (480p)
+
+کیفیت فعلی: {quality}
+"""
+
+YT_QUALITIES = {
+    'high': '1080',
+    'medium': '720',
+    'low': '480'
+}
+
+# وارد کردن ماژول‌های مورد نیاز
 from utils import (
     is_youtube_url, is_instagram_url, format_size, 
-    cleanup_temp_file, cleanup_temp_dir, setup_logging, 
-    ensure_temp_dir
+    cleanup_temp_file, cleanup_temp_dir, ensure_temp_dir
 )
 from downloaders import YouTubeDownloader, InstagramDownloader
 

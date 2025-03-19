@@ -18,6 +18,18 @@ from youtube_downloader import (
     validate_youtube_url, extract_video_info, download_video,
     get_download_progress, cancel_download, clean_old_downloads
 )
+from debug_logger import debug_log
+
+# برای تشخیص لینک اینستاگرام
+def is_instagram_url(url: str) -> bool:
+    """
+    بررسی معتبر بودن آدرس اینستاگرام
+    Args:
+        url: آدرس ورودی
+    Returns:
+        True اگر آدرس معتبر اینستاگرام باشد
+    """
+    return 'instagram.com' in url
 from user_management import (
     update_user_info, is_user_blocked, is_admin, is_premium,
     check_user_limits, get_user_role, format_user_info
