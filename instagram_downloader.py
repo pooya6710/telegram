@@ -1,15 +1,15 @@
 import os
 import re
+import shutil
 import logging
 import instaloader
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Dict, Any
 
-# تنظیم لاگینگ
-logging.basicConfig(level=logging.INFO)
+# تنظیم لاگر
 logger = logging.getLogger(__name__)
 
 class InstagramDownloader:
-    def __init__(self, temp_dir):
+    def __init__(self, temp_dir: str):
         """
         راه‌اندازی دانلود کننده اینستاگرام
 
@@ -17,12 +17,23 @@ class InstagramDownloader:
             temp_dir (str): مسیر دایرکتوری موقت برای ذخیره فایل‌ها
         """
         self.temp_dir = temp_dir
-        logger.info("Initialized Instagram downloader")
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
         
-        # اطمینان از وجود دایرکتوری موقت
-        os.makedirs(temp_dir, exist_ok=True)
-    
-    async def download(self, url) -> Tuple[str, str]:
+        # ایجاد نمونه Instaloader
+        self.instaloader = instaloader.Instaloader(
+            download_pictures=True,
+            download_videos=True,
+            download_video_thumbnails=False,
+            download_geotags=False,
+            download_comments=False,
+            save_metadata=False,
+            compress_json=False,
+            quiet=False,
+            max_connection_attempts=3
+        )
+
+    async def download(self, url: str) -> Tuple[str, str]:
         """
         دانلود پست اینستاگرام
         
@@ -33,58 +44,66 @@ class InstagramDownloader:
             (file_path, title): مسیر فایل و عنوان
         """
         try:
-            # استخراج شناسه پست از URL
+            logger.info(f"شروع دانلود از آدرس: {url}")
+            
+            # استخراج کد پست از آدرس
             shortcode = None
-            match = re.search(r'instagram.com/(?:p|reel)/([^/?]+)', url)
-            if match:
-                shortcode = match.group(1)
+            if "/reel/" in url:
+                match = re.search(r'instagram.com/reel/([^/?]+)', url)
+                if match:
+                    shortcode = match.group(1)
+                    logger.info(f"کد ریل شناسایی شد: {shortcode}")
+            else:
+                match = re.search(r'instagram.com/p/([^/?]+)', url)
+                if match:
+                    shortcode = match.group(1)
+                    logger.info(f"کد پست شناسایی شد: {shortcode}")
             
             if not shortcode:
-                raise Exception("شناسه پست اینستاگرام یافت نشد")
-            
-            # ایجاد دایرکتوری منحصر به فرد برای این دانلود
-            download_dir = os.path.join(self.temp_dir, shortcode)
-            os.makedirs(download_dir, exist_ok=True)
-            
-            logger.info(f"Starting download for Instagram post: {shortcode}")
-            
-            # دانلود پست
-            L = instaloader.Instaloader(
-                dirname_pattern=download_dir,
-                filename_pattern=shortcode,
-                download_videos=True,
-                download_video_thumbnails=False,
-                download_geotags=False,
-                download_comments=False,
-                save_metadata=False
-            )
-            
-            post = instaloader.Post.from_shortcode(L.context, shortcode)
-            L.download_post(post, target=shortcode)
-            
-            # یافتن فایل دانلود شده
-            files = os.listdir(download_dir)
-            media_files = [f for f in files if f.endswith(('.jpg', '.mp4', '.mov'))]
-            
-            if not media_files:
-                raise Exception("No media found in the Instagram post")
-            
-            # ترجیح دادن فایل‌های ویدیویی به تصاویر
-            video_files = [f for f in media_files if f.endswith(('.mp4', '.mov'))]
-            if video_files:
-                file_path = os.path.join(download_dir, video_files[0])
-            else:
-                file_path = os.path.join(download_dir, media_files[0])
-            
-            # ایجاد عنوان مناسب
-            title = f"Post by {post.owner_username}"
-            if post.caption:
-                short_caption = post.caption[:50] + "..." if len(post.caption) > 50 else post.caption
-                title = f"{title} - {short_caption}"
+                logger.error("کد پست از آدرس استخراج نشد")
+                raise ValueError("آدرس اینستاگرام نامعتبر است")
                 
-            logger.info(f"Instagram download completed: {file_path}")
-            return file_path, title
-            
+            # ایجاد دایرکتوری موقت برای این پست
+            post_temp_dir = os.path.join(self.temp_dir, f"insta_{shortcode}")
+            if not os.path.exists(post_temp_dir):
+                os.makedirs(post_temp_dir)
+                
+            # دانلود پست
+            try:
+                post = instaloader.Post.from_shortcode(self.instaloader.context, shortcode)
+                self.instaloader.download_post(post, target=post_temp_dir)
+                logger.info(f"دانلود پست با موفقیت انجام شد: {shortcode}")
+                
+                # پیدا کردن فایل‌های مدیا در پوشه
+                media_files = []
+                for root, _, files in os.walk(post_temp_dir):
+                    for file in files:
+                        if file.endswith(('.mp4', '.jpg', '.jpeg')):
+                            media_files.append(os.path.join(root, file))
+                
+                if not media_files:
+                    logger.error("هیچ فایل مدیایی در پست یافت نشد")
+                    raise ValueError("هیچ فایل مدیایی در پست یافت نشد")
+                
+                # استفاده از اولین فایل یافت شده
+                file_path = media_files[0]
+                logger.info(f"فایل انتخاب شده برای ارسال: {file_path}")
+                
+                return file_path, f"{post.owner_username} - {shortcode}"
+                
+            except instaloader.exceptions.ProfileNotExistsException:
+                logger.error("پروفایل مورد نظر وجود ندارد")
+                raise ValueError("پروفایل مورد نظر وجود ندارد")
+            except instaloader.exceptions.PrivateProfileNotFollowedException:
+                logger.error("این پروفایل خصوصی است")
+                raise ValueError("این پروفایل خصوصی است و شما آن را دنبال نمی‌کنید")
+            except instaloader.exceptions.LoginRequiredException:
+                logger.error("برای دانلود این محتوا نیاز به ورود به حساب کاربری است")
+                raise ValueError("برای دانلود این محتوا نیاز به ورود به حساب کاربری است")
+            except Exception as e:
+                logger.error(f"خطا در دانلود پست: {str(e)}")
+                raise ValueError(f"خطا در دانلود پست: {str(e)}")
+                
         except Exception as e:
-            logger.error(f"Error in Instagram download: {str(e)}")
-            raise Exception(f"خطا در دانلود: {str(e)}")
+            logger.error(f"خطا در دانلود اینستاگرام: {str(e)}")
+            raise ValueError(f"خطا در دانلود اینستاگرام: {str(e)}")

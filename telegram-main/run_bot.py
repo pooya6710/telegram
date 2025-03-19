@@ -204,8 +204,100 @@ def process_instagram_download(message, url: str):
         except:
             pass
 
+def is_instagram_url(url: str) -> bool:
+    """بررسی اینکه آیا آدرس مربوط به اینستاگرام است یا خیر"""
+    return 'instagram.com' in url and ('/p/' in url or '/reel/' in url or '/tv/' in url)
+
+def process_instagram_url(message, url):
+    """پردازش لینک اینستاگرام و دانلود آن"""
+    try:
+        from instagram_downloader import InstagramDownloader
+        
+        # ارسال پیام در حال پردازش
+        debug_msg = bot.reply_to(message, "🔄 در حال پردازش لینک اینستاگرام...")
+        
+        # ایجاد دایرکتوری temp_downloads اگر وجود ندارد
+        temp_dir = "temp_downloads"
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir, exist_ok=True)
+            
+        # دانلود محتوا از اینستاگرام
+        bot.edit_message_text("⏳ در حال دانلود از اینستاگرام...", message.chat.id, debug_msg.message_id)
+        
+        # ایجاد نمونه دانلودر
+        downloader = InstagramDownloader(temp_dir)
+        
+        # استفاده از دانلودر برای دانلود محتوا (بصورت async)
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        file_path, caption = loop.run_until_complete(downloader.download(url))
+        
+        # بررسی نوع فایل و ارسال آن
+        bot.edit_message_text("📤 در حال ارسال فایل...", message.chat.id, debug_msg.message_id)
+        
+        # ارسال ویدیو یا تصویر بر اساس پسوند فایل
+        if file_path.endswith(('.mp4', '.mov')):
+            with open(file_path, 'rb') as video_file:
+                bot.send_video(
+                    message.chat.id, 
+                    video_file,
+                    caption=f"✅ دانلود شد از اینستاگرام\n👤 {caption}"
+                )
+        else:  # ارسال تصویر
+            with open(file_path, 'rb') as photo_file:
+                bot.send_photo(
+                    message.chat.id, 
+                    photo_file,
+                    caption=f"✅ دانلود شد از اینستاگرام\n👤 {caption}"
+                )
+        
+        # پاکسازی فایل‌های موقت
+        try:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            # پاکسازی پوشه والد
+            parent_dir = os.path.dirname(file_path)
+            if os.path.exists(parent_dir) and parent_dir != temp_dir:
+                import shutil
+                shutil.rmtree(parent_dir, ignore_errors=True)
+        except Exception as e:
+            logger.error(f"خطا در پاکسازی فایل‌های موقت: {str(e)}")
+        
+        # حذف پیام "در حال پردازش"
+        bot.delete_message(message.chat.id, debug_msg.message_id)
+        
+    except ValueError as e:
+        # خطاهای قابل پیش‌بینی (مانند لینک نامعتبر)
+        error_message = str(e)
+        if debug_msg:
+            bot.edit_message_text(f"❌ {error_message}", message.chat.id, debug_msg.message_id)
+        else:
+            bot.reply_to(message, f"❌ {error_message}")
+    except Exception as e:
+        # سایر خطاها
+        logger.error(f"خطا در پردازش لینک اینستاگرام: {str(e)}\n{traceback.format_exc()}")
+        error_message = str(e)
+        if "No module named 'instaloader'" in error_message:
+            error_message = "ماژول instaloader نصب نیست. لطفا با ادمین تماس بگیرید."
+        
+        if debug_msg:
+            bot.edit_message_text(f"⚠️ خطای سیستمی: {error_message}", message.chat.id, debug_msg.message_id)
+        else:
+            bot.reply_to(message, f"⚠️ خطای سیستمی: {error_message}")
+
 def setup_bot_handlers():
     """تنظیم هندلرهای ربات"""
+    @bot.message_handler(func=lambda message: is_instagram_url(message.text))
+    def instagram_link_handler(message):
+        """پردازش لینک‌های اینستاگرام"""
+        try:
+            url = message.text.strip()
+            process_instagram_url(message, url)
+        except Exception as e:
+            logger.error(f"Error processing Instagram link: {str(e)}\n{traceback.format_exc()}")
+            bot.reply_to(message, f"⚠️ خطا در پردازش لینک اینستاگرام: {str(e)}")
+
     @bot.message_handler(func=lambda message: 'youtube.com' in message.text or 'youtu.be' in message.text)
     def youtube_link_handler(message):
         try:
